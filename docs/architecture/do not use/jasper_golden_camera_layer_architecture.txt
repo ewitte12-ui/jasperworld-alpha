@@ -1,0 +1,124 @@
+JASPER’S WORLD — GOLDEN CAMERA + LAYER ARCHITECTURE
+(2.5D Side‑Scrolling Platformer)
+
+PURPOSE
+-------
+This document defines a proven, stable camera and layer architecture for 2.5D
+side‑scrolling platform games that aim to feel spatial and three‑dimensional
+without introducing camera, parallax, or overlay bugs.
+
+This architecture is designed to survive camera tilt, parallax, layered visuals,
+and polish passes without regressions.
+
+================================================================
+CORE PRINCIPLE
+================================================================
+The scene is composed of THREE SEPARATE SYSTEMS:
+
+1. Camera math (projection, tilt, follow)
+2. World space (backgrounds, gameplay, parallax)
+3. Screen space (vignette, overlays, UI)
+
+These systems MUST remain architecturally separate.
+
+================================================================
+WORLD CAMERA (SINGLE SOURCE OF TRUTH)
+================================================================
+
+There must be EXACTLY ONE world camera.
+
+Recommended configuration:
+- Orthographic projection
+- ScalingMode::FixedVertical(VIRTUAL_HEIGHT)
+- Constant pitch (e.g. −20° to −30°)
+- No roll
+- Camera clears color
+- Camera follows player in X/Y only
+
+Rules:
+- World camera renders ONLY world geometry
+- No UI
+- No screen‑space effects
+
+================================================================
+DEPTH‑AWARE LAYERING
+================================================================
+
+Depth is expressed using REAL Z separation, not just draw order.
+
+All layer roles must occupy distinct Z bands.
+
+================================================================
+PARALLAX DESIGN
+================================================================
+
+Parallax is implemented via transform movement, not camera tricks.
+
+Recommended parallax factors:
+- Far sky: 0.2 – 0.4
+- Distant mountains: 0.5 – 0.7
+- Mid layers: 0.7 – 0.9
+- Gameplay: 1.0
+
+Parallax layers MUST be oversized to account for reduced effective coverage.
+
+================================================================
+BACKGROUND COMPOSITION RULE
+================================================================
+
+Background layers MUST:
+- Exceed camera visible height
+- Account for maximum camera movement
+- Overlap vertically
+- Ignore current gameplay framing
+
+Backgrounds are sized for worst‑case camera state.
+
+================================================================
+SCREEN‑SPACE OVERLAY CAMERA
+================================================================
+
+A separate overlay camera is used for screen‑space effects.
+
+Overlay camera responsibilities:
+- Vignettes
+- Fog bands
+- Light falloff
+- Film grain
+- Damage flashes
+
+Rules:
+- Screen space only
+- Does NOT clear color
+- Completely independent of world transforms
+
+================================================================
+UI CAMERA
+================================================================
+
+UI is rendered using a dedicated UI camera.
+
+Rules:
+- Renders last
+- No interaction with world or overlay cameras
+
+================================================================
+VISUAL PLACEMENT RULE
+================================================================
+
+If an element describes the SCREEN:
+→ It belongs in screen space.
+
+If an element describes the WORLD:
+→ It belongs in world space.
+
+Violating this rule inevitably causes camera‑dependent bugs.
+
+================================================================
+FINAL RULE
+================================================================
+
+If camera tilt, parallax, and overlays are all present,
+this architecture MUST be followed exactly.
+
+END OF DOCUMENT

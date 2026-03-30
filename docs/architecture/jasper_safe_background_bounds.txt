@@ -1,0 +1,197 @@
+JASPER’S WORLD — SAFE BACKGROUND BOUNDS COMPUTATION GUIDE
+(Bevy 0.18, 2.5D side‑scroller)
+
+PURPOSE
+-------
+This document explains how to compute SAFE background bounds that guarantee no
+horizontal bars, seams, or clear‑color bleed inside the scene — even with camera
+movement, vertical gameplay, and parallax.
+
+It is written as a mechanical guide and is meant to be treated as a permanent
+implementation rule, not design advice.
+
+================================================================
+CORE PRINCIPLE
+================================================================
+Backgrounds must be sized for the CAMERA AT ITS WORST‑CASE POSITION,
+not for initial framing or visible art height.
+
+If a background only fits when the camera is centered, it WILL eventually fail.
+
+================================================================
+STEP 1 — CAMERA VISIBLE HEIGHT (WORLD UNITS)
+================================================================
+
+CASE A — FixedVertical (RECOMMENDED)
+-----------------------------------
+If using:
+    ScalingMode::FixedVertical(VIRTUAL_HEIGHT)
+
+Then:
+    camera_visible_height = VIRTUAL_HEIGHT
+    camera_visible_half_height = VIRTUAL_HEIGHT / 2
+
+This is the most stable and predictable setup.
+
+CASE B — Auto‑scaled modes (AutoMin / AutoMax)
+----------------------------------------------
+If using auto scaling:
+
+    camera_visible_height =
+        window_height_in_pixels / pixels_per_world_unit
+
+WARNING:
+- This value changes at runtime
+- Makes safe bounds harder to guarantee
+
+================================================================
+STEP 2 — MAXIMUM CAMERA VERTICAL TRAVEL
+================================================================
+
+Define:
+    Y_min = lowest camera center Y
+    Y_max = highest camera center Y
+
+These must account for:
+- player max jump height
+- camera follow offset
+- camera smoothing / lag
+- cutscenes or scripted camera moves
+
+When unsure, overestimate.
+
+Compute:
+    camera_vertical_range = Y_max - Y_min
+
+================================================================
+STEP 3 — REQUIRED RAW BACKGROUND COVERAGE
+================================================================
+
+At a minimum, background coverage must satisfy:
+
+    background_bottom ≤ (Y_min - camera_visible_half_height)
+    background_top    ≥ (Y_max + camera_visible_half_height)
+
+This guarantees the camera view is always inside the background.
+
+================================================================
+STEP 4 — PARALLAX SAFETY MARGIN (CRITICAL)
+================================================================
+
+If a background layer uses parallax or scaled movement:
+
+Define parallax factor p:
+- p = 1.0 → world‑locked
+- p < 1.0 → slower parallax layer
+
+Parallax reduces effective coverage.
+
+Compute:
+    parallax_margin = camera_visible_height * (1 - p)
+
+If multiple parallax effects exist, use the *smallest* p.
+
+================================================================
+STEP 5 — MANDATORY OVERLAP BUFFER
+================================================================
+
+Never allow layers to meet edge‑to‑edge.
+
+Define:
+    overlap_margin = 10%–25% of camera_visible_height
+
+This buffer eliminates seams due to:
+- floating‑point drift
+- camera smoothing
+- transform interpolation
+
+================================================================
+STEP 6 — FINAL SAFE BACKGROUND HEIGHT FORMULA
+================================================================
+
+Compute:
+
+    safe_background_height =
+        camera_visible_height
+      + camera_vertical_range
+      + parallax_margin
+      + overlap_margin
+
+This is the MINIMUM safe height.
+
+================================================================
+WORKED EXAMPLE (REALISTIC)
+================================================================
+
+Given:
+    VIRTUAL_HEIGHT = 180
+    camera vertical travel = ±30 units
+    parallax factor (mountains) = 0.7
+
+Compute:
+    camera_visible_height = 180
+    camera_vertical_range = 60
+    parallax_margin = 180 × (1 - 0.7) = 54
+    overlap_margin = 36
+
+Result:
+    safe_background_height = 180 + 60 + 54 + 36 = 330 units
+
+A background shorter than ~330 units WILL produce an internal horizontal bar.
+
+================================================================
+STEP 7 — BACKGROUND PLACEMENT RULE
+================================================================
+
+Once height is correct, placement still matters.
+
+Background center MUST be:
+
+    background_center_y =
+        (background_top + background_bottom) / 2
+
+DO NOT anchor background Y to:
+- platform height
+- camera Y
+- zero
+
+Anchor it to its computed coverage region.
+
+================================================================
+STEP 8 — VALIDATION TEST (DO THIS ONCE)
+================================================================
+
+1. Set:
+    ClearColor(Color::MAGENTA)
+
+2. Move camera to:
+    - highest reachable gameplay position
+    - lowest reachable gameplay position
+
+If magenta appears inside the scene:
+→ background bounds are insufficient
+
+================================================================
+COMMON FAILURES THIS PREVENTS
+================================================================
+
+- Horizontal bars touching sprites
+- Seams between sky / mountains
+- Clear‑color bleed during jumps
+- Parallax layers exposing gaps
+- Bugs that appear only after stability fixes
+
+================================================================
+CANONICAL RULE
+================================================================
+
+A background layer MUST be taller than:
+
+    camera view
+  + all camera movement
+  + parallax loss
+  + overlap margin
+
+If this rule is followed, this bug class cannot reappear.
+
+END OF GUIDE

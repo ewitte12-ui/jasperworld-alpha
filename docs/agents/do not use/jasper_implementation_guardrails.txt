@@ -1,0 +1,170 @@
+JASPER’S WORLD — IMPLEMENTATION GUARDRAILS
+(Minimizing Unintended Changes)
+
+PURPOSE
+-------
+These guardrails exist to PREVENT the system (human or AI) from fixing
+problems by changing things that were NOT asked to be changed.
+
+When followed, they ensure:
+- Fixes stay localized
+- Regressions are rare
+- Debugging remains predictable
+- Architectural decisions are not silently violated
+
+These guardrails apply to ALL future changes.
+
+================================================================
+CORE IMPLEMENTATION RULES (NON‑NEGOTIABLE)
+================================================================
+
+RULE 1 — ONE INTENT, ONE SYSTEM
+--------------------------------
+Each change MUST have exactly ONE declared intent.
+
+Examples:
+- "Improve gameplay readability"
+- "Restore background depth"
+- "Fix camera artifact"
+
+ONLY the system that directly serves that intent may be changed.
+
+Violations:
+- Adjusting Z while fixing color
+- Tweaking lighting while fixing placement
+- Changing camera while fixing composition
+
+================================================================
+RULE 2 — DECLARE WHAT MUST NOT CHANGE
+-------------------------------------
+Before implementing any fix, explicitly declare:
+
+"The following MUST remain unchanged:"
+
+Typical examples:
+- Camera projection
+- Z ordering
+- Gameplay contrast
+- Parallax factors
+
+Anything not declared protected is allowed to drift.
+
+================================================================
+RULE 3 — NO CASCADE FIXES
+-------------------------
+If a fix causes a new visual issue:
+
+DO NOT fix the new issue immediately.
+
+Instead:
+- Undo the change
+- Re‑isolate the root cause
+- Choose a different lever
+
+Chain reactions are diagnostic failures.
+
+================================================================
+RULE 4 — NEVER MIX AXES IN ONE PASS
+-----------------------------------
+Only ONE of the following axes may be modified per pass:
+
+- Z position
+- Scale
+- Color / contrast
+- Lighting
+- Parallax
+- Camera math
+
+Mixing axes destroys cause‑and‑effect clarity.
+
+================================================================
+RULE 5 — PRESERVE WORKING STATES
+--------------------------------
+If a change fixes the primary issue:
+
+- Snapshot / commit immediately
+- Do NOT "clean it up" in the same pass
+
+Working states are reference points, not intermediates.
+
+================================================================
+IMPLEMENTATION CHECKLIST (MANDATORY)
+================================================================
+
+Before making ANY change, answer ALL of the following:
+
+[ ] What exact problem am I solving?
+[ ] Which ONE system owns this problem?
+[ ] What systems must remain unchanged?
+[ ] What single variable will I touch?
+[ ] How will I revert if this fails?
+
+If any answer is unclear — STOP.
+
+================================================================
+ALLOWED VS FORBIDDEN FIX TYPES
+================================================================
+
+Fixing readability allows:
+- Platform contrast
+- Background contrast
+- Detail reduction
+
+Fixing readability forbids:
+- Camera changes
+- Z changes
+- Parallax changes
+
+Fixing depth allows:
+- Scale deltas
+- Z magnitude adjustments
+- Parallax motion
+
+Fixing depth forbids:
+- Gameplay contrast changes
+- Lighting over gameplay
+
+Fixing camera artifacts allows:
+- Coordinate space fixes
+- Projection math
+
+Fixing camera artifacts forbids:
+- Color tuning
+- Composition changes
+
+================================================================
+ROLLBACK RULE (MANDATORY)
+================================================================
+
+If a fix makes the scene worse:
+
+- Roll back completely
+- Return to last known good state
+- Re‑approach with a different axis
+
+Partial rollback is not allowed.
+
+================================================================
+AI‑ASSISTED IMPLEMENTATION RULE
+================================================================
+
+When delegating changes to an AI:
+
+You MUST specify:
+- Exact intent
+- Exact allowed axes
+- Explicit forbidden changes
+
+If not specified, AI will improvise.
+Improvisation is how regressions happen.
+
+================================================================
+CANONICAL MANTRA
+================================================================
+
+"Fix the problem I asked for — and nothing else."
+
+If this mantra is violated, the change is invalid
+regardless of visual improvement.
+
+END OF IMPLEMENTATION GUARDRAILS

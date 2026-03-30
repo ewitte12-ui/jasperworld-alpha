@@ -1,0 +1,94 @@
+JASPER’S WORLD — CAMERA ROLE & IDENTITY GUARDRAIL
+(Camera Ownership, Queries, and Determinism)
+
+PURPOSE
+-------
+This guardrail enforces explicit camera identity to prevent
+ambiguous queries, silent failures, and future multi‑camera regressions.
+
+It replaces assumptions with contracts.
+
+================================================================
+CORE PRINCIPLE
+================================================================
+
+CAMERAS ARE IDENTITIES, NOT TYPES.
+
+Camera3d is insufficient to describe intent.
+
+================================================================
+MANDATORY CAMERA ROLES
+================================================================
+
+Every camera MUST declare EXACTLY ONE role marker:
+
+- GameplayCamera
+- TitleCamera
+- UICamera
+- DebugCamera
+
+Untagged cameras are forbidden.
+
+================================================================
+QUERY RULE (CRITICAL)
+================================================================
+
+NO system may query cameras using:
+
+  Query<..., With<Camera3d>>
+
+This is INVALID.
+
+All camera queries MUST include a role marker:
+
+  With<Camera3d> + With<GameplayCamera>
+
+This guarantees determinism regardless of how many cameras exist.
+
+================================================================
+SINGLE() SAFETY RULE
+================================================================
+
+.single() may ONLY be used if:
+- The query includes an explicit role marker
+- The role is guaranteed unique by design
+
+Using .single() on Camera3d alone is a defect.
+
+================================================================
+TITLE SCREEN INTERACTION RULE
+================================================================
+
+Title Screen cameras are allowed to coexist with gameplay cameras ONLY
+outside the Playing state.
+
+Gameplay systems MUST IGNORE non‑GameplayCamera entities.
+
+================================================================
+ANTI‑FRAGILITY RULE
+================================================================
+
+Systems must remain correct if:
+- A second camera is added
+- A debug camera is enabled
+- A cinematic camera exists
+
+Camera role markers are the only supported mechanism for this.
+
+================================================================
+AI SAFETY RULE
+================================================================
+
+AI agents MUST:
+- Introduce role markers when adding cameras
+- Refactor queries to use roles instead of types
+- Treat Camera3d‑only queries as unsafe legacy code
+
+================================================================
+FINAL RULE
+================================================================
+
+IF A CAMERA QUERY CAN EVER BECOME AMBIGUOUS,
+IT IS WRONG TODAY.
+
+END OF CAMERA ROLE & IDENTITY GUARDRAIL

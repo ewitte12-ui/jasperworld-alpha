@@ -1,0 +1,156 @@
+JASPER’S WORLD — CAMERA & WORLD ANCHOR CONTRACT GUARDRAIL
+(Parallax, Camera Attachment, Frame-of-Reference, and VFX Exceptions)
+
+PURPOSE
+-------
+This guardrail defines strict rules governing how visual entities relate to
+the camera, the world, and player perception.
+
+Its goal is to prevent camera-follow artifacts, jarring parallax motion,
+frame-of-reference errors, and accidental regressions when adding biomes,
+VFX, or editor tooling.
+
+This guardrail governs CAMERA RELATIONSHIPS and REFERENCE FRAMES.
+
+================================================================
+CORE PRINCIPLE
+================================================================
+
+EVERY VISUAL ENTITY MUST HAVE EXACTLY ONE FRAME OF REFERENCE.
+
+An entity must be classified as ONE of the following:
+- Camera-attached (screen-space)
+- World-anchored (static)
+- World-anchored with parallax (delta-based)
+- Camera-relative world-effect (VFX exception)
+
+Hybrid or ambiguous anchoring is forbidden.
+
+================================================================
+ENTITY CATEGORIES (MANDATORY)
+================================================================
+
+1) CAMERA-ATTACHED ENTITIES (SCREEN-SPACE)
+------------------------------------------
+Examples:
+- UI
+- HUD
+- Screen-space effects (vignette, fade, overlays)
+
+Rules:
+- May follow camera transform directly
+- May parent to the camera
+- May recompute absolute position from camera position
+
+Camera-attached entities MUST be explicitly documented.
+
+------------------------------------------
+2) WORLD-ANCHORED ENTITIES (NO PARALLAX)
+------------------------------------------
+Examples:
+- Platforms
+- Enemies
+- Ground props
+- Interactive objects
+
+Rules:
+- Spawn once in world-space
+- Must NEVER read camera position to set world position
+- Must NEVER parent to the camera
+- Movement derives only from gameplay or physics systems
+
+------------------------------------------
+3) WORLD-ANCHORED PARALLAX ENTITIES
+------------------------------------------
+Examples:
+- Trees
+- Buildings
+- Terrain silhouettes
+- Large environment layers
+
+Rules:
+- Spawn once at a fixed world-space anchor
+- Retain original anchor position
+- MUST NOT recompute absolute position from camera position
+- MUST use delta-based motion ONLY
+
+Allowed:
+- position += camera_delta * parallax_factor
+
+Forbidden:
+- position = camera.position * factor
+- Parenting to camera
+
+If the camera does not move, parallax entities must not move.
+
+------------------------------------------
+4) CAMERA-RELATIVE WORLD EFFECTS (VFX EXCEPTION)
+------------------------------------------
+Examples:
+- Weather particles (rain, snow)
+- Fog motes
+- Wind-blown leaves
+- Ambient dust
+
+These are NOT world structure and do not convey spatial truth.
+They are perceptual effects intended to maintain consistent density
+around the player.
+
+Rules:
+- MAY spawn volumes relative to camera position
+- MUST NOT parent directly to the camera transform
+- Once spawned, particles move independently in world-space
+- MUST NOT use parallax math or depth illusion logic
+- MUST NOT occlude gameplay silhouettes or readability
+
+All camera-relative VFX systems MUST be:
+- Explicitly documented
+- Tagged (e.g. CameraRelativeVfx)
+
+================================================================
+VISUAL SANITY RULE
+================================================================
+
+If a non-UI object moves when the camera is stationary,
+its anchoring is incorrect.
+
+This is a blocking defect.
+
+================================================================
+FOREST / LOW-INTENSITY BIOME GUIDANCE
+================================================================
+
+For tutorial or calm biomes (e.g. Forest):
+- Parallax differences between layers must be subtle
+- Motion should suggest mass and calm, not spectacle
+- Motion should never draw attention to itself
+
+Aggressive parallax is reserved for later biomes (City, Sanctuary).
+
+================================================================
+CAMERA QUERY RULE
+================================================================
+
+All parallax and world-anchored systems MUST explicitly bind to:
+- GameplayCamera
+
+Generic queries (With<Camera>) are forbidden.
+
+================================================================
+AI SAFETY RULE
+================================================================
+
+AI agents MUST:
+- Never attach world structure to the camera
+- Never compute absolute world position from camera position
+- Preserve original spawn transforms as anchors
+- Treat camera-relative VFX as a documented exception only
+
+================================================================
+FINAL RULE
+================================================================
+
+IF A NON-UI, NON-VFX ENTITY FEELS "GLUED" TO THE CAMERA,
+THE CONTRACT HAS BEEN VIOLATED.
+
+END OF CAMERA & WORLD ANCHOR CONTRACT GUARDRAIL

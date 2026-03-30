@@ -1,0 +1,176 @@
+JASPER’S WORLD — TROUBLESHOOTING & BUGFIX GUARDRAILS
+(2.5D Side‑Scrolling Platformer)
+
+PURPOSE
+-------
+This document defines a STRICT, ORDERED TROUBLESHOOTING PROCESS for visual,
+rendering, camera, depth, and readability issues. It exists to prevent
+random tweaking, regression loops, and mis‑diagnosis as the game becomes
+more visually complex.
+
+This guardrail assumes you already have:
+- Correct sprite/atlas setup
+- Correct camera math
+- Correct Z separation
+
+If something "looks wrong", follow this document TOP‑DOWN.
+
+================================================================
+CORE RULE (MEMORIZE THIS)
+================================================================
+
+NEVER tweak more than ONE system at a time.
+
+If you violate this rule, you lose diagnostic signal.
+
+================================================================
+PHASE 0 — VERIFY BASELINE (MANDATORY, FAST)
+================================================================
+
+Before debugging ANY visual issue:
+
+[ ] Disable post‑effects (vignette, fog, lighting overlays)
+[ ] Freeze camera position
+[ ] Pause parallax updates
+[ ] Ensure ONE world camera only
+
+If the issue disappears → the bug is NOT foundational.
+
+================================================================
+PHASE 1 — CAMERA & PROJECTION DIAGNOSIS
+================================================================
+
+Symptoms this phase addresses:
+- Screen gaps
+- Drifting bars
+- World sliding oddly
+- Resize‑dependent artifacts
+
+Checklist:
+[ ] One (and only one) world camera clears color
+[ ] Projection explicitly set (no defaults)
+[ ] Camera tilt accounted for in all world‑space math
+[ ] Any screen‑space effect is NOT world‑space
+
+If a screen‑edge effect moves with player:
+→ It is incorrectly world‑space
+
+STOP here until fixed.
+
+================================================================
+PHASE 2 — Z ORDER vs Z MAGNITUDE
+================================================================
+
+Symptoms this phase addresses:
+- Flicker
+- Visual fighting
+- Objects disappearing
+
+Checks:
+[ ] Conceptual layers mapped to explicit Z bands
+[ ] Numeric separation >= 10–20 units minimum
+[ ] Tilted camera has EXTRA Z spacing
+[ ] No translucent quads share the same Z
+
+If adjusting Z fixes bugs but breaks composition:
+→ Z ORDER is correct, Z MAGNITUDE is not tuned
+
+================================================================
+PHASE 3 — BACKGROUND COVERAGE & BOUNDS
+================================================================
+
+Symptoms this phase addresses:
+- Horizontal bars inside scene
+- Clear‑color bleed
+- Gaps touching gameplay
+
+Checks:
+[ ] Background exceeds worst‑case camera bounds
+[ ] Layers overlap vertically
+[ ] Parallax shrinkage accounted for
+[ ] ClearColor never visible inside play space
+
+Use ClearColor = magenta as a diagnostic.
+
+================================================================
+PHASE 4 — READABILITY VS DEPTH CONFLICT
+================================================================
+
+Symptoms this phase addresses:
+- Platforms exist but are hard to see
+- Trees disappear or overpower gameplay
+- Scene feels noisy or flat
+
+Do NOT touch camera or Z here.
+
+Checks:
+[ ] Gameplay has highest contrast
+[ ] Background contrast decreases with depth
+[ ] Foreground does not dominate gameplay envelope
+[ ] Props have a single role (landmark or decoration)
+
+If readability fix flattens scene:
+→ Too many depth cues were reduced uniformly
+
+================================================================
+PHASE 5 — DEPTH RECOVERY (CONTROLLED)
+================================================================
+
+ONLY after readability is confirmed:
+
+Reintroduce depth using NON‑COMPETITIVE cues:
+
+[ ] Slight scale differences by Z layer
+[ ] Subtle parallax motion
+[ ] Atmospheric perspective gradients
+[ ] Edge softness differences
+
+DO NOT reintroduce:
+- Gameplay‑zone lighting
+- High‑frequency background detail
+
+================================================================
+PHASE 6 — EXAGGERATION TEST (MANDATORY)
+================================================================
+
+Temporarily exaggerate ONE variable:
+
+Examples:
+- +20% platform brightness
+- +10% background scale
+- −20% background contrast
+
+If exaggeration clarifies the issue:
+→ You found the correct axis to tune
+
+Undo exaggeration immediately.
+
+================================================================
+COMMON FAILURE PATTERNS (RECOGNIZE THESE)
+================================================================
+
+• "Z fixed bugs but things look worse"
+  → Composition tuning phase, not regression
+
+• "Removing fog fixed everything"
+  → Fog was violating gameplay envelope
+
+• "Depth disappeared after readability pass"
+  → Contrast hierarchy flattened depth gradients
+
+• "Camera math seems fine but visuals drift"
+  → World‑space effect assuming screen‑space
+
+================================================================
+FINAL RULES
+================================================================
+
+1. Rendering correctness comes BEFORE aesthetics.
+2. Readability comes BEFORE realism.
+3. Depth comes from differences, not subtraction.
+4. Never adjust two systems in the same pass.
+
+If these rules are followed, visual debugging remains
+finite and predictable even as complexity increases.
+
+END OF TROUBLESHOOTING GUARDRAILS

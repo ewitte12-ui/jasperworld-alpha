@@ -1,0 +1,160 @@
+JASPER’S WORLD — SPRITE & ATLAS RENDERING GUARDRAIL
+(Bevy 0.18, 2.5D sprite-based game)
+
+PURPOSE
+-------
+This document is a NON-NEGOTIABLE GUARDRAIL for sprite, atlas, and camera rendering.
+If any sprite flicker, seams, missing parts, or instability appear, this checklist MUST
+be followed top-down. It includes ONLY recommendations proven correct in this project.
+
+This file is intentionally plain text so it can be pasted directly into Claude or other
+LLMs and applied mechanically without interpretation.
+
+================================================================
+STOP CONDITIONS (DO NOT SKIP)
+================================================================
+If ANY of the following occur, stop and apply this guardrail:
+- Sprite flickers during motion or animation
+- Body parts disappear or split
+- Seams appear between atlas frames
+- Alpha edges shimmer or pop
+- Visuals change when the camera moves slowly
+
+================================================================
+RENDERING & ATLAS GUARDRAIL — ORDERED CHECKLIST
+================================================================
+
+[1] UV RECT COMPUTATION (MANDATORY)
+--------------------------------
+- UV rectangles MUST NOT touch atlas cell borders
+- Half-texel inset is REQUIRED
+
+Exact formula (do not modify):
+    eps_u = 0.5 / atlas_width
+    eps_v = 0.5 / atlas_height
+
+    u_min = col / cols + eps_u
+    v_min = row / rows + eps_v
+    u_max = (col + 1) / cols - eps_u
+    v_max = (row + 1) / rows - eps_v
+
+Why:
+- Prevents neighbor texel sampling
+- Eliminates frame bleeding and splits
+
+================================================================
+[2] ATLAS CONTENT RULES (MANDATORY)
+----------------------------------
+- Runtime atlas MUST be clean:
+  - No guide lines
+  - No debug overlays
+
+- Each sprite frame MUST:
+  - Be bottom-aligned
+  - Preserve true alpha values
+
+- DO NOT convert alpha to binary (0/255)
+
+Why:
+- Binary alpha causes cutout popping during minification
+
+================================================================
+[3] ATLAS BAKE SIZE (MANDATORY)
+------------------------------
+Bake art close to runtime resolution
+
+Rule of thumb:
+- Runtime sprite: ~24–32 px tall
+- Bake frames: ~64–128 px tall
+
+DO NOT:
+- Bake 256–512 px art for tiny runtime sprites
+
+Why:
+- Extreme downscaling creates unstable GPU sampling
+
+================================================================
+[4] ATLAS PADDING & EXTRUSION (RECOMMENDED)
+------------------------------------------
+- Preferred: 1–4 px padding between cells
+- Preferred: edge extrusion (duplicate edge pixels inward)
+
+Required when:
+- Using linear filtering
+- Enabling mipmaps
+
+================================================================
+[5] MATERIAL SETTINGS (MANDATORY)
+--------------------------------
+Default sprite material MUST use:
+
+    AlphaMode::Blend
+
+Do NOT use AlphaMode::Mask unless ALL are true:
+- Atlas has padding/extrusion
+- Mask threshold <= 0.02
+- Hard cut edges are acceptable
+
+Why:
+- Mask is unstable for thin details
+
+================================================================
+[6] FILTERING & SAMPLING (MANDATORY)
+-----------------------------------
+- Use nearest sampling:
+
+    ImagePlugin::default_nearest()
+
+- Disable MSAA for atlas rendering:
+
+    Msaa::Off
+
+================================================================
+[7] CAMERA & TRANSFORM STABILITY (MANDATORY)
+-------------------------------------------
+- Camera translation MUST be snapped to whole pixels:
+
+    x = round(x)
+    y = round(y)
+
+- Orthographic camera strongly recommended
+
+Why:
+- Sub-pixel movement causes UV sampling hops
+
+================================================================
+[8] MESH & UV UPDATES (MANDATORY)
+--------------------------------
+- Update mesh UVs ONLY when frame index changes
+- Do NOT rewrite UV buffers every tick
+
+================================================================
+[9] QUAD UV ORDER (MANDATORY)
+----------------------------
+All sprite quads MUST use this vertex order:
+
+    0 = Top-Right
+    1 = Top-Left
+    2 = Bottom-Left
+    3 = Bottom-Right
+
+UVs must match this order exactly
+
+================================================================
+[10] CULLING & DOUBLE-SIDED POLICY (MANDATORY)
+---------------------------------------------
+- Player & enemy sprites:
+  - Single-sided
+  - Backface culling ON
+
+- Double-sided ONLY for:
+  - Background or parallax quads
+
+================================================================
+FINAL RULE
+================================================================
+If adding a new sprite, atlas, animation, or character:
+
+-> This guardrail must pass completely BEFORE debugging elsewhere.
+
+END OF GUARDRAIL

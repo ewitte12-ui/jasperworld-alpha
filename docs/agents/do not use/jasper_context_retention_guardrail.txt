@@ -1,0 +1,137 @@
+JASPER’S WORLD — CONTEXT RETENTION & DECISION INVARIANTS GUARDRAIL
+(Project Continuity & Anti‑Regression)
+
+PURPOSE
+-------
+This document defines NON‑NEGOTIABLE GUARDRAILS for retaining relevant context
+and preventing loss of hard‑won decisions over time.
+
+Its purpose is to stop solved problems from being silently re‑introduced,
+re‑argued, or partially undone due to memory loss, personnel changes,
+or AI improvisation.
+
+This guardrail governs CONTINUITY, not creativity.
+
+================================================================
+CORE PRINCIPLE
+================================================================
+
+ONCE A DECISION IS STABLE, IT IS AN INVARIANT — NOT A SUGGESTION.
+
+If a decision solved a real problem, it remains true
+until explicitly revoked.
+
+================================================================
+CANONICAL DECISION SET (MANDATORY)
+================================================================
+
+Maintain a short list of CANONICAL DECISIONS.
+
+A canonical decision is:
+- Based on observed failure
+- Chosen intentionally over alternatives
+- Proven to solve the stated problem
+
+Examples:
+- Screen‑space effects MUST NOT be world‑space
+- Gameplay envelope clarity must never be compromised
+- Depth recovery uses scale and parallax, not contrast
+- Enemies must be readable before dangerous
+
+Keep this list SMALL (10–20 items max).
+
+================================================================
+DECISION PROVENANCE RULE
+================================================================
+
+Every canonical decision MUST record:
+
+- What problem it solved
+- What alternative was rejected
+- Why the alternative failed
+
+Decisions without provenance are fragile and easily overturned.
+
+================================================================
+CLOSED‑PROBLEM DECLARATION
+================================================================
+
+When a problem is solved, it must be explicitly marked:
+
+STATUS: CLOSED
+
+Rules:
+- Closed problems may not be modified casually
+- Fixes must assume closed problems remain correct
+
+Re‑opening a closed problem requires justification.
+
+================================================================
+REOPENING A DECISION (CONTROLLED)
+================================================================
+
+To reopen a closed decision, ALL of the following are required:
+
+1. Restate the original problem and solution
+2. Name the invariant being reconsidered
+3. Present NEW evidence stronger than the original
+4. Acknowledge secondary impacts
+
+Without all four → reopening is INVALID.
+
+================================================================
+UPSTREAM PRECEDENCE RULE
+================================================================
+
+Decisions are ordered by scope:
+
+1. Gameplay fairness & readability
+2. Camera & spatial correctness
+3. Level structure
+4. Visual depth & composition
+5. Decoration & polish
+
+Lower‑scope changes MUST NOT violate higher‑scope invariants.
+
+================================================================
+AI CONTEXT CONTRACT (MANDATORY)
+================================================================
+
+Every AI‑assisted task MUST include:
+
+- Canonical decision list
+- Closed problems list
+- Explicit invariants that MUST NOT be violated
+
+If AI output violates an invariant:
+→ OUTPUT IS INVALID REGARDLESS OF QUALITY.
+
+================================================================
+ANTI‑AMNESIA RULE
+================================================================
+
+If a fix proposes adjusting something previously stabilized,
+ALWAYS ask:
+
+"What problem did this originally solve?"
+
+If the answer is unknown → STOP.
+
+================================================================
+DECISION REGISTER REVIEW
+================================================================
+
+Periodically review canonical decisions:
+- Verify they still apply
+- Retire only with explicit replacement
+
+Unreviewed decisions decay.
+
+================================================================
+FINAL RULE
+================================================================
+
+PROGRESS COMES FROM ACCUMULATING CORRECT DECISIONS,
+NOT FROM RE‑MAKING THEM.
+
+END OF CONTEXT RETENTION GUARDRAIL
