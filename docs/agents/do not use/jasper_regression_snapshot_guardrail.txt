@@ -1,0 +1,31 @@
+JASPER’S WORLD — REGRESSION SNAPSHOT GUARDRAIL
+(Visual Stability & Change Control)
+
+PURPOSE
+-------
+This document defines a NON‑NEGOTIABLE REGRESSION SNAPSHOT PROCESS.
+Its purpose is to prevent visual regressions by ensuring every change
+is compared against a known‑good visual baseline.
+
+================================================================
+CORE RULE
+================================================================
+
+If it is not compared, it is not verified.
+
+================================================================
+MANDATORY PROCESS
+================================================================
+
+- Capture BEFORE snapshot
+- Apply ONE change
+- Capture AFTER snapshot
+- Compare side-by-side
+
+================================================================
+STOP CONDITION
+================================================================
+
+If regression is observed → rollback fully
+
+END OF REGRESSION SNAPSHOT GUARDRAIL

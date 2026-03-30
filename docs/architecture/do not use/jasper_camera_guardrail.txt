@@ -1,0 +1,165 @@
+JASPER’S WORLD — CAMERA & VIEWPORT GUARDRAIL
+(Bevy 0.18, 2.5D game)
+
+PURPOSE
+-------
+This document is a NON-NEGOTIABLE GUARDRAIL for camera, viewport, and window setup.
+It exists to permanently eliminate screen gaps, misalignment, letterboxing surprises,
+and camera-dependent placement bugs.
+
+This guardrail MUST be applied before debugging sprites, UI, or level placement.
+
+================================================================
+STOP CONDITIONS (DO NOT SKIP)
+================================================================
+If ANY of the following occur, STOP and apply this guardrail:
+- Empty gaps on left/right/top/bottom of the screen
+- World appears shrunk, floating, or offset in the window
+- Gaps change when resizing the window
+- Camera motion causes scaling or edge artifacts
+- Pixel snapping causes 1–2px bars at edges
+
+================================================================
+CAMERA & WINDOW GUARDRAIL — ORDERED CHECKLIST
+================================================================
+
+[1] CHOOSE AN ASPECT RATIO POLICY (MANDATORY)
+--------------------------------------------
+You MUST explicitly choose ONE policy. Never rely on defaults.
+
+OPTION A — NO GAPS (STRETCH WORLD)
+---------------------------------
+- World always fills the window
+- Aspect ratio may distort
+
+Use:
+    ScalingMode::FixedVertical(VIRTUAL_HEIGHT)
+
+Result:
+- No gaps
+- Consistent vertical framing
+
+OPTION B — PRESERVE ASPECT (GAPS ACCEPTED)
+------------------------------------------
+- World keeps aspect ratio
+- Letterboxing/pillarboxing is EXPECTED
+
+Use:
+    ScalingMode::AutoMin {
+        min_width,
+        min_height,
+    }
+
+IMPORTANT:
+- If you choose Option B, gaps are NOT a bug
+
+================================================================
+[2] DEFINE A PIXEL-TO-WORLD CONTRACT (MANDATORY)
+-----------------------------------------------
+You MUST decide and document:
+
+    1 world unit = N screen pixels
+
+Examples:
+- 1 unit = 1 pixel (true pixel art)
+- 1 unit = 2 pixels (HiDPI friendly)
+
+ALL of these MUST obey the ratio:
+- sprite sizes
+- tile sizes
+- camera scale
+- level dimensions
+
+Reason:
+- Without this, perfect edge alignment is mathematically impossible
+
+================================================================
+[3] CAMERA ORIGIN & CENTERING (MANDATORY)
+----------------------------------------
+Decide which coordinate convention you use.
+
+OPTION A — CENTER-ORIGIN WORLD (RECOMMENDED)
+--------------------------------------------
+- (0,0) is world center
+
+Camera translation MUST be:
+    (0, 0, Z)
+
+OPTION B — BOTTOM-LEFT WORLD
+----------------------------
+- (0,0) is screen bottom-left
+
+Camera MUST be positioned intentionally, e.g.:
+    (world_width/2, world_height/2, Z)
+
+IMPORTANT:
+- Mismatching camera origin and world logic causes gaps and offsets
+
+================================================================
+[4] WINDOW RESIZING POLICY (MANDATORY)
+-------------------------------------
+You MUST choose ONE behavior:
+
+OPTION A — FIXED RESOLUTION
+---------------------------
+- Window size is locked
+- No resize handling required
+
+OPTION B — RESIZABLE WINDOW
+----------------------------
+- Camera projection MUST update on resize
+- ScalingMode must handle new aspect ratio
+
+Do NOT:
+- Allow resizing without updating the projection
+
+================================================================
+[5] VIEWPORT USAGE (MANDATORY)
+------------------------------
+- Do NOT use a custom camera viewport unless required
+
+If you DO use a viewport:
+- It MUST be updated on every window resize
+- Size MUST cover intended render area exactly
+
+Reason:
+- Partial viewports are a common hidden cause of screen gaps
+
+================================================================
+[6] PIXEL SNAPPING & RESOLUTION CONSTRAINTS (MANDATORY)
+-------------------------------------------------------
+If pixel snapping is enabled:
+
+- Camera translation MUST be integer-aligned
+- Window resolution SHOULD be divisible by world scale
+
+WARNING:
+- Odd resolutions + integer snapping can create 1px gaps
+- This is a math constraint, not a rendering bug
+
+Acceptable solutions:
+- Constrain window sizes
+- Choose scale factors that divide evenly
+
+================================================================
+[7] MSAA & CAMERA INTERACTION (MANDATORY)
+-----------------------------------------
+For 2D atlas-based games:
+
+    Msaa::Off
+
+Reason:
+- MSAA can introduce edge interpolation and apparent gaps
+
+================================================================
+FINAL RULE
+================================================================
+If screen gaps or offsets are visible:
+
+-> THIS CAMERA GUARDRAIL MUST PASS COMPLETELY
+-> BEFORE debugging sprites, atlases, or UI
+
+Sprite issues and camera issues are separate layers.
+Mixing them leads to wasted debugging time.
+
+END OF CAMERA GUARDRAIL

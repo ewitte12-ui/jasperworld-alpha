@@ -1,0 +1,346 @@
+# Jasper's World — test2 Plan
+
+## Context
+
+test1 is complete — a functional 2D raccoon platformer with 4 levels, 3 layers each, enemies, collectibles, combat, dialogue, and save/load. However, test1 revealed critical architectural problems: hand-rolled physics caused grounded flicker and unreliable jumping, hardcoded level layouts in Rust were impossible to iterate on, and the 2D rendering couldn't support the visual quality target.
+
+test2 is a **clean rewrite** that addresses every major pain point:
+- **Camera3d** with 2D gameplay for real lighting, depth, and parallax
+- **avian2d + bevy-tnua** for reliable physics and character control
+- **Kenney All-in-One assets** (60K+ sprites, audio, 3D models) instead of procedural generation
+- Properly designed level layouts validated against jump height
+
+## Agent Structure (per phase)
+
+Each phase uses this 4-agent workflow:
+
+```
+Manager Agent (M)
+├── Spec/Design Agent     → defines interfaces and contracts first
+├── Implementation Agent  → codes against the spec
+├── Test Agent            → writes and runs tests
+└── Critic/Review Agent   → flags integration issues before M accepts
+```
+
+**Spec** runs first to define component structs, system signatures, and data contracts.
+**Implementation** codes strictly against the spec — no ad-hoc additions.
+**Test** writes unit tests and runs `cargo test` + `cargo clippy` + `cargo run`.
+**Critic** reviews for integration issues: startup ordering, query conflicts, missing despawn, entity leaks.
+
+## Working Memory Protocol
+
+Between phases, save working memory to `/Users/ericwitte/.claude/projects/-Users-ericwitte-Documents-claude-projects-jaspersworld-test/memory/`. Each phase completion note should capture:
+- What was implemented and any deviations from the spec
+- Key decisions made during implementation
+- Known issues or things to watch for in later phases
+
+## Test1 Lessons (must not repeat)
+
+1. **Don't hand-roll physics** — use avian2d. Test1's collision resolver had grounded flicker at tile edges.
+2. **Don't hardcode levels in Rust** — level data must be validated (all platforms ≤5 rows apart for jump height).
+3. **Deferred texture application** — systems in OnEnter chains run before resources from other chain systems exist. Use deferred patterns.
+4. **Layer transitions must teleport player** — player position must update to the matching transition tile in the new layer.
+5. **HUD parent traversal** — Bevy's Children component is shallow. Use ChildOf to walk up the tree.
+6. **Parallax sizing** — never use pixel dimensions as world units. Size relative to tile_height.
+7. **Level gate must be unjumpable** — 400px+ tall, not 64px.
+8. **All collectibles must be on reachable surfaces** — validate positions against tilemap and jump height.
+
+## Architecture
+
+### Camera3d with 2D Gameplay
+- `Camera3d` + `OrthographicProjection` looking down -Z at the XY plane
+- All gameplay on XY plane; Z axis is visual depth only
+- Sprites rendered as `Mesh3d` quads + `MeshMaterial3d<StandardMaterial>` with `base_color_texture`
+- Real 3D lighting: `DirectionalLight3d` + `PointLight3d`
+- Parallax via actual Z-depth separation (quads at Z=-20 to Z=-100)
+- Bevy's UI system handles HUD independently of world camera
+
+### No 2D-specific plugins
+Most 2D plugins (bevy_ecs_tilemap, bevy_ecs_ldtk, bevy_light_2d) assume Camera2d. Since we use Camera3d:
+- Tilemaps: hand-roll rendering as Mesh3d quads with atlas UV rects
+- Lighting: Bevy's built-in 3D lights (not bevy_light_2d)
+- Pixel-perfect: OrthographicProjection scaling + `ImagePlugin::default_nearest()`
+
+### Camera-agnostic plugins (safe to use)
+- `avian2d` — physics decoupled from rendering
+- `bevy-tnua` + `bevy-tnua-avian2d` — character controller on top of avian2d
+- `bevy_spritesheet_animation` — if compatible, else hand-roll UV cycling
+
+### Dependencies (Cargo.toml)
+```toml
+[package]
+name = "jaspersworld"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = "0.18"
+avian2d = "*"
+bevy-tnua = "*"
+bevy-tnua-avian2d = "*"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "6"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+```
+
+### Asset Pipeline
+Kenney assets at `buildassets/Kenney Game Assets All-in/`. Copy needed files into `assets/` per phase:
+- **Pixel Platformer tiles**: 18×18px, 1px spacing, tilemap_packed.png (20 cols × 9 rows = 180 tiles)
+- **Characters**: 24×24px, tilemap-characters_packed.png (9 cols × 3 rows = 27 tiles)
+- **Food/Farm/Industrial expansions**: 18×18px, 112 tiles each
+- **Background Elements Redux**: individual PNGs (trees, mountains, clouds, houses)
+- **Animal Pack Redux**: 240 animal sprites for enemies
+- **Audio**: 1286 files (Retro Sounds for SFX, Music Loops for BGM)
+
+---
+
+## Phase 1: Project Scaffold + Camera3d + Textured Quad Rendering
+
+### Deliverables
+Window opens with Camera3d. A row of Kenney terrain tiles renders as Mesh3d quads. A raccoon character quad is visible. Arrow keys move the raccoon (no physics yet). Proves the Camera3d + textured quad pipeline works.
+
+### New Files
+```
+src/main.rs                  — App, DefaultPlugins, ImagePlugin::default_nearest()
+src/lib.rs                   — Module declarations
+src/states.rs                — AppState enum (TitleScreen, MainMenu, Playing, Paused)
+src/rendering/mod.rs         — Rendering utilities
+src/rendering/quad.rs        — spawn_textured_quad(): Mesh3d plane + StandardMaterial from Handle<Image>
+src/rendering/atlas.rs       — Atlas loading: parse tilemap_packed.png, compute UV rects for 18×18 tiles
+src/rendering/camera.rs      — Camera3d + OrthographicProjection (FixedVertical 320.0), DirectionalLight3d
+src/player/mod.rs            — Player module
+src/player/components.rs     — Player marker, FacingDirection
+src/player/systems.rs        — Temporary direct-transform input (replaced in Phase 2)
+assets/tiles/                — tilemap_packed.png, tilemap-characters_packed.png
+CLAUDE.md                    — Build/run/test commands
+Cargo.toml
+```
+
+### Key Details
+- OrthographicProjection viewport_height = 320.0 (20 tiles × 16 world units per tile)
+- DirectionalLight3d pointing -Z to uniformly light the XY plane
+- StandardMaterial with `unlit: false`, `alpha_mode: AlphaMask` for transparency
+- Atlas UV math: tile_index → row/col → UV rect accounting for 1px spacing
+
+### Agent Focus
+- **Spec**: Define `spawn_textured_quad` API, atlas UV math, Camera3d projection params, module structure
+- **Implementation**: Build Mesh3d plane creation, StandardMaterial with atlas UV, camera setup
+- **Test**: Unit test atlas UV calculation, integration test that app builds and camera entity exists
+- **Critic**: Verify pixel-perfect rendering (no blur), confirm Z-ordering (ground z=0, player z=1)
+
+### Verification
+- `cargo run` shows textured ground tiles and raccoon quad
+- Arrow keys move raccoon
+- No blurring (nearest-neighbor sampling works with StandardMaterial)
+- `cargo test` — atlas UV calculation tests
+- `cargo clippy -- -D warnings` clean
+
+---
+
+## Phase 2: Physics + Character Controller
+
+### Deliverables
+Raccoon has gravity, lands on ground, jumps with space, runs left/right. Uses avian2d + bevy-tnua. One-way platforms work. Jump buffer + coyote time. Replaces Phase 1 temp input.
+
+### New Files
+```
+src/physics/mod.rs            — Avian2dPlugin, gravity config
+src/physics/config.rs         — PhysicsConfig (gravity, speeds, jump height)
+src/player/controller.rs      — TnuaController + TnuaAvian2dSensorShape setup
+src/player/input.rs           — Reads keyboard, feeds TnuaBuiltinWalk/Jump actions
+src/level/mod.rs              — Level module
+src/level/components.rs       — TileEntity, LayerTransition, etc.
+src/level/test_level.rs       — Hardcoded test level: ground + platforms at reachable heights
+```
+
+### Key Details
+- avian2d `RigidBody::Dynamic` on player, `RigidBody::Static` on ground
+- avian2d `Collider::rectangle()` for AABB collision
+- TnuaBuiltinWalk: speed 200, TnuaBuiltinJump: height ~5 tiles (160 units)
+- Jump buffer: 150ms timer. Coyote time: 100ms after leaving ground.
+- Collision layers: Player, Ground, Platform, Enemy
+
+### Agent Focus
+- **Spec**: Define collider sizes, Tnua walk/jump params, one-way platform layer masks
+- **Implementation**: Integrate avian2d + tnua, set up collision layers, wire input
+- **Test**: Test jump height reaches target, test one-way platform passthrough, test no ground clipping
+- **Critic**: Check for physics jitter, verify FixedUpdate vs Update scheduling
+
+### Verification
+- Player falls, lands, no jitter or sinking
+- Jump reaches ~5 tile heights consistently
+- One-way platforms: pass through from below, land on top
+- `cargo test` — physics config, controller setup
+
+---
+
+## Phase 3: Tilemap + Level Loading + Camera
+
+### Deliverables
+Complete Forest level (3 layers) with Kenney tiles. Auto-tiling for ground edges. Camera follows player with clamping. Layer switching via E key. Parallax background at Z-depth.
+
+### New Files
+```
+src/tilemap/mod.rs            — TilemapPlugin
+src/tilemap/tilemap.rs        — TileMap struct, TileType enum, grid_to_world
+src/tilemap/autotile.rs       — Neighbor-based atlas index selection (16 edge/corner variants)
+src/tilemap/spawn.rs          — Spawn Mesh3d quads with avian2d colliders per tile
+src/level/level_data.rs       — LevelId, Layer, LevelData structs
+src/level/forest.rs           — Forest 3 layers (validated: all platforms ≤5 rows apart)
+src/level/systems.rs          — load_level, switch_layer, camera_follow
+src/rendering/parallax.rs     — Background quads at Z=-20 to Z=-100
+```
+
+### Key Details
+- Auto-tiling: Solid tiles check 8 neighbors → select from ~16 atlas variants
+- Camera lerp speed 5.0, clamp to world bounds
+- Layer switch: despawn TileEntity, spawn new layer, teleport player to matching transition
+- Parallax: Kenney PNGs on Mesh3d quads at negative Z depths
+
+### Agent Focus
+- **Spec**: Define tilemap format, tile-to-atlas-index mapping for auto-tiling, camera clamping math
+- **Implementation**: Build tilemap renderer with Mesh3d quads + atlas UVs, connect avian2d colliders
+- **Test**: Test tilemap bounds, auto-tile edge cases, layer transition player placement
+- **Critic**: Verify no gaps between tiles, confirm Z-ordering, check entity cleanup on layer switch
+
+### Verification
+- Forest renders with proper edge tiles
+- Camera never shows void outside bounds
+- Layer switch places player on solid ground
+- Parallax creates depth effect
+- `cargo test` — tilemap indexing, auto-tile, grid_to_world
+
+---
+
+## Phase 4: Enemies + Combat
+
+### Deliverables
+Enemies spawn, patrol, chase. Stomp kills. Tail slap (F key) kills. Contact damage → knockback + invulnerability. Death → respawn.
+
+### New Files
+```
+src/enemies/mod.rs            — EnemiesPlugin
+src/enemies/components.rs     — Enemy, EnemyType, EnemyAI, ContactDamage
+src/enemies/spawner.rs        — Spawn with Mesh3d quad + avian2d collider
+src/enemies/ai.rs             — patrol, chase, return state machine
+src/combat/mod.rs             — CombatPlugin
+src/combat/damage.rs          — contact_damage, knockback, invulnerability, death/respawn
+src/combat/stomp.rs           — Jump-on-enemy detection + kill + bounce
+src/combat/tail_slap.rs       — F key hitbox attack
+```
+
+### Key Details
+- Enemies: Animal Pack Redux PNGs (dog, cat, snake, parrot, rat)
+- Stomp: player falling + bottom near enemy top = kill, bounce 300 velocity
+- Tail slap: 28px reach in facing direction
+- Health: 100 HP, 5 hearts × 20 HP. Invulnerability 1.5s.
+
+### Agent Focus
+- **Spec**: Enemy stats table, collision layer matrix, stomp geometry, tail slap hitbox
+- **Implementation**: Enemy spawner, AI state machine, combat systems
+- **Test**: AI state transitions, stomp from various angles, invulnerability prevents double-damage
+- **Critic**: Enemies don't walk off platforms, combat feel (knockback, bounce)
+
+---
+
+## Phase 5: Collectibles + Puzzles + All 4 Levels
+
+### Deliverables
+All 4 levels. 10 collectibles per level across 3 layers. Level gate blocks exit. Game ending at Sanctuary.
+
+### New Files
+```
+src/level/subdivision.rs      — Subdivision level (houses as background art, jumpable roofs)
+src/level/city.rs             — City level (industrial tiles, fire escapes)
+src/level/sanctuary.rs        — Sanctuary level (nature theme)
+src/collectibles/mod.rs       — CollectiblesPlugin
+src/collectibles/systems.rs   — pickup on proximity, progress tracking, health food pickups
+src/puzzle/mod.rs             — PuzzlePlugin
+src/puzzle/systems.rs         — puzzle completion, gate, level exit, game ending
+```
+
+### Key Details
+- Collectibles: Kenney food/gem tiles. Auto-pickup 24px range.
+- Health food: cookie tile. Restores 20 HP.
+- Level gate: 400px+ tall barrier
+- Each level uses different Kenney tileset theme
+- All positions validated: on ground or reachable platforms
+
+### Agent Focus
+- **Spec**: Level layouts, collectible placement ensuring reachability, gate positions
+- **Implementation**: All 4 level data sets, collectible system, puzzle state machine
+- **Test**: Every level loads, puzzle completion per level, gate enforcement
+- **Critic**: Playtest reachability — can every collectible be reached?
+
+---
+
+## Phase 6: HUD + Dialogue + Save/Load
+
+### Deliverables
+Health bar + collectible counter HUD. NPC dialogue. Save/load 3 slots. Pause menu. Main menu.
+
+### Key Details
+- HUD: Bevy UI nodes (separate from Camera3d). Hearts + counter.
+- Dialogue: lines array, advance with Space/E, locks player movement
+- Save: JSON via `dirs` crate. Stores level, layer, position, health, collected, puzzles.
+- Menu: TitleScreen → MainMenu → Playing (with Paused overlay)
+
+---
+
+## Phase 7: Audio + Animation + Particles
+
+### Deliverables
+Background music per level. SFX for all events. Raccoon walk/idle/jump animation. Enemy animation. Particle bursts.
+
+### Key Details
+- Music: Kenney Music Loops (Farm Frolics, Mischief Stroll, Mission Plausible, Night at the Beach)
+- SFX: Kenney Retro Sounds (jump, pickup, creature/damage, lose/death)
+- Animation: UV cycling on Mesh3d StandardMaterial
+- Particles: lightweight Mesh3d quads with lifetime + velocity + fade
+
+---
+
+## Phase 8: Polish + 3D Lighting + Visual Effects
+
+### Deliverables
+Per-level lighting themes. Point lights in underground. Weather particles. Vignette. Level name flash. Transition fades.
+
+### Key Details
+- DirectionalLight3d color/angle per level (warm Forest, cool City, golden Sanctuary)
+- PointLight3d at specific positions (torches underground, street lamps)
+- AmbientLight varies per layer (dark underground, bright rooftop)
+- Weather: rain in City, leaves in Forest, dust in Sanctuary
+
+---
+
+## Phase Dependencies
+
+```
+Phase 1 (Scaffold + Camera3d)
+    ↓
+Phase 2 (Physics + Controller)
+    ↓
+Phase 3 (Tilemap + Levels)
+    ↓
+Phase 4 (Enemies + Combat) ←→ Phase 5 (Collectibles + Puzzles)
+                                    ↓
+                              Phase 6 (HUD + Dialogue + Save/Load)
+                                    ↓
+                              Phase 7 (Audio + Animation)
+                                    ↓
+                              Phase 8 (Polish + Lighting + Effects)
+```
+
+## Verification (every phase)
+
+- `cargo build` compiles
+- `cargo test` passes
+- `cargo clippy -- -D warnings` clean
+- `cargo fmt --check` clean
+- `cargo run` — new features visible, prior features still work

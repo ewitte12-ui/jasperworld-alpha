@@ -1,0 +1,146 @@
+JASPER’S WORLD — BACKGROUND & PARALLAX LIFECYCLE GUARDRAIL
+(Level-Scoped Rendering Ownership and Persistence Rules)
+
+PURPOSE
+-------
+This guardrail defines strict, non-negotiable rules for how backgrounds,
+parallax layers, and large-scale environment art are spawned, owned,
+and destroyed across levels.
+
+Its goal is to ensure:
+- Backgrounds change correctly per level
+- No biome-specific art leaks between levels
+- Title screen, gameplay, and level transitions are visually consistent
+- Parallax behavior reflects the active level, not stale entities
+
+This guardrail governs ENTITY LIFECYCLE and OWNERSHIP, not parallax math.
+
+================================================================
+CORE PRINCIPLE
+================================================================
+
+BACKGROUNDS ARE LEVEL CONTENT, NOT ENGINE SETUP.
+
+Any background element that varies by level
+must obey the same lifecycle as enemies and platforms.
+
+================================================================
+SCOPE
+================================================================
+
+THIS GUARDRAIL APPLIES TO:
+- Parallax background layers
+- Midground and background decoration
+- Foreground framing elements that are biome-specific
+- Clouds, trees, city skylines, mountains, etc.
+
+THIS GUARDRAIL DOES NOT APPLY TO:
+- Cameras
+- Screen-space UI
+- Truly global visuals that never change by level (rare)
+
+================================================================
+SPAWN OWNERSHIP RULE (MANDATORY)
+================================================================
+
+Biome- or level-specific background entities MUST:
+- Be spawned from level-entry code
+- NOT be spawned from Startup systems
+
+Startup systems may ONLY spawn:
+- Cameras
+- Debug utilities
+- Truly global, non-biome visuals
+
+If an entity visually depends on the level,
+spawning it in Startup is a defect.
+
+================================================================
+DESPAWN OWNERSHIP RULE (MANDATORY)
+================================================================
+
+All background entities that are level-scoped MUST:
+- Carry a common marker (e.g. Decoration, LevelBackground)
+- Be completely despawned on level exit
+
+Background entities without a despawn marker
+are considered immortal and invalid.
+
+================================================================
+SINGLE AUTHORITY RULE
+================================================================
+
+There MUST be exactly ONE authoritative function responsible for:
+- Spawning all biome-specific backgrounds
+- Selecting background variants by level type
+
+Examples:
+- spawn_level_decorations(level)
+- spawn_biome_background(level_type)
+
+If background logic is split across multiple systems
+(Startup + OnEnter + transitions), ownership is broken.
+
+================================================================
+TITLE SCREEN ISOLATION RULE
+================================================================
+
+The Title Screen MUST NOT rely on gameplay background entities.
+
+Allowed patterns:
+- Dedicated TitleScreen background scene
+- Neutral/global background with no biome identity
+- Explicitly empty background
+
+Implicit reuse of Level 1 assets on the Title Screen
+is forbidden.
+
+================================================================
+PARALLAX DATA SOURCE RULE
+================================================================
+
+Parallax systems MUST:
+- Read live, authoritative camera and level data
+- NOT cache level-dependent configuration at spawn time only
+
+If parallax layers do not react to level changes,
+the data source is invalid.
+
+================================================================
+CAMERA BINDING RULE
+================================================================
+
+Parallax systems MUST bind explicitly to the GameplayCamera.
+
+Queries like:
+- With&lt;Camera&gt;
+- Without role markers
+
+are forbidden, as they cause stale or ambiguous binding.
+
+================================================================
+LEAK DETECTION RULE
+================================================================
+
+If a visual element appears in a level where it does not belong:
+- The cause is a lifecycle violation, not a rendering bug
+
+Visual leakage across levels must be treated as a SEVERE DEFECT.
+
+================================================================
+AI SAFETY RULE
+================================================================
+
+AI agents MUST:
+- Treat background spawning as level-scoped by default
+- Never introduce biome art into Startup systems
+- Always tag background entities with a despawn marker
+
+================================================================
+FINAL RULE
+================================================================
+
+IF A BACKGROUND DOES NOT CHANGE WHEN THE LEVEL CHANGES,
+THE ENTITY LIFECYCLE IS WRONG.
+
+END OF BACKGROUND & PARALLAX LIFECYCLE GUARDRAIL

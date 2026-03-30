@@ -1,0 +1,62 @@
+JASPER’S WORLD — AI PROMPT CONTRACT GUARDRAIL
+(Preventing AI Overreach & Improvisation)
+
+PURPOSE
+-------
+This guardrail defines a REQUIRED CONTRACT whenever changes are delegated to an AI.
+Its purpose is to prevent the AI from "helpfully" modifying systems that were not
+explicitly requested.
+
+================================================================
+REQUIRED PROMPT STRUCTURE
+================================================================
+
+Every AI task MUST define:
+
+1. INTENT
+2. ALLOWED AXES
+3. FORBIDDEN AXES
+4. SUCCESS CONDITION
+
+================================================================
+EXAMPLE (VALID)
+================================================================
+
+Intent:
+- Restore background depth
+
+Allowed:
+- Scale
+- Parallax
+
+Forbidden:
+- Camera
+- Z order
+- Gameplay contrast
+
+Success:
+- Background layers feel separated without harming readability
+
+================================================================
+INVALID PROMPTS
+================================================================
+
+- "Make it look better"
+- "Fix the scene"
+- Any prompt without forbidden axes
+
+================================================================
+ENFORCEMENT RULE
+================================================================
+
+If an AI modifies a forbidden axis:
+→ Output is INVALID regardless of quality
+
+================================================================
+FINAL RULE
+================================================================
+
+The AI does not choose scope.
+YOU do.
+
+END OF AI PROMPT CONTRACT GUARDRAIL

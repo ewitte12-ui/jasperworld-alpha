@@ -1,0 +1,145 @@
+JASPER’S WORLD — RENDERING / ENTITY CONTRACT GUARDRAIL
+(Visual–Physics Alignment & Anti‑Illusion Rules)
+
+PURPOSE
+-------
+This guardrail defines NON‑NEGOTIABLE CONTRACTS between entity visuals
+(sprite meshes, quads, models) and their physical representation
+(colliders, hitboxes, contact surfaces).
+
+Its purpose is to prevent:
+- “Phantom” bugs where physics is correct but visuals mislead
+- Repeated re‑litigation of solved visual issues
+- AI agents “fixing” correct physics due to visual artifacts
+
+This guardrail governs REPRESENTATION, not gameplay.
+
+================================================================
+CORE PRINCIPLE
+================================================================
+
+THE COLLIDER IS CANONICAL.
+
+Visuals may decorate reality, but must never obscure it.
+
+================================================================
+ENTITY REPRESENTATION CONTRACT (MANDATORY)
+================================================================
+
+Every entity with a collider MUST declare how its visual relates
+to that collider.
+
+There are only three legal relationships:
+
+1) EXACT MATCH (Preferred)
+   - Visual bounds == collider bounds
+   - Visual bottom == collider bottom
+   - Visual center == collider center
+
+2) OFFSET MATCH (Allowed, explicit)
+   - Visual size != collider size
+   - Visual is intentionally shifted relative to collider
+   - Offset is fixed, documented, and justified
+
+3) DECORATIVE VISUAL (Rare)
+   - Visual is non-contact decoration only
+   - Cannot be mistaken for physical boundary
+   - Must never imply collision where none exists
+
+Any other relationship is INVALID.
+
+================================================================
+DEFAULT RULE (STRONGLY RECOMMENDED)
+================================================================
+
+UNLESS EXPLICITLY STATED OTHERWISE:
+
+- Sprite quad height MUST equal collider height
+- Sprite bottom MUST align with collider bottom
+
+This rule minimizes ambiguity and prevents false bug reports.
+
+================================================================
+VISUAL EXTENSION PROHIBITION
+================================================================
+
+Visuals MUST NOT extend below the collider’s bottom
+
+EXCEPT if ALL of the following are true:
+- Extension is purely aesthetic
+- Physics contact point remains unambiguous
+- A code comment explicitly explains the mismatch
+
+Uncommented visual overhangs are considered DEFECTS.
+
+================================================================
+DOCUMENTATION REQUIREMENT
+================================================================
+
+If a visual does NOT exactly match its collider, the spawning code MUST include:
+
+- A comment explaining the mismatch
+- The exact amount of visual overhang/offset
+- Which surface (if any) is non‑authoritative
+
+Example (required pattern):
+
+  // NOTE: Visual sprite is taller than collider by design.
+  // Sprite extends 4 units BELOW collider for style only.
+  // Collider bottom is the authoritative ground contact.
+
+Undocumented mismatches WILL be revisited and corrected.
+
+================================================================
+GROUND CONTACT INVARIANT
+================================================================
+
+For ground‑standing entities:
+
+- Collider bottom defines ground contact
+- Visual bottom MUST NOT contradict ground contact
+
+If an entity appears embedded, floating, or hovering:
+→ Visual contract is wrong, not physics
+
+================================================================
+SPAWN POSITION MEANING
+================================================================
+
+All entity spawn positions MUST be defined as:
+
+COLLIDER CENTER — NOT VISUAL CENTER
+
+If a spawner accepts foot, base, or ground‑top coordinates,
+that MUST be explicitly named and converted internally.
+
+Implicit assumptions are forbidden.
+
+================================================================
+CAMERA & DEPTH NOTE
+================================================================
+
+Camera tilt, Z‑scale, or perspective tricks MUST NOT be used
+to hide collider/visual mismatches.
+
+Depth illusion is allowed.
+Reality illusion is not.
+
+================================================================
+AI SAFETY RULE
+================================================================
+
+AI agents MUST NOT adjust colliders to “fix” visual artifacts
+unless a contract violation is proven.
+
+If physics is correct:
+→ Adjust visuals, not collision.
+
+================================================================
+FINAL RULE
+================================================================
+
+IF PHYSICS AND VISUALS DISAGREE,
+PHYSICS WINS — AND THE VISUAL CONTRACT MUST BE FIXED.
+
+END OF RENDERING / ENTITY CONTRACT GUARDRAIL

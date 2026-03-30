@@ -1,0 +1,94 @@
+JASPER’S WORLD — CAMERA CLEAR CONTRACT GUARDRAIL
+(Async Rendering, Frame Safety, and Flash Prevention)
+
+PURPOSE
+-------
+This guardrail defines strict rules for camera clear behavior to prevent
+screen flashes, background pops, and first‑frame render artifacts.
+
+It exists because async asset loading and multi‑camera setups
+make naive clear behavior unsafe.
+
+================================================================
+CORE PRINCIPLE
+================================================================
+
+CAMERAS MAY NOT ERASE THE FRAME UNLESS THEY CAN IMMEDIATELY DRAW.
+
+Clearing without guaranteed draw is a visual defect.
+
+================================================================
+MANDATORY CLEAR RULE
+================================================================
+
+Any camera that renders content which:
+- loads asynchronously, OR
+- may not be visible on its first frame
+
+MUST use:
+
+  clear_color: ClearColorConfig::None
+
+This rule is non‑negotiable.
+
+================================================================
+ALLOWED CLEAR CASES
+================================================================
+
+A camera MAY clear color buffers ONLY if:
+- It renders synchronously loaded content, AND
+- It is guaranteed to draw visible pixels on the same frame
+
+Typical valid cases:
+- Primary gameplay camera
+- Fully static backgrounds
+
+================================================================
+TITLE SCREEN RULE
+================================================================
+
+Title Screen cameras that render scenes, models, or meshes
+loaded from asset files MUST NOT clear color.
+
+The Title Screen must layer over an existing backdrop
+or explicitly fade in its visuals.
+
+================================================================
+DEPTH BUFFER NOTE
+================================================================
+
+ClearColorConfig::None affects COLOR ONLY.
+
+It is acceptable — and expected — that depth buffers
+are still cleared using Camera3d defaults.
+
+Depth correctness and color clearing are independent.
+
+================================================================
+FORBIDDEN BEHAVIOR
+================================================================
+
+The following are defects by definition:
+- Sky‑color flashes before assets appear
+- Single‑frame blank screens
+- Clearing to "placeholder" colors during loading
+
+If observed, assume camera clear misuse.
+
+================================================================
+AI SAFETY RULE
+================================================================
+
+AI agents MUST:
+- Default to ClearColorConfig::None for overlays
+- Avoid clearing unless a spec explicitly requires it
+- Never introduce clears "just to be safe"
+
+================================================================
+FINAL RULE
+================================================================
+
+IF A CAMERA CLEARS AND NOTHING DRAWS,
+THE CLEAR IS WRONG.
+
+END OF CAMERA CLEAR CONTRACT GUARDRAIL

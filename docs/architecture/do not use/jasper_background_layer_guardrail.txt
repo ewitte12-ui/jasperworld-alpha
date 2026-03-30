@@ -1,0 +1,156 @@
+JASPER’S WORLD — BACKGROUND & LAYERING VISUAL GUARDRAIL
+(Bevy 0.18, 2.5D side‑scrolling game)
+
+PURPOSE
+-------
+This document is a NON‑NEGOTIABLE GUARDRAIL for background composition, parallax layers,
+and scene coverage. It exists to permanently eliminate horizontal bars, seams between
+background layers, clear‑color bleed, and other visual artifacts that appear inside the
+play space (including bars touching gameplay sprites).
+
+This guardrail addresses ONLY issues that were clearly observed or strongly indicated
+by the shared scene image.
+
+================================================================
+STOP CONDITIONS (DO NOT SKIP)
+================================================================
+Apply this guardrail immediately if ANY of the following appear:
+- A horizontal bar or band appears inside the scene
+- A bar touches or overlaps gameplay sprites
+- Background color changes abruptly at a straight horizontal line
+- ClearColor is visible between background layers
+- Visual seams appear as the camera moves vertically
+
+================================================================
+BACKGROUND & LAYERING GUARDRAIL — ORDERED CHECKLIST
+================================================================
+
+[1] FULL CAMERA COVERAGE (MANDATORY)
+-----------------------------------
+EVERY background layer MUST fully cover the camera’s visible height.
+
+Rules:
+- Background quad height MUST exceed camera view height
+- NEVER rely on two layers “meeting exactly” at an edge
+- Layers MUST overlap vertically by a safety margin
+
+Reason:
+- Exact edge‑to‑edge matching creates visible seams
+- Camera motion, parallax, or scaling exposes gaps immediately
+
+================================================================
+[2] LAYER OVERLAP REQUIREMENT (MANDATORY)
+----------------------------------------
+Adjacent background layers MUST overlap.
+
+Rules:
+- Upper layer MUST extend below the lower layer’s top
+- Lower layer MUST extend above the upper layer’s bottom
+
+DO NOT:
+- Stack backgrounds so edges merely touch
+
+Reason:
+- Prevents clear‑color bleed‑through
+- Eliminates horizontal “bars” inside the scene
+
+================================================================
+[3] CAMERA‑AWARE BACKGROUND SIZE (MANDATORY)
+--------------------------------------------
+Background geometry MUST be sized using camera metrics.
+
+Rules:
+- Background height >= camera vertical span + margin
+- Margin MUST tolerate worst‑case parallax offset
+
+Reason:
+- Backgrounds must be stable under camera movement
+- Camera framing is the dominant constraint, not art bounds
+
+================================================================
+[4] PARALLAX SCALING SAFETY (MANDATORY)
+--------------------------------------
+If parallax or scaled transforms are used:
+
+Rules:
+- Scaling a background layer smaller REQUIRES increasing its base size
+- Parallax layers MUST assume reduced effective coverage
+
+Reason:
+- Parallax transforms shrink visible coverage
+- Unadjusted layers reveal clear color as horizontal bands
+
+================================================================
+[5] SINGLE PROJECTION FOR BACKGROUNDS (MANDATORY)
+-------------------------------------------------
+All background layers MUST share the same camera projection.
+
+DO NOT:
+- Render different background layers with different camera projections
+- Mix FixedVertical and AutoMin across background cameras
+
+Reason:
+- Mismatched projections cause seams and apparent bars
+
+================================================================
+[6] CLEAR COLOR SAFETY RULE (MANDATORY)
+--------------------------------------
+The ClearColor MUST NEVER be relied on for visual coverage.
+
+Rules:
+- ClearColor may be visible ONLY outside the playable world
+- ClearColor MUST NOT appear between background layers
+
+Debug test:
+- Temporarily set ClearColor to a bright color
+- If it appears inside the scene, background coverage is wrong
+
+================================================================
+[7] BACKGROUND VERTICAL HEADROOM (MANDATORY)
+--------------------------------------------
+Backgrounds MUST extend above the tallest reachable gameplay height.
+
+Rules:
+- Background top > maximum player jump + camera offset
+- Do NOT align background top with platform peaks
+
+Reason:
+- Gameplay dictates background bounds, not initial framing
+
+================================================================
+[8] DEPTH & DRAW ORDER CONSISTENCY (MANDATORY)
+----------------------------------------------
+Backgrounds MUST follow a strict depth ordering.
+
+Rules:
+- Sky furthest back
+- Distant mountains behind mid‑layers
+- No Z overlap between different background concepts
+
+Reason:
+- Overlapping or identical depths can cause unexpected visual seams
+
+================================================================
+[9] DEBUGGING RULE (MANDATORY)
+------------------------------
+When diagnosing visual bars:
+
+Steps:
+- Change ClearColor to a bright color
+- Toggle individual background layers
+- Temporarily over‑scale the suspected layer
+
+If the bar disappears → coverage failure confirmed
+
+================================================================
+FINAL RULE
+================================================================
+If a horizontal band or seam is visible INSIDE the scene:
+
+→ THIS BACKGROUND & LAYERING GUARDRAIL MUST BE APPLIED
+→ BEFORE investigating camera math, sprites, UVs, or atlases
+
+Rendering stability can expose background composition errors.
+These layers must be robust by construction.
+
+END OF BACKGROUND GUARDRAIL

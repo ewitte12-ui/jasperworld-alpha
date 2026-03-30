@@ -1,0 +1,167 @@
+================================================================================
+JASPER — TRAVERSAL & CAMERA STABILITY GUARDRAILS
+================================================================================
+
+PURPOSE
+-------
+This document defines two hard structural guardrails finalized during
+Subdivision (Level 2) development:
+
+1) Traversal vertical spacing normalization
+2) Camera / parallax jitter elimination
+
+These guardrails are NOT tuning suggestions.
+They are correctness constraints intended to prevent regressions.
+
+
+================================================================================
+GUARDRAIL 1 — TRAVERSAL VERTICAL SPACING
+================================================================================
+
+REFERENCE
+---------
+JasperHeight:
+- Full standing collision height of the player character
+- All traversal spacing rules are expressed as multiples of JasperHeight
+
+
+CATEGORY DEFINITIONS
+--------------------
+
+Category A — Traversal Geometry
+- Any vertical gap the player is expected to JUMP across
+- Includes:
+  * platform → platform jumps
+  * ground → platform jumps
+  * recovery climbs that enable progression
+- Any platform carrying a collectible defaults to Category A
+  UNLESS explicitly documented as recovery-only
+
+Category B — Incidental / Recovery Geometry
+- Catch platforms
+- Safety shelves
+- Ground smoothing
+- Decorative elevation changes
+- Must NOT define forward traversal intent
+- May carry collectibles ONLY if clearly optional and avoidable
+
+
+HARD RULE
+---------
+All Category A vertical gaps MUST be ≥ 1.25× JasperHeight
+
+Practical enforcement:
+- Minimum vertical separation: 2 tile rows (≥ 36 units)
+- Gaps of 1.0×–1.24× JasperHeight are explicitly prohibited
+
+
+VERTICAL STACK NORMALIZATION
+----------------------------
+Traversal geometry forms vertical stacks.
+
+Rule:
+- Platforms connected by traversal must be normalized as a unit
+- Fixes must be applied to entire stacks in a single pass
+- Single-platform adjustments that cause cascades are invalid
+
+Cascade handling:
+- Cascades indicate incomplete stack normalization
+- Resolve cascades by raising dependent neighbors
+- NEVER loosen spacing rules to suppress cascades
+- NEVER lower previously-fixed platforms
+
+
+RECOVERY EXCEPTION (SEMANTIC OVERRIDE)
+-------------------------------------
+Recovery platforms may be reclassified as Category B IF AND ONLY IF:
+
+- The platform is not a primary traversal destination
+- The primary intended path bypasses the platform
+- Collectibles on the platform are optional
+- Enforcing Category A spacing would create an unsatisfiable constraint graph
+
+This requires explicit justification.
+This is NOT an automatic exception.
+
+
+PROHIBITED
+----------
+- Tuning jump physics to compensate for poor spacing
+- Using enemies to justify tight geometry
+- Late-stage movement of star platforms
+- Creating 1-row "almost jumps" to simulate difficulty
+
+
+================================================================================
+GUARDRAIL 2 — CAMERA / PARALLAX STABILITY (JITTER)
+================================================================================
+
+FAILURE MODE
+------------
+- Background jitter or shimmer while the player is standing still
+- Most noticeable on thin silhouettes or near clamp boundaries
+- Occurs even when camera motion appears zero
+
+
+ROOT CAUSES
+-----------
+- Fractional camera writes from clamp logic
+- Non-deterministic ECS system ordering
+- Parallax reading a partially-updated camera transform
+
+
+SELECTED FIX PATTERN
+--------------------
+Option B — Delta-based parallax computation
+WITH deterministic camera system ordering
+
+
+HARD RULE
+---------
+When camera delta == 0:
+- Parallax must be bit-exact stable
+- No background motion is permitted
+
+Absolute camera position must NOT directly drive parallax offsets.
+
+
+REQUIRED SYSTEM ORDER (EVERY FRAME)
+-----------------------------------
+1) camera_follow
+   - applies target tracking
+   - may round camera position
+
+2) camera_clamp
+   - enforces bounds
+   - may write fractional values
+
+3) update_parallax
+   - reads final camera transform
+   - applies delta-based parallax ONLY
+
+update_parallax MUST NEVER read a partially-updated camera transform.
+
+
+ENFORCEMENT
+-----------
+- Ordering MUST be explicit (e.g., chained system sets)
+- Implicit execution order is forbidden
+
+
+PROHIBITED
+----------
+- Adding smoothing or epsilon logic to hide jitter
+- Pixel-snapping parallax as a substitute for ordering
+- Relying on frame-to-frame luck for stability
+
+
+================================================================================
+SIGN-OFF STATUS
+================================================================================
+
+- Traversal spacing normalized
+- Cascades resolved via stack normalization
+- One semantic recovery exception approved (R1b)
+- Camera jitter eliminated via Option B + deterministic ordering
+
+This guardrail is APPROVED and applies to all future levels.

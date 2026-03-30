@@ -1,0 +1,85 @@
+jasper_quit_shutdown_guardrail.txt — LOCKED 2026-03-28
+
+PURPOSE
+Defines the quit/shutdown contract.  Quit is one-shot, immediate, and
+irreversible.  No menu logic, state transitions, or persistent I/O may
+run after quit begins.
+
+STATUS: LOCKED.  Do not modify quit behavior without a new phase declaration.
+
+────────────────────────────────────────────────────────────────────────
+
+1. QUIT IS ONE-SHOT
+
+   QuitRequested is a boolean latch: once set to true it never reverts.
+
+   - Set exclusively in handle_navigation_click on MenuButtonAction::Quit.
+   - Written once, read many.  No system may clear it.
+
+2. ALL SYSTEMS EARLY-EXIT AFTER QUIT STARTS
+
+   Every Update-schedule system that touches shared state or performs I/O
+   must check QuitRequested and return immediately when true.
+
+   Currently guarded:
+     handle_navigation_click   — rejects all button presses (menu/mod.rs)
+     persist_window_geometry   — skips disk I/O (window_geometry.rs)
+
+   Implicitly safe (run_if gating prevents execution):
+     handle_pending_save_load  — gated on in_state(AppState::Playing);
+                                 Quit only fires from MainMenu or Paused.
+     save_settings             — runs on OnExit(AppState::Settings);
+                                 Quit does not change AppState.
+
+   Rule: any new Update system that writes to disk, sends messages, or
+   mutates game state MUST add a QuitRequested early-return guard.
+
+3. NO MENU OR STATE LOGIC RUNS DURING SHUTDOWN
+
+   - Quit handler does NOT call next_state.set().  AppState is frozen.
+   - No OnEnter / OnExit transitions fire as a result of quit.
+   - No button interactions are processed after QuitRequested is set.
+
+4. ENFORCE_QUIT_EXIT (Last schedule)
+
+   Safety-net system registered in MenuPlugin:
+
+     fn enforce_quit_exit(...)
+       if !quit.0 { return; }
+       exit.write(AppExit::Success);      // re-send every frame
+       for entity in &windows {
+           commands.entity(entity).despawn();  // trigger clean macOS shutdown
+       }
+
+   Why re-send AppExit:  Bevy's message double-buffer swaps in Last via
+   message_update_system.  A single write may land in the buffer that gets
+   cleared before should_exit() reads it.  Re-sending guarantees the
+   message is always present.
+
+   Why despawn windows:  On macOS, bevy_winit's despawn_windows must drop
+   window surfaces on the main thread.  If the window entity survives,
+   the render thread holds the last Arc and the process hangs.
+
+5. VALIDATION MATRIX
+
+   | Scenario                    | AppState at quit | State change? | I/O during shutdown? |
+   |-----------------------------|-----------------|---------------|----------------------|
+   | Quit from Main Menu         | MainMenu        | No            | No                   |
+   | Quit from Pause Menu        | Paused          | No            | No                   |
+   | Quit after Settings → Back  | MainMenu        | No            | No (save_settings    |
+   |                             |                 |               |  ran on OnExit before |
+   |                             |                 |               |  returning to menu)   |
+   | Quit after Save/Load → Back | Paused          | No            | No                   |
+
+   Pass conditions (all scenarios):
+     - Window closes within 1 second
+     - Process exits with code 0
+     - No repeated log warnings or panics
+
+6. ADDING NEW SYSTEMS — CHECKLIST
+
+   Before registering any new system in Update or Last:
+   [ ] Does it perform disk I/O?         → Add QuitRequested guard
+   [ ] Does it send messages/events?     → Add QuitRequested guard
+   [ ] Does it mutate game resources?    → Add QuitRequested guard
+   [ ] Is it gated by run_if(in_state)? → Verify quit cannot reach that state

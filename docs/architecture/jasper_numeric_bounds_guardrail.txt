@@ -1,0 +1,47 @@
+JASPER’S WORLD — NUMERIC BOUNDS GUARDRAIL
+(Preventing Over-Tuning & Masked Bugs)
+
+PURPOSE
+-------
+This guardrail defines SAFE NUMERIC LIMITS for visual tuning. Its goal is to prevent
+large adjustments that hide root causes or introduce regressions.
+
+================================================================
+CORE RULE
+================================================================
+
+If a fix requires breaking numeric bounds, STOP and re-diagnose.
+
+================================================================
+SAFE BOUNDS (PER PASS)
+================================================================
+
+- Scale changes: ±10%
+- Z position changes: ≤20 units
+- Contrast changes: ≤15%
+- Saturation changes: ≤15%
+- Parallax delta changes: ≤0.10
+
+================================================================
+RULES
+================================================================
+
+- Only ONE numeric dimension may change per pass
+- Values must be logged before and after
+- Changes beyond bounds require explicit justification
+
+================================================================
+DIAGNOSTIC SIGNAL
+================================================================
+
+If large values are required to "see" improvement:
+→ the wrong system is being adjusted
+
+================================================================
+FINAL RULE
+================================================================
+
+Small, bounded adjustments reveal truth.
+Large ones conceal it.
+
+END OF NUMERIC BOUNDS GUARDRAIL

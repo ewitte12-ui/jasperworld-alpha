@@ -1,0 +1,82 @@
+JASPER’S WORLD — LAYERED Z SEPARATION SPEC
+(2.5D Side‑Scroller)
+
+PURPOSE
+-------
+This document defines a canonical Z‑layer separation scheme for 2.5D
+side‑scrolling platform games. It prevents depth ambiguity, parallax conflicts,
+and camera‑tilt artifacts.
+
+================================================================
+WHY Z SEPARATION MATTERS
+================================================================
+
+Tilted cameras amplify depth mistakes.
+Reusing Z values for different layer roles causes:
+- visual popping
+- seam artifacts
+- blending conflicts
+- parallax breakdown
+
+Each conceptual layer MUST live in its own Z band.
+
+================================================================
+RECOMMENDED Z BANDS
+================================================================
+
+Z = −100 : Far sky / gradients
+Z =  −60 : Distant clouds
+Z =  −40 : Distant mountains
+Z =  −25 : Mid parallax layers
+Z =  −10 : Background decor (trees, cliffs)
+Z =    0 : Gameplay platforms + characters
+Z =  +10 : Foreground decor (vines, poles)
+Z =  +20 : Foreground occluders (leaves, branches)
+Z =  +50 : Screen‑space overlays (via overlay camera)
+Z = +100 : UI
+
+================================================================
+Z‑LAYER RULES
+================================================================
+
+- Never reuse a Z value for different layer roles
+- Always leave numeric gaps between bands
+- Tilted cameras require MORE separation, not less
+
+================================================================
+PARALLAX + Z INTERACTION
+================================================================
+
+Parallax affects movement, not Z placement.
+
+Rules:
+- Do NOT encode parallax by adjusting Z alone
+- Parallax layers still respect Z bands
+
+================================================================
+TRANSPARENCY RULES
+================================================================
+
+For translucent layers:
+- Each translucent concept must have its own Z band
+- Never overlap translucent quads at the same Z
+
+Violations cause flicker and flashing.
+
+================================================================
+DEBUGGING TIP
+================================================================
+
+Temporarily color layers by Z band to visualize ordering.
+This instantly reveals architectural mistakes.
+
+================================================================
+FINAL RULE
+================================================================
+
+If an object’s conceptual layer is unclear,
+its Z value is also unclear.
+
+Resolve concept first, then assign Z.
+
+END OF DOCUMENT

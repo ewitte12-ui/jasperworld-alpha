@@ -1,0 +1,145 @@
+JASPER’S WORLD — CODING DOCUMENTATION GUARDRAILS
+(In‑Source Knowledge Retention & Anti‑Amnesia Rules)
+
+PURPOSE
+-------
+This guardrail defines HOW and WHY important information must be preserved
+DIRECTLY INSIDE THE SOURCE CODE.
+
+Its purpose is to:
+- Prevent loss of hard‑won understanding
+- Stop solved problems from being re‑opened
+- Allow AI agents to reason correctly from code alone
+- Reduce reliance on external memory or chat history
+
+These rules govern DOCUMENTATION PRACTICE, not features.
+
+================================================================
+CORE PRINCIPLE
+================================================================
+
+SOURCE CODE IS THE CANONICAL MEMORY.
+
+If critical knowledge is not visible in the codebase,
+it is considered lost.
+
+================================================================
+WHAT MUST BE DOCUMENTED (MANDATORY)
+================================================================
+
+The following information MUST live in source comments:
+
+1) NON‑OBVIOUS NUMBERS
+   - Magic offsets (camera math, sprite bounds, collider sizes)
+   - Values derived from geometry, art, or engine quirks
+
+2) DESIGN DECISIONS
+   - Why a solution was chosen
+   - Why alternatives were rejected
+   - Which behaviors are intentional (even if surprising)
+
+3) SOLVED BUGS
+   - Root cause (not just the fix)
+   - The symptom it produced
+   - What regressions to watch for
+
+4) CONTRACTS & INVARIANTS
+   - Spawn position meaning
+   - Visual vs physics authority
+   - Z‑layer expectations
+
+================================================================
+WHAT MUST NOT BE DOCUMENTED
+================================================================
+
+Do NOT add comments for:
+- Self‑explanatory code
+- Temporary experiments
+- Generic reminders like “TODO clean up” without context
+
+Comments without unique informational value are noise.
+
+================================================================
+COMMENT LOCATION RULE
+================================================================
+
+DOCUMENTATION MUST LIVE:
+- Next to the code it explains
+
+NOT:
+- In separate markdown files
+- In commit messages only
+- In chat logs or external notes
+
+If the code moves, the explanation must move with it.
+
+================================================================
+REQUIRED COMMENT STRUCTURE
+================================================================
+
+Anything non‑obvious must answer at least ONE of these questions:
+
+- WHY does this exist?
+- WHAT breaks if this changes?
+- WHICH assumption is being enforced?
+
+Preferred pattern:
+
+  // WHY: The camera is tilted -28°; vertical bounds are asymmetrical.
+  // EFFECT: Top clamp is smaller than bottom clamp.
+  // WARNING: Changing this breaks safe background bounds.
+
+================================================================
+NUMERIC COMMENT RULE
+================================================================
+
+Any constant that is NOT visually obvious MUST include:
+
+- What it represents (units)
+- Where it came from
+- Whether it is derived or empirical
+
+Example:
+
+  // VIEW_BOTTOM_OFFSET = 234.0
+  // Derived from tracing orthographic frustum edges at -28° tilt
+  // Represents how far below camera.y the player can see
+
+================================================================
+ANTI‑REFACTORIZATION RULE
+================================================================
+
+If code LOOKS strange but is correct:
+
+THE COMMENT MUST EXPLAIN WHY IT IS STRANGE.
+
+Otherwise, it will be “fixed” later by mistake.
+
+================================================================
+AI SAFETY RULE
+================================================================
+
+AI agents MUST:
+- Preserve existing explanatory comments
+- Update comments when behavior is changed
+- Treat undocumented numbers as suspicious
+
+Deleting comments that explain constraints is forbidden.
+
+================================================================
+COMMENT‑TO‑CODE COHESION RULE
+================================================================
+
+If behavior changes:
+- Comments MUST be updated in the SAME CHANGE
+
+Code and explanation must never drift.
+
+================================================================
+FINAL RULE
+================================================================
+
+IF YOU HAD TO EXPLAIN IT ONCE,
+IT BELONGS IN THE CODE — FOREVER.
+
+END OF CODING DOCUMENTATION GUARDRAILS
