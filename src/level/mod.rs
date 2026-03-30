@@ -466,23 +466,53 @@ pub fn spawn_level_decorations(
             // (model, x, y, scale_xy, scale_z)
             // z=-1: props sit just behind the tile surface, immediately visible.
             // Non-uniform scale: thin Z breaks the boxy look of GLB props placed flat.
+            // Scale reference: 1J = Jasper sprite height (32 world units), halved.
+            // sxy = target_J × 32.0 / native_model_Y / 2;  sz keeps original ratio.
+            // All items placed on ground (y=-141) or valid platforms only.
+            //   Row 6 platforms (y=-69):  4-8, 22-26, 35-39, 55-60, 67-71, 83-87
+            //   Row 10 platforms (y=3):   13-18, 44-46, 75-80
+            //   Row 14 platforms (y=75):  48-52, 68-72
             let decor: &[(&str, f32, f32, f32, f32)] = &[
-                ("models/rock_smallA.glb",     col_x_f(3.0),  -141.0, 13.0,  5.0),
-                ("models/plant_bush.glb",      col_x_f(9.0),  -141.0, 26.0, 14.0),
-                ("models/flower_redA.glb",     col_x_f(18.0), -141.0, 24.0,  6.0),
-                ("models/rock_tallA.glb",      col_x_f(30.0), -141.0, 12.0,  4.0),
-                ("models/plant_bushLarge.glb", col_x_f(43.0), -141.0, 26.0, 14.0),
-                ("models/flower_yellowA.glb",  col_x_f(5.0),   -69.0, 24.0,  6.0),
-                ("models/rock_smallA.glb",     col_x_f(8.0),   -69.0, 13.0,  5.0),
-                ("models/plant_bush.glb",      col_x_f(24.0),  -69.0, 26.0, 14.0),
-                ("models/flower_redA.glb",     col_x_f(25.0),  -69.0, 24.0,  6.0),
-                ("models/rock_smallA.glb",     col_x_f(14.0),    3.0, 13.0,  5.0),
-                ("models/grass_large.glb",     col_x_f(16.0),    3.0, 26.0,  8.0),
-                ("models/flower_yellowA.glb",  col_x_f(46.0),    3.0, 24.0,  6.0),
-                ("models/plant_bushLarge.glb", col_x_f(49.0),   75.0, 26.0, 14.0),
-                ("models/rock_smallA.glb",     col_x_f(52.0),   75.0, 13.0,  5.0),
-                ("models/flower_redA.glb",     col_x_f(69.0),   75.0, 24.0,  6.0),
-                ("models/plant_bush.glb",      col_x_f(71.0),   75.0, 26.0, 14.0),
+                // ── y = -141 ground ──────────────────────────────────────────
+                ("models/rock_smallA.glb",     col_x_f(3.0),  -141.0, 34.0, 13.0),
+                ("models/grass_large.glb",     col_x_f(7.0),  -141.0, 38.0, 12.0),
+                ("models/plant_bush.glb",      col_x_f(9.0),  -141.0, 49.0, 27.0),
+                ("models/rock_tallA.glb",      col_x_f(10.0), -141.0, 24.0,  8.0),
+                ("models/plant_bushLarge.glb", col_x_f(15.0), -141.0, 79.0, 43.0),
+                ("models/flower_redA.glb",     col_x_f(18.0), -141.0, 66.0, 17.0),
+                ("models/flower_yellowA.glb",  col_x_f(22.0), -141.0, 101.0, 26.0),
+                ("models/rock_tallA.glb",      col_x_f(30.0), -141.0, 24.0,  8.0),
+                ("models/rock_smallA.glb",     col_x_f(35.0), -141.0, 34.0, 13.0),
+                ("models/plant_bushLarge.glb", col_x_f(43.0), -141.0, 79.0, 43.0),
+                ("models/rock_tallA.glb",      col_x_f(55.0), -141.0, 24.0,  8.0),
+                ("models/flower_yellowA.glb",  col_x_f(58.0), -141.0, 101.0, 26.0),
+                ("models/rock_smallA.glb",     col_x_f(85.0), -141.0, 34.0, 13.0),
+                // ── y = -69 row 6 platforms ──────────────────────────────────
+                ("models/flower_yellowA.glb",  col_x_f(5.0),   -69.0, 101.0, 26.0),
+                ("models/rock_smallA.glb",     col_x_f(8.0),   -69.0, 34.0, 13.0),
+                ("models/rock_smallA.glb",     col_x_f(23.0),  -69.0, 34.0, 13.0),
+                ("models/plant_bush.glb",      col_x_f(24.0),  -69.0, 49.0, 27.0),
+                ("models/flower_redA.glb",     col_x_f(25.0),  -69.0, 66.0, 17.0),
+                ("models/grass_large.glb",     col_x_f(36.0),  -69.0, 38.0, 12.0),
+                ("models/plant_bush.glb",      col_x_f(37.0),  -69.0, 49.0, 27.0),
+                ("models/flower_redA.glb",     col_x_f(57.0),  -69.0, 66.0, 17.0),
+                ("models/rock_smallA.glb",     col_x_f(84.0),  -69.0, 34.0, 13.0),
+                // ── y = 3 row 10 platforms ───────────────────────────────────
+                ("models/rock_smallA.glb",     col_x_f(14.0),    3.0, 34.0, 13.0),
+                ("models/grass_large.glb",     col_x_f(16.0),    3.0, 38.0, 12.0),
+                ("models/flower_redA.glb",     col_x_f(17.0),    3.0, 66.0, 17.0),
+                ("models/rock_smallA.glb",     col_x_f(45.0),    3.0, 34.0, 13.0),
+                ("models/flower_yellowA.glb",  col_x_f(46.0),    3.0, 101.0, 26.0),
+                ("models/grass_large.glb",     col_x_f(76.0),    3.0, 38.0, 12.0),
+                ("models/rock_smallA.glb",     col_x_f(78.0),    3.0, 34.0, 13.0),
+                ("models/plant_bushLarge.glb", col_x_f(80.0),    3.0, 79.0, 43.0),
+                // ── y = 75 row 14 platforms ──────────────────────────────────
+                ("models/plant_bushLarge.glb", col_x_f(49.0),   75.0, 79.0, 43.0),
+                ("models/rock_smallA.glb",     col_x_f(52.0),   75.0, 34.0, 13.0),
+                ("models/plant_bush.glb",      col_x_f(68.0),   75.0, 49.0, 27.0),
+                ("models/flower_redA.glb",     col_x_f(69.0),   75.0, 66.0, 17.0),
+                ("models/grass_large.glb",     col_x_f(70.0),   75.0, 38.0, 12.0),
+                ("models/plant_bush.glb",      col_x_f(71.0),   75.0, 49.0, 27.0),
             ];
             for &(model, x, y, sxy, sz) in decor {
                 commands.spawn((
@@ -601,26 +631,27 @@ pub fn spawn_level_decorations(
                 crate::rendering::parallax::ParallaxBackground,
             ));
 
-            // Decorative stars — tiny bright dots scattered in the night sky.
-            // z=-95: behind near attenuation (-38) but in front of night overlay (-99).
-            // Deterministic positions from a fixed seed pattern.
-            let star_mesh = meshes.add(Rectangle::new(2.0, 2.0));
+            // Decorative stars — bright dots scattered in the night sky.
+            // z=-72: in front of far attenuation (-75) so haze does not obscure them.
+            // WHY z=-72 not z=-95: at z=-95 stars sat behind the 50% alpha far
+            // attenuation plane (z=-75), making them nearly invisible.
+            let star_mesh = meshes.add(Rectangle::new(4.0, 4.0));
             for i in 0..40 {
                 let fi = i as f32;
                 // Pseudo-random scatter using golden-ratio-based hash.
                 let sx = ((fi * 137.508).sin() * 1500.0).rem_euclid(3100.0) - 1500.0;
                 let sy = ((fi * 251.317 + 3.0).sin() * 200.0).rem_euclid(400.0) + 100.0;
-                let brightness = 0.7 + ((fi * 317.432).sin() * 0.5 + 0.5) * 0.3;
+                let brightness = 0.9 + ((fi * 317.432).sin() * 0.5 + 0.5) * 0.1;
                 let star_mat = materials.add(StandardMaterial {
-                    base_color: Color::srgba(brightness, brightness, brightness * 0.9, 0.9),
+                    base_color: Color::srgb(brightness, brightness, brightness * 0.95),
                     unlit: true,
-                    alpha_mode: AlphaMode::Blend,
+                    alpha_mode: AlphaMode::Opaque,
                     ..default()
                 });
                 commands.spawn((
                     Mesh3d(star_mesh.clone()),
                     MeshMaterial3d(star_mat),
-                    Transform::from_xyz(sx, sy, -95.0),
+                    Transform::from_xyz(sx, sy, -72.0),
                     crate::rendering::parallax::ParallaxLayer { factor: 0.22 },
                     components::Decoration,
                     crate::rendering::parallax::ParallaxBackground,

@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::combat::components::Health;
 use crate::player::components::Player;
 
-use super::components::{CollectedEvent, Collectible, CollectibleType, CollectionProgress};
+use super::components::{CollectedEvent, Collectible, CollectibleType, CollectionProgress, MakeEmissive};
 
 /// Marker component for collectibles that spin in place.
 #[derive(Component)]
@@ -58,6 +58,40 @@ pub fn pickup_collectibles(
     }
 }
 
+/// Walks SceneRoot descendants of entities with `MakeEmissive`, clones their
+/// `StandardMaterial`, sets emissive + unlit, then removes the marker.
+/// Same pattern as `apply_scene_tints` in parallax.rs.
+pub fn apply_emissive_to_collectibles(
+    mut commands: Commands,
+    query: Query<(Entity, &MakeEmissive, &Children)>,
+    child_query: Query<&Children>,
+    mat_query: Query<&MeshMaterial3d<StandardMaterial>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    for (entity, emissive, top_children) in &query {
+        let mut found_any = false;
+        let mut stack: Vec<Entity> = top_children.iter().collect();
+        while let Some(child) = stack.pop() {
+            if let Ok(mat_handle) = mat_query.get(child)
+                && let Some(original) = materials.get(&mat_handle.0)
+            {
+                let mut modified = original.clone();
+                modified.emissive = emissive.color;
+                modified.unlit = true;
+                let new_handle = materials.add(modified);
+                commands.entity(child).insert(MeshMaterial3d(new_handle));
+                found_any = true;
+            }
+            if let Ok(grandchildren) = child_query.get(child) {
+                stack.extend(grandchildren.iter());
+            }
+        }
+        if found_any {
+            commands.entity(entity).remove::<MakeEmissive>();
+        }
+    }
+}
+
 /// Spawns a collectible at the given world position.
 ///
 /// Star      → star_collectible.glb (Kenney Platformer Kit, colormap.png texture)
@@ -92,6 +126,8 @@ fn spawn_star_3d(commands: &mut Commands, asset_server: &AssetServer, position: 
         Collectible {
             collectible_type: CollectibleType::Star,
         },
+        // Warm gold glow — visible even in dark City moonlight.
+        MakeEmissive { color: LinearRgba::new(2.0, 1.7, 0.4, 1.0) },
         Spinning { speed: 1.5 },
     ));
 }
@@ -107,6 +143,8 @@ fn spawn_health_food_3d(commands: &mut Commands, asset_server: &AssetServer, pos
         Collectible {
             collectible_type: CollectibleType::HealthFood,
         },
+        // Bright red-green glow — visible even in dark City moonlight.
+        MakeEmissive { color: LinearRgba::new(1.5, 0.5, 0.3, 1.0) },
         Spinning { speed: 1.5 },
     ));
 }
