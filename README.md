@@ -47,10 +47,10 @@ If you enjoy the game and want to support development:
 
 - GitHub Sponsors / Ko-fi / Patreon: Your donations help keep the project alive and growing.
   - GitHub Sponsors: https://github.com/sponsors/ewitte12-ui (update if different)
-  - Ko-fi: https://ko-fi.com/yourname (replace with your actual link)
-  - Patreon: https://patreon.com/yourname (replace with your actual link)
-- Itch.io Build: Get a fully compiled version on itch.io for $2 (or pay what you want). Payment is optional -- the source code remains free.
-  - Add your itch.io page link here: https://yourpage.itch.io/jaspers-world (replace with your actual link)
+  - Ko-fi: https://ko-fi.com/yourname - coming soon
+  - Patreon: https://patreon.com/yourname - comming soon
+- Itch.io Build: COMMING SOON - Get a fully compiled version on itch.io for $2 (or pay what you want). Payment is optional -- the source code remains free.
+  - Add your itch.io page link here: https://itch.io/profile/ericjwi
 
 Your support is greatly appreciated and helps fund new features, art, and updates!
 
