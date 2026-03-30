@@ -6,7 +6,7 @@ pub struct AudioHandles {
     pub pickup: Handle<AudioSource>,
     pub enemy_hit: Handle<AudioSource>,
     pub player_hurt: Handle<AudioSource>,
-    pub bgm: [Handle<AudioSource>; 4], // indexed by level: Forest=0, Subdivision=1, City=2, Sanctuary=3
+    pub bgm: Handle<AudioSource>,
 }
 
 #[derive(Component)]

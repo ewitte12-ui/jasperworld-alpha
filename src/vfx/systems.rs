@@ -27,9 +27,7 @@ pub fn update_weather(
 
     let (particle_type, interval_secs) = match current_level.level_id {
         Some(LevelId::Forest) => (WeatherType::Leaves, 0.15),
-        Some(LevelId::City) => (WeatherType::Rain, 0.04),
-        Some(LevelId::Sanctuary) => (WeatherType::Dust, 0.2),
-        // Subdivision and None get no weather emitter
+        Some(LevelId::Subdivision) => (WeatherType::Rain, 0.08),
         _ => return,
     };
 
@@ -71,6 +69,38 @@ pub fn emit_weather_particles(
         let r3 = (t * 317.432 + 2.0).sin() * 0.5 + 0.5; // 0..1
 
         match emitter.particle_type {
+            WeatherType::Rain => {
+                // Thin blue-white rain streaks — no texture needed.
+                let x = cam_pos.x + (r1 - 0.5) * 400.0;
+                let spawn_y = cam_pos.y + 175.0;
+                let drift_x = (r2 - 0.5) * 15.0;
+                let tint = Color::srgba(
+                    0.7 + r3 * 0.2,
+                    0.75 + r3 * 0.2,
+                    0.9 + r3 * 0.1,
+                    0.7,
+                );
+                let mesh = meshes.add(Rectangle::new(2.0, 10.0));
+                let mat = materials.add(StandardMaterial {
+                    base_color: tint,
+                    unlit: true,
+                    alpha_mode: AlphaMode::Blend,
+                    double_sided: true,
+                    cull_mode: None,
+                    ..default()
+                });
+                commands.spawn((
+                    Particle {
+                        velocity: Vec2::new(drift_x, -200.0),
+                        lifetime: Timer::from_seconds(3.0, TimerMode::Once),
+                        fade: true,
+                    },
+                    Mesh3d(mesh),
+                    MeshMaterial3d(mat),
+                    Transform::from_xyz(x, spawn_y, 20.0),
+                    CameraRelativeVfx,
+                ));
+            }
             WeatherType::Leaves => {
                 // CAMERA-RELATIVE VFX EXCEPTION — jasper_camera_world_anchor_guardrail_v2 Category 4.
                 // Spawn volume is computed relative to the camera to maintain stable visual density
@@ -106,62 +136,6 @@ pub fn emit_weather_particles(
                 ));
             }
 
-            WeatherType::Rain => {
-                // CAMERA-RELATIVE VFX EXCEPTION — jasper_camera_world_anchor_guardrail_v2 Category 4.
-                // Spawn volume is computed relative to the camera to maintain stable visual density
-                // around the player regardless of level width. Once spawned, each raindrop moves
-                // independently in world-space under its own velocity. This is not a parallax layer
-                // and is not subject to world-anchor or parallax rules.
-                let x = cam_pos.x + (r1 - 0.5) * 500.0;
-                let color = Color::srgba(0.4, 0.6, 1.0, 0.6);
-                let mesh = meshes.add(Rectangle::new(1.5, 8.0));
-                let mat = materials.add(StandardMaterial {
-                    base_color: color,
-                    unlit: true,
-                    alpha_mode: AlphaMode::Blend,
-                    ..default()
-                });
-                commands.spawn((
-                    Particle {
-                        velocity: Vec2::new((r2 - 0.5) * 10.0, -150.0),
-                        lifetime: Timer::from_seconds(1.0, TimerMode::Once),
-                        fade: false,
-                    },
-                    Mesh3d(mesh),
-                    MeshMaterial3d(mat),
-                    Transform::from_xyz(x, cam_pos.y + 175.0, 20.0),
-                    CameraRelativeVfx,
-                ));
-            }
-
-            WeatherType::Dust => {
-                // CAMERA-RELATIVE VFX EXCEPTION — jasper_camera_world_anchor_guardrail_v2 Category 4.
-                // Spawn volume is computed relative to the camera to maintain stable visual density
-                // around the player regardless of level width. Once spawned, each dust mote moves
-                // independently in world-space under its own velocity. This is not a parallax layer
-                // and is not subject to world-anchor or parallax rules.
-                let x = cam_pos.x + (r1 - 0.5) * 500.0;
-                let y = cam_pos.y + (r2 - 0.5) * 300.0;
-                let color = Color::srgba(1.0, 0.95, 0.8, 0.4);
-                let mesh = meshes.add(Rectangle::new(2.0, 2.0));
-                let mat = materials.add(StandardMaterial {
-                    base_color: color,
-                    unlit: true,
-                    alpha_mode: AlphaMode::Blend,
-                    ..default()
-                });
-                commands.spawn((
-                    Particle {
-                        velocity: Vec2::new((r3 - 0.5) * 15.0, (r2 - 0.5) * 10.0),
-                        lifetime: Timer::from_seconds(4.0, TimerMode::Once),
-                        fade: true,
-                    },
-                    Mesh3d(mesh),
-                    MeshMaterial3d(mat),
-                    Transform::from_xyz(x, y, 20.0),
-                    CameraRelativeVfx,
-                ));
-            }
         }
     }
 }
@@ -228,8 +202,6 @@ pub fn flash_level_name(
     let name = match current_level.level_id {
         Some(LevelId::Forest) => "Forest",
         Some(LevelId::Subdivision) => "Subdivision",
-        Some(LevelId::City) => "City",
-        Some(LevelId::Sanctuary) => "Sanctuary",
         None => return,
     };
 

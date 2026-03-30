@@ -24,8 +24,6 @@ pub fn update_lighting(
     let theme = match current_level.level_id {
         Some(LevelId::Forest) => &LightingTheme::FOREST,
         Some(LevelId::Subdivision) => &LightingTheme::SUBDIVISION,
-        Some(LevelId::City) => &LightingTheme::CITY,
-        Some(LevelId::Sanctuary) => &LightingTheme::SANCTUARY,
         None => &LightingTheme::FOREST,
     };
 

@@ -101,10 +101,8 @@ fn read_debug_config(
     }
 
     let level_id = match cfg.level.as_str() {
-        "Forest"      => LevelId::Forest,
+        "Forest" => LevelId::Forest,
         "Subdivision" => LevelId::Subdivision,
-        "City"        => LevelId::City,
-        "Sanctuary"   => LevelId::Sanctuary,
         other => {
             warn!("[DEBUG] unknown level \"{other}\" — defaulting to Forest");
             LevelId::Forest
@@ -308,11 +306,9 @@ fn log_decoration_counts(
     }
 
     let level_name = match current_level.level_id {
-        Some(LevelId::Forest)      => "Forest",
+        Some(LevelId::Forest) => "Forest",
         Some(LevelId::Subdivision) => "Subdivision",
-        Some(LevelId::City)        => "City",
-        Some(LevelId::Sanctuary)   => "Sanctuary",
-        None                       => "None",
+        None                  => "None",
     };
 
     info!(

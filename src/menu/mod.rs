@@ -1014,8 +1014,6 @@ pub fn handle_pending_save_load(
         let level_name = match current_level.level_id {
             Some(crate::level::level_data::LevelId::Forest) => "Forest",
             Some(crate::level::level_data::LevelId::Subdivision) => "Subdivision",
-            Some(crate::level::level_data::LevelId::City) => "City",
-            Some(crate::level::level_data::LevelId::Sanctuary) => "Sanctuary",
             None => "Forest",
         };
 

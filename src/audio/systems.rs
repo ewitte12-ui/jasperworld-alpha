@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::collectibles::components::CollectedEvent;
 use crate::combat::components::{EnemyKillEvent, PlayerDamageEvent};
-use crate::level::level_data::{CurrentLevel, LevelId};
+use crate::level::level_data::CurrentLevel;
 
 use super::components::{AudioHandles, BackgroundMusic};
 
@@ -13,12 +13,7 @@ pub fn load_audio(mut commands: Commands, asset_server: Res<AssetServer>) {
         pickup: asset_server.load("audio/pickup1.ogg"),
         enemy_hit: asset_server.load("audio/creature1.ogg"),
         player_hurt: asset_server.load("audio/lose1.ogg"),
-        bgm: [
-            asset_server.load("audio/music-forest.ogg"),
-            asset_server.load("audio/music-subdivision.ogg"),
-            asset_server.load("audio/music-city.ogg"),
-            asset_server.load("audio/music-sanctuary.ogg"),
-        ],
+        bgm: asset_server.load("audio/music-forest.ogg"),
     };
     commands.insert_resource(handles);
 }
@@ -100,15 +95,6 @@ pub fn play_kill_sfx(
     }
 }
 
-fn level_to_bgm_index(level_id: LevelId) -> usize {
-    match level_id {
-        LevelId::Forest => 0,
-        LevelId::Subdivision => 1,
-        LevelId::City => 2,
-        LevelId::Sanctuary => 3,
-    }
-}
-
 /// Detects CurrentLevel changes and swaps BGM accordingly.
 pub fn update_bgm(
     current_level: Res<CurrentLevel>,
@@ -124,20 +110,19 @@ pub fn update_bgm(
         return;
     };
 
-    let Some(level_id) = current_level.level_id else {
+    if current_level.level_id.is_none() {
         return;
-    };
+    }
 
     // Despawn existing BGM entities.
     for entity in bgm_query.iter() {
         commands.entity(entity).despawn();
     }
 
-    // Spawn new BGM for this level.
-    let idx = level_to_bgm_index(level_id);
+    // Spawn new BGM.
     commands.spawn((
         BackgroundMusic,
-        AudioPlayer::new(handles.bgm[idx].clone()),
+        AudioPlayer::new(handles.bgm.clone()),
         PlaybackSettings::LOOP,
     ));
 }

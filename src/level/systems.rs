@@ -2,7 +2,7 @@ use avian2d::prelude::LinearVelocity;
 use bevy::prelude::*;
 
 use crate::level::components::TileEntity;
-use crate::level::level_data::{CurrentLevel, LevelData};
+use crate::level::level_data::{CurrentLevel, LevelData, LevelId};
 use crate::player::components::Player;
 use crate::rendering::camera::GameplayCamera;
 use crate::tilemap::spawn::spawn_tilemap;
@@ -93,11 +93,10 @@ pub fn switch_layer(
         commands.entity(entity).despawn();
     }
 
-    // Pick solid model based on current level theme.
-    let solid_model = match current_level.level_id {
-        Some(crate::level::level_data::LevelId::Subdivision)
-        | Some(crate::level::level_data::LevelId::City) => "models/brick.glb",
-        _ => "models/block-grass-large.glb",
+    // Pick tile models based on current level theme.
+    let (solid_model, platform_model) = match current_level.level_id {
+        Some(LevelId::Subdivision) => ("models/brick.glb", "models/brick.glb"),
+        _ => ("models/block-grass-large.glb", "models/block-grass-low.glb"),
     };
 
     // Spawn new layer tiles.
@@ -106,7 +105,7 @@ pub fn switch_layer(
         layer.origin_x + TILE_SIZE * 0.5,
         layer.origin_y + TILE_SIZE * 0.5,
     );
-    spawn_tilemap(&mut commands, &asset_server, solid_model, &layer.tiles, origin, 0.0);
+    spawn_tilemap(&mut commands, &asset_server, solid_model, platform_model, &layer.tiles, origin, 0.0);
 
     // Teleport player to the new layer's spawn point.
     if let Ok((mut player_transform, mut player_vel)) = player_query.single_mut() {

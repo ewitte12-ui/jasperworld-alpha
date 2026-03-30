@@ -3,6 +3,7 @@ use bevy::prelude::*;
 
 use crate::level::components::{OneWayPlatform, TileEntity};
 use crate::physics::config::GameLayer;
+use crate::rendering::parallax::SceneTint;
 use crate::tilemap::tilemap::{TILE_SIZE, TileType};
 
 // Kenney Platformer Kit native model bounds (from GLB GLTF accessor min/max).
@@ -14,6 +15,8 @@ const BLOCK_LOW_W: f32 = 1.082; // block-grass-low native X width
 const BLOCK_LOW_H: f32 = 0.500; // block-grass-low native Y height
 const BRICK_W: f32 = 0.500; // brick native X width
 const BRICK_H: f32 = 0.500; // brick native Y height
+const PLATFORM_W: f32 = 1.082; // platform native X width (same as block-grass-low)
+const PLATFORM_H: f32 = 0.500; // platform native Y height
 
 /// Spawn all tiles for a 2D grid using 3D GLB models.
 ///
@@ -31,9 +34,39 @@ pub fn spawn_tilemap(
     commands: &mut Commands,
     asset_server: &AssetServer,
     solid_model: &str,
+    platform_model: &str,
     grid: &[Vec<TileType>],
     origin: Vec2,
     z: f32,
+) {
+    spawn_tilemap_inner(commands, asset_server, solid_model, platform_model, grid, origin, z, None);
+}
+
+/// Same as `spawn_tilemap` but applies a color tint to platform tiles.
+#[allow(clippy::too_many_arguments)]
+pub fn spawn_tilemap_tinted(
+    commands: &mut Commands,
+    asset_server: &AssetServer,
+    solid_model: &str,
+    platform_model: &str,
+    grid: &[Vec<TileType>],
+    origin: Vec2,
+    z: f32,
+    platform_tint: Color,
+) {
+    spawn_tilemap_inner(commands, asset_server, solid_model, platform_model, grid, origin, z, Some(platform_tint));
+}
+
+#[allow(clippy::too_many_arguments)]
+fn spawn_tilemap_inner(
+    commands: &mut Commands,
+    asset_server: &AssetServer,
+    solid_model: &str,
+    platform_model: &str,
+    grid: &[Vec<TileType>],
+    origin: Vec2,
+    z: f32,
+    platform_tint: Option<Color>,
 ) {
     // ── Pass 1: visuals (one GLB model per tile, no collider) ────────────────
     for (row_idx, row) in grid.iter().enumerate() {
@@ -46,17 +79,26 @@ pub fn spawn_tilemap(
             let wy = origin.y + row_idx as f32 * TILE_SIZE;
 
             let model = if tile_type == TileType::Platform {
-                "models/block-grass-low.glb"
+                platform_model
             } else {
                 solid_model
             };
 
-            let vis_scale = model_scale(model);
+            let vis_scale = if tile_type == TileType::Platform {
+                model_scale_platform(model)
+            } else {
+                model_scale(model)
+            };
             let scene_handle = asset_server.load(format!("{}#Scene0", model));
 
             // Visual entity: same world position as the original physics entity
             // (wx, wy+2.0) with the scene child offset down by TILE_SIZE/2 so the
             // model top aligns with the visible ground surface.
+            // SceneTint must be on the SceneRoot entity (not the parent) because
+            // apply_scene_tints walks Children of the tinted entity to find
+            // MeshMaterial3d handles — the mesh entities are children of the
+            // SceneRoot entity, not children of the TileEntity parent.
+            let tint_platform = tile_type == TileType::Platform && platform_tint.is_some();
             commands
                 .spawn((
                     TileEntity,
@@ -64,10 +106,13 @@ pub fn spawn_tilemap(
                     Visibility::default(),
                 ))
                 .with_children(|parent| {
-                    parent.spawn((
+                    let mut child = parent.spawn((
                         SceneRoot(scene_handle),
                         Transform::from_xyz(0.0, -TILE_SIZE * 0.5, 0.0).with_scale(vis_scale),
                     ));
+                    if tint_platform {
+                        child.insert(SceneTint::Replace(platform_tint.unwrap()));
+                    }
                 });
         }
     }
@@ -158,6 +203,8 @@ fn model_scale(model_path: &str) -> Vec3 {
         (BLOCK_LOW_W, BLOCK_LOW_H)
     } else if model_path.contains("block-grass") {
         (BLOCK_LARGE_W, BLOCK_LARGE_H)
+    } else if model_path.contains("platform") {
+        (PLATFORM_W, PLATFORM_H)
     } else if model_path.contains("brick") {
         (BRICK_W, BRICK_H)
     } else {
@@ -171,6 +218,14 @@ fn model_scale(model_path: &str) -> Vec3 {
     // don't look like chunky slabs.
     let z_scale = if model_path.contains("block-grass-low") { 3.0 } else { 6.0 };
     Vec3::new(TILE_SIZE / w, TILE_SIZE / h, z_scale)
+}
+
+/// Same as `model_scale` but with extra Z depth so the top face is more
+/// visible from the -28° camera tilt. Used for brick platform tiles.
+fn model_scale_platform(model_path: &str) -> Vec3 {
+    let mut s = model_scale(model_path);
+    s.z = 10.0;
+    s
 }
 
 /// Returns true if the grid cell at (col, row) is a solid or platform tile.

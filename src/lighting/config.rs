@@ -14,22 +14,12 @@ impl LightingTheme {
         ambient_color: Color::srgb(0.4, 0.5, 0.4),
         ambient_brightness: 300.0,
     };
+
+    /// Overcast rainy daylight — cooler tones, reduced illuminance.
     pub const SUBDIVISION: Self = Self {
-        directional_color: Color::srgb(1.0, 0.98, 0.95), // neutral daylight
-        directional_illuminance: 14000.0,
-        ambient_color: Color::srgb(0.5, 0.5, 0.5),
-        ambient_brightness: 400.0,
-    };
-    pub const CITY: Self = Self {
-        directional_color: Color::srgb(0.8, 0.85, 1.0), // cool city light
-        directional_illuminance: 8000.0,
-        ambient_color: Color::srgb(0.3, 0.3, 0.45),
-        ambient_brightness: 500.0, // more ambient from neon/screens
-    };
-    pub const SANCTUARY: Self = Self {
-        directional_color: Color::srgb(1.0, 0.85, 0.5), // golden hour
-        directional_illuminance: 10000.0,
-        ambient_color: Color::srgb(0.5, 0.45, 0.3),
-        ambient_brightness: 350.0,
+        directional_color: Color::srgb(0.75, 0.80, 0.88), // cool grey-blue
+        directional_illuminance: 7000.0,
+        ambient_color: Color::srgb(0.35, 0.40, 0.50),
+        ambient_brightness: 250.0,
     };
 }

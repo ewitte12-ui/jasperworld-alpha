@@ -34,7 +34,7 @@ pub struct LevelExit {
 /// Resource tracking game completion
 #[derive(Resource, Default)]
 pub struct GameProgress {
-    pub current_level_index: usize, // 0=Forest, 1=Subdivision, 2=City, 3=Sanctuary
+    pub current_level_index: usize, // 0=Forest
     pub game_complete: bool,
     /// Guard against re-entrant transitions.
     ///
