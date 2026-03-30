@@ -743,6 +743,70 @@ pub fn spawn_level_decorations(
 ///   z = +4  Opaque dark backdrop — hides parallax houses behind the panel
 ///   z = +5  Semi-transparent dark-blue panel strip — the visible "solar panel"
 ///
+/// Spawns themed 3D decoration props inside a layer 1 sublevel.
+/// All entities carry `TileEntity` so they despawn on layer switch.
+/// Grid is 32 cols × 18 rows at origin (0,0). TILE_SIZE = 18.
+pub fn spawn_sublevel_decorations(
+    commands: &mut Commands,
+    asset_server: &AssetServer,
+    level_id: LevelId,
+    origin_x: f32,
+    origin_y: f32,
+) {
+    let col_x = |col: f32| origin_x + col * TILE_SIZE + TILE_SIZE * 0.5;
+    let row_y = |row: f32| origin_y + row * TILE_SIZE;
+
+    // (model_path, x, y, scale_xy, scale_z)
+    let decor: &[(&str, f32, f32, f32, f32)] = match level_id {
+        // ── Forest Cave: stalactites on ceiling, mushrooms, rocks ─────────
+        LevelId::Forest => &[
+            // Stalactites hanging from ceiling (row 16 bottom = y=288)
+            ("models/cave/cliff_cave_stone.glb", col_x(6.0),  row_y(15.0), 12.0, 4.0),
+            ("models/cave/cliff_cave_rock.glb",  col_x(15.0), row_y(15.0), 10.0, 3.0),
+            ("models/cave/cliff_cave_stone.glb", col_x(25.0), row_y(15.0), 14.0, 5.0),
+            // Mushrooms on ground (row 2 top = y=36)
+            ("models/mushroom_red.glb",  col_x(4.0),  row_y(2.0), 30.0, 12.0),
+            ("models/mushroom_tan.glb",  col_x(18.0), row_y(2.0), 25.0, 10.0),
+            ("models/mushrooms.glb",     col_x(26.0), row_y(2.0), 28.0, 11.0),
+            // Rocks on ground
+            ("models/rock_tallA.glb",    col_x(10.0), row_y(2.0), 24.0, 8.0),
+            ("models/rock_smallA.glb",   col_x(21.0), row_y(2.0), 34.0, 13.0),
+        ],
+        // ── Subdivision Sewer: columns, iron fences, wall segments ────────
+        LevelId::Subdivision => &[
+            // Columns along the floor
+            ("models/sewer/column-large.glb",      col_x(8.0),  row_y(2.0), 18.0, 6.0),
+            ("models/sewer/column-large.glb",      col_x(24.0), row_y(2.0), 18.0, 6.0),
+            ("models/sewer/stone-wall-column.glb", col_x(16.0), row_y(2.0), 18.0, 6.0),
+            // Iron fences
+            ("models/sewer/iron-fence.glb", col_x(3.0),  row_y(2.0), 20.0, 5.0),
+            ("models/sewer/iron-fence.glb", col_x(28.0), row_y(2.0), 20.0, 5.0),
+            // Wall decorations along ceiling
+            ("models/sewer/brick-wall.glb", col_x(10.0), row_y(15.0), 16.0, 4.0),
+            ("models/sewer/brick-wall.glb", col_x(22.0), row_y(15.0), 16.0, 4.0),
+        ],
+        // ── City Subway: columns, lights, construction barriers ──────────
+        LevelId::City => &[
+            // Platform columns
+            ("models/city/light-curved.glb",       col_x(5.0),  row_y(2.0), 40.0, 10.0),
+            ("models/city/light-curved.glb",       col_x(16.0), row_y(2.0), 40.0, 10.0),
+            ("models/city/light-curved.glb",       col_x(27.0), row_y(2.0), 40.0, 10.0),
+            // Construction cones
+            ("models/city/construction-cone.glb",  col_x(9.0),  row_y(2.0), 80.0, 25.0),
+            ("models/city/construction-cone.glb",  col_x(22.0), row_y(2.0), 80.0, 25.0),
+        ],
+    };
+
+    for &(model, x, y, sxy, sz) in decor {
+        commands.spawn((
+            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
+            Transform::from_xyz(x, y, 3.0).with_scale(Vec3::new(sxy, sxy, sz)),
+            components::TileEntity,
+            components::ForegroundDecoration,
+        ));
+    }
+}
+
 /// Rain (z=+20) renders in front of both; clouds (z=-60) are dimly visible
 /// through the semi-transparent panel, giving the "rain above, player below" feel.
 ///
@@ -809,6 +873,19 @@ pub fn spawn_solar_panel_canopy(
 ///   7. Insert LevelData as a resource
 ///
 /// Returns the spawn point for the loaded layer so the caller can teleport
+/// Returns (solid_model, platform_model) paths for a given level + layer.
+/// Layer 1 sublevels use unique themed tile models; all others use surface defaults.
+pub fn tile_models_for_layer(level_id: LevelId, layer_index: usize) -> (&'static str, &'static str) {
+    match (level_id, layer_index) {
+        (LevelId::Forest, 1)      => ("models/cave/cliff_blockCave_stone.glb", "models/cave/cliff_blockCave_rock.glb"),
+        (LevelId::Subdivision, 1) => ("models/sewer/stone-wall.glb", "models/sewer/brick-wall.glb"),
+        (LevelId::City, 1)        => ("models/brick.glb", "models/block-moving-large.glb"),
+        (LevelId::Subdivision, _) => ("models/brick.glb", "models/brick.glb"),
+        (LevelId::City, _)        => ("models/block-snow-large.glb", "models/block-moving-large.glb"),
+        _                         => ("models/block-grass-large.glb", "models/block-grass-low.glb"),
+    }
+}
+
 /// the player — each call site has a different query type for the player,
 /// so teleportation is the caller's responsibility.
 ///
@@ -841,11 +918,7 @@ pub fn spawn_level_full(
     let spawn = layer.spawn;
     let tiles = layer.tiles.clone();
 
-    let (solid_model, platform_model) = match level_id {
-        LevelId::Forest => ("models/block-grass-large.glb", "models/block-grass-low.glb"),
-        LevelId::Subdivision => ("models/brick.glb", "models/brick.glb"),
-        LevelId::City => ("models/block-snow-large.glb", "models/block-moving-large.glb"),
-    };
+    let (solid_model, platform_model) = tile_models_for_layer(level_id, layer_index);
 
     current_level.level_id    = Some(level_id);
     current_level.layer_index = layer_index;
@@ -858,6 +931,45 @@ pub fn spawn_level_full(
     // Solar panel canopy on Subdivision Rooftop layer only.
     if level_id == LevelId::Subdivision && layer_index == 2 {
         spawn_solar_panel_canopy(commands, meshes, materials);
+    }
+
+    // Sublevel setup: dark background, decorations, return door.
+    if layer_index == 1 {
+        let ox = layer.origin_x;
+        let oy = layer.origin_y;
+        let center_x = ox + 16.0 * TILE_SIZE;
+        let center_y = oy + 9.0 * TILE_SIZE;
+
+        let bg_color = match level_id {
+            LevelId::Forest      => Color::srgb(0.08, 0.06, 0.04),
+            LevelId::Subdivision => Color::srgb(0.04, 0.06, 0.04),
+            LevelId::City        => Color::srgb(0.05, 0.05, 0.08),
+        };
+        let bg_mesh = meshes.add(Rectangle::new(2000.0, 1000.0));
+        let bg_mat = materials.add(StandardMaterial {
+            base_color: bg_color,
+            unlit: true,
+            alpha_mode: AlphaMode::Opaque,
+            ..default()
+        });
+        commands.spawn((
+            Mesh3d(bg_mesh),
+            MeshMaterial3d(bg_mat),
+            Transform::from_xyz(center_x, center_y, -5.0),
+            components::TileEntity,
+        ));
+
+        spawn_sublevel_decorations(commands, asset_server, level_id, ox, oy);
+
+        let door_x = ox + 28.0 * TILE_SIZE + TILE_SIZE * 0.5;
+        let door_y = oy + 2.0 * TILE_SIZE;
+        commands.spawn((
+            SceneRoot(asset_server.load("models/door-rotate.glb#Scene0")),
+            Transform::from_xyz(door_x, door_y, 1.0)
+                .with_scale(Vec3::new(60.0, 54.0, 7.0)),
+            doors::TransitionDoor { target_layer: 0 },
+            components::TileEntity,
+        ));
     }
 
     commands.insert_resource(level_data);

@@ -88,77 +88,50 @@ fn city_layer_0() -> LayerData {
     }
 }
 
-// ── Layer 1: Subway ──────────────────────────────────────────────────────────
-// 96 cols × 44 rows, origin_x = -864.0, origin_y = -200.0
-// rows 0-1: solid floor
-// rows 2-34: walls at cols 0/95, interior with platforms
-// rows 35-43: solid ceiling
+// ── Layer 1: Subway (single-screen) ──────────────────────────────────────────
+// 32 cols × 18 rows, origin (0, 0) — independent from surface layer.
+// Fully enclosed: solid floor, walls, ceiling.
+// Station-like symmetrical platform layout.
 fn city_layer_1() -> LayerData {
     let tiles: Vec<Vec<TileType>> = {
-        let solid = || vec![S; 96];
+        let solid = || vec![S; 32];
         let cave = |platforms: &[(usize, usize)]| {
-            let mut row = vec![E; 96];
+            let mut row = vec![E; 32];
             row[0] = S;
-            row[95] = S;
+            row[31] = S;
             for &(start, end) in platforms {
                 row[start..=end].fill(P);
             }
             row
         };
         vec![
-            solid(), // row 0
-            solid(), // row 1
-            cave(&[]),                                         // row 2
-            cave(&[]),                                         // row 3
-            cave(&[(10, 15), (35, 40), (60, 65)]),             // row 4
-            cave(&[]),                                         // row 5
-            cave(&[(5, 10), (20, 25), (48, 53), (70, 75)]),    // row 6
-            cave(&[]),                                         // row 7
-            cave(&[(15, 20), (40, 45), (65, 70)]),             // row 8
-            cave(&[]),                                         // row 9
-            cave(&[(22, 27), (55, 60), (80, 85)]),             // row 10
-            cave(&[]),                                         // row 11
-            cave(&[]),                                         // row 12
-            cave(&[]),                                         // row 13
-            cave(&[(12, 17), (45, 50), (72, 77)]),             // row 14
-            cave(&[]),                                         // row 15
-            cave(&[(22, 27), (52, 57)]),                       // row 16 — bridges: 14(12-17)→18(30-35), 14(45-50)→18(60-65)
-            cave(&[]),                                         // row 17
-            cave(&[(30, 35), (60, 65)]),                       // row 18
-            cave(&[]),                                         // row 19
-            cave(&[]),                                         // row 20
-            cave(&[]),                                         // row 21
-            cave(&[]),                                         // row 22
-            cave(&[]),                                         // row 23
-            cave(&[]),                                         // row 24
-            cave(&[]),                                         // row 25
-            cave(&[]),                                         // row 26
-            cave(&[]),                                         // row 27
-            cave(&[]),                                         // row 28
-            cave(&[]),                                         // row 29
-            cave(&[]),                                         // row 30
-            cave(&[]),                                         // row 31
-            cave(&[]),                                         // row 32
-            cave(&[]),                                         // row 33
-            cave(&[]),                                         // row 34
-            solid(), // row 35
-            solid(), // row 36
-            solid(), // row 37
-            solid(), // row 38
-            solid(), // row 39
-            solid(), // row 40
-            solid(), // row 41
-            solid(), // row 42
-            solid(), // row 43
+            solid(),                                // row 0  — floor (track level)
+            solid(),                                // row 1  — floor
+            cave(&[]),                              // row 2
+            cave(&[]),                              // row 3
+            cave(&[(6, 10), (22, 26)]),             // row 4  — platform edges
+            cave(&[]),                              // row 5
+            cave(&[]),                              // row 6
+            cave(&[]),                              // row 7
+            cave(&[(13, 17)]),                      // row 8  — mid platform
+            cave(&[]),                              // row 9
+            cave(&[]),                              // row 10
+            cave(&[(4, 8), (24, 28)]),              // row 11 — upper platforms
+            cave(&[]),                              // row 12
+            cave(&[]),                              // row 13
+            cave(&[]),                              // row 14
+            cave(&[]),                              // row 15
+            solid(),                                // row 16 — ceiling
+            solid(),                                // row 17 — ceiling
         ]
     };
 
     LayerData {
         id: 1,
         tiles,
-        origin_x: -864.0,
-        origin_y: -200.0,
-        spawn: Vec2::new(-819.0, -155.0),
+        origin_x: 5000.0,
+        origin_y: 5000.0,
+        spawn: Vec2::new(5045.0, 5063.0),
     }
 }
 
