@@ -26,7 +26,3 @@ pub struct Decoration;
 #[derive(Component)]
 pub struct ForegroundDecoration;
 
-/// Marker for Subdivision-biome-only entities (static parallax plates).
-/// Allows targeted despawn without touching shared or City-specific entities.
-#[derive(Component)]
-pub struct SubdivisionOnly;

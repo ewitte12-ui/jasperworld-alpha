@@ -13,6 +13,19 @@ pub struct ParallaxLayer {
     pub factor: f32,
 }
 
+/// Pending color tint for a SceneRoot model. A one-shot system finds loaded
+/// children with StandardMaterial, clones the material, applies the tint,
+/// then removes the component.
+///
+/// `Multiply` — multiplies existing base_color channels by the tint (preserves
+///   material variation; used for house color washes).
+/// `Replace` — overwrites base_color entirely (used for grey platforms, etc.).
+#[derive(Component, Debug)]
+pub enum SceneTint {
+    Multiply(Color),
+    Replace(Color),
+}
+
 /// Marks level-specific parallax background entities (tree/building layers).
 /// These must be despawned on level transition and respawned by `spawn_level_decorations`.
 /// Permanent elements (sky, mountains, clouds) do NOT carry this marker.
@@ -107,49 +120,47 @@ pub fn spawn_shared_background(
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
     asset_server: &AssetServer,
+    level_id: crate::level::level_data::LevelId,
 ) {
-    // ── Snowy mountains (z = -70) ─────────────────────────────────────────────
-    // WHY z=-70: mountains must sit BEHIND near trees (z=-50) so the forest
-    // frames the mountains rather than mountains occluding trees. z=-70 places
-    // them between near trees (-50) and dark trees (-80).
-    // Scale reduced ~20% vs old values so mountains read as distant, not dominant.
-    // Factor 0.45 (was 0.6) — truly distant peaks drift very slowly.
-    // Span x = -1500..+1600 (step 160) so every level start position has coverage.
-    let mountain_scales = [178.0_f32, 160.0, 197.0, 167.0, 175.0, 185.0, 156.0, 192.0];
-    let mountain_data: Vec<(f32, f32, f32)> = (-1500..=1600)
-        .step_by(160)
-        .enumerate()
-        .map(|(i, x)| (x as f32, -170.0_f32, mountain_scales[i % mountain_scales.len()]))
-        .collect();
-    for &(mx, my, mscale) in &mountain_data {
-        commands.spawn((
-            SceneRoot(asset_server.load("models/stone-mountain.glb#Scene0")),
-            Transform::from_xyz(mx, my, -70.0).with_scale(Vec3::new(mscale, mscale, 20.0)),
-            ParallaxLayer { factor: 0.35 },
-            Decoration,
-        ));
+    // ── Snowy mountains (z = -70) — Forest only ───────────────────────────────
+    // Subdivision has houses instead of mountains; skip for that level.
+    if level_id != crate::level::level_data::LevelId::Subdivision {
+        let mountain_scales = [178.0_f32, 160.0, 197.0, 167.0, 175.0, 185.0, 156.0, 192.0];
+        let mountain_data: Vec<(f32, f32, f32)> = (-1500..=1600)
+            .step_by(160)
+            .enumerate()
+            .map(|(i, x)| (x as f32, -170.0_f32, mountain_scales[i % mountain_scales.len()]))
+            .collect();
+        for &(mx, my, mscale) in &mountain_data {
+            commands.spawn((
+                SceneRoot(asset_server.load("models/stone-mountain.glb#Scene0")),
+                Transform::from_xyz(mx, my, -70.0).with_scale(Vec3::new(mscale, mscale, 20.0)),
+                ParallaxLayer { factor: 0.35 },
+                Decoration,
+            ));
 
-        let cap_w = mscale * 0.38;
-        let cap_h = mscale * 0.20;
-        let cap_y = my + mscale * 0.70;
-        let snow_mesh = meshes.add(Mesh::from(Rectangle::new(cap_w, cap_h)));
-        let snow_mat = materials.add(StandardMaterial {
-            base_color: Color::srgb(0.93, 0.95, 1.00),
-            alpha_mode: AlphaMode::Opaque,
-            unlit: true,
-            ..default()
-        });
-        commands.spawn((
-            Mesh3d(snow_mesh),
-            MeshMaterial3d(snow_mat),
-            Transform::from_xyz(mx, cap_y, -69.9),
-            ParallaxLayer { factor: 0.35 },
-            Decoration,
-        ));
+            let cap_w = mscale * 0.38;
+            let cap_h = mscale * 0.20;
+            let cap_y = my + mscale * 0.70;
+            let snow_mesh = meshes.add(Mesh::from(Rectangle::new(cap_w, cap_h)));
+            let snow_mat = materials.add(StandardMaterial {
+                base_color: Color::srgb(0.93, 0.95, 1.00),
+                alpha_mode: AlphaMode::Opaque,
+                unlit: true,
+                ..default()
+            });
+            commands.spawn((
+                Mesh3d(snow_mesh),
+                MeshMaterial3d(snow_mat),
+                Transform::from_xyz(mx, cap_y, -69.9),
+                ParallaxLayer { factor: 0.35 },
+                Decoration,
+            ));
+        }
     }
 
     // ── Sky backdrop (z = -100) ───────────────────────────────────────────────
-    // 6400 wide: covers Sanctuary (±1440) + parallax drift at factor 0.15.
+    // 6400 wide: covers all levels + parallax drift at factor 0.15.
     let sky_mesh = meshes.add(Mesh::from(Rectangle::new(6400.0, 1800.0)));
     let sky_mat = materials.add(StandardMaterial {
         base_color: Color::srgb(0.45, 0.72, 0.90),
@@ -165,25 +176,64 @@ pub fn spawn_shared_background(
         Decoration,
     ));
 
-    // ── Mountain attenuation plane (z = -38) ─────────────────────────────────
-    // Semi-transparent dark overlay — creates gameplay > trees > mountains contrast.
-    // 5000 wide to match mountain spread.
-    let attn_mesh = meshes.add(Mesh::from(Rectangle::new(5000.0, 1600.0)));
-    let attn_mat = materials.add(StandardMaterial {
-        base_color: Color::srgba(0.0, 0.0, 0.0, 0.18),
-        alpha_mode: AlphaMode::Blend,
-        unlit: true,
-        double_sided: true,
-        cull_mode: None,
-        ..default()
-    });
-    commands.spawn((
-        Mesh3d(attn_mesh),
-        MeshMaterial3d(attn_mat),
-        Transform::from_xyz(0.0, -50.0, -38.0),
-        ParallaxLayer { factor: 0.38 },
-        Decoration,
-    ));
+    // ── Attenuation plane(s) ────────────────────────────────────────────────
+    // Forest: single plane at z=-38 (18% dark) covers all background equally.
+    // Subdivision: two planes — light (12%) for near houses, heavy (35%) for far
+    //   houses — so the far row reads as visibly more distant.
+    if level_id == crate::level::level_data::LevelId::Subdivision {
+        // Near attenuation (z=-38): light overlay for near houses at z=-50
+        let near_attn_mesh = meshes.add(Mesh::from(Rectangle::new(5000.0, 1600.0)));
+        let near_attn_mat = materials.add(StandardMaterial {
+            base_color: Color::srgba(0.0, 0.0, 0.0, 0.12),
+            alpha_mode: AlphaMode::Blend,
+            unlit: true,
+            double_sided: true,
+            cull_mode: None,
+            ..default()
+        });
+        commands.spawn((
+            Mesh3d(near_attn_mesh),
+            MeshMaterial3d(near_attn_mat),
+            Transform::from_xyz(0.0, -50.0, -38.0),
+            ParallaxLayer { factor: 0.38 },
+            Decoration,
+        ));
+        // Far attenuation (z=-75): heavier overlay for far houses at z=-80
+        let far_attn_mesh = meshes.add(Mesh::from(Rectangle::new(5000.0, 1600.0)));
+        let far_attn_mat = materials.add(StandardMaterial {
+            base_color: Color::srgba(0.45, 0.50, 0.58, 0.50),
+            alpha_mode: AlphaMode::Blend,
+            unlit: true,
+            double_sided: true,
+            cull_mode: None,
+            ..default()
+        });
+        commands.spawn((
+            Mesh3d(far_attn_mesh),
+            MeshMaterial3d(far_attn_mat),
+            Transform::from_xyz(0.0, -50.0, -75.0),
+            ParallaxLayer { factor: 0.48 },
+            Decoration,
+        ));
+    } else {
+        // Forest: single shared attenuation at z=-38 (18% dark)
+        let attn_mesh = meshes.add(Mesh::from(Rectangle::new(5000.0, 1600.0)));
+        let attn_mat = materials.add(StandardMaterial {
+            base_color: Color::srgba(0.0, 0.0, 0.0, 0.18),
+            alpha_mode: AlphaMode::Blend,
+            unlit: true,
+            double_sided: true,
+            cull_mode: None,
+            ..default()
+        });
+        commands.spawn((
+            Mesh3d(attn_mesh),
+            MeshMaterial3d(attn_mat),
+            Transform::from_xyz(0.0, -50.0, -38.0),
+            ParallaxLayer { factor: 0.38 },
+            Decoration,
+        ));
+    }
 
     // ── Clouds (z = -60) ──────────────────────────────────────────────────────
     // Span x = -1500..+1600 to match mountain coverage.
@@ -229,9 +279,6 @@ pub fn spawn_shared_background(
     }
 }
 
-// Subdivision parallax plates are now handled by the segmented panorama
-// system in subdivision_panorama.rs.  See that module for depth/factor
-// specs and the full composition reference.
 
 /// Spawns the forest/nature background tree layers (dark mid + bright front).
 /// Each entity is marked `Decoration` so it gets despawned on level transitions.
@@ -274,5 +321,146 @@ pub fn spawn_nature_background(commands: &mut Commands, asset_server: &AssetServ
             Decoration,
             ParallaxBackground,
         ));
+    }
+}
+
+/// Spawns subdivision/neighborhood background layers — houses, suburban trees, fences.
+/// Each entity is marked `Decoration` so it gets despawned on level transitions.
+/// Spans x = -1500..+1600 to cover every level's starting camera position.
+pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &AssetServer) {
+    // Near houses (z=-50, factor 0.38): 5-7 Jasper units tall (90-126 world units)
+    let house_models = [
+        "models/suburban/building-type-a.glb",
+        "models/suburban/building-type-b.glb",
+        "models/suburban/building-type-c.glb",
+        "models/suburban/building-type-d.glb",
+        "models/suburban/building-type-e.glb",
+        "models/suburban/building-type-f.glb",
+        "models/suburban/building-type-g.glb",
+        "models/suburban/building-type-h.glb",
+    ];
+    let house_scales = [119.0_f32, 150.0, 113.0, 158.0, 125.0, 138.0, 115.0, 148.0];
+    for (i, x) in (-1500..=1600i32).step_by(240).enumerate() {
+        let model = house_models[i % house_models.len()];
+        let scale = house_scales[i % house_scales.len()];
+        let tint = HOUSE_TINTS[i % HOUSE_TINTS.len()];
+        commands.spawn((
+            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
+            Transform::from_xyz(x as f32, -160.0, -50.0).with_scale(Vec3::new(scale, scale, scale * 0.35)),
+            ParallaxLayer { factor: 0.38 },
+            Decoration,
+            ParallaxBackground,
+            SceneTint::Multiply(tint),
+        ));
+    }
+
+    // Far houses (z=-80, factor 0.48): slightly smaller distant row (still 5-7 range)
+    let far_house_models = [
+        "models/suburban/building-type-i.glb",
+        "models/suburban/building-type-j.glb",
+        "models/suburban/building-type-f.glb",
+        "models/suburban/building-type-g.glb",
+        "models/suburban/building-type-h.glb",
+    ];
+    let far_house_scales = [59.0_f32, 68.0, 62.0, 75.0, 64.0, 60.0, 70.0, 62.0];
+    for (i, x) in (-1500..=1600i32).step_by(200).enumerate() {
+        let model = far_house_models[i % far_house_models.len()];
+        let scale = far_house_scales[i % far_house_scales.len()];
+        // Offset by 2 so far row doesn't repeat the same color sequence as near row
+        let tint = HOUSE_TINTS[(i + 2) % HOUSE_TINTS.len()];
+        commands.spawn((
+            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
+            Transform::from_xyz(x as f32, -160.0, -80.0).with_scale(Vec3::new(scale, scale, scale * 0.30)),
+            ParallaxLayer { factor: 0.48 },
+            Decoration,
+            ParallaxBackground,
+            SceneTint::Multiply(tint),
+        ));
+    }
+
+    // Suburban trees interspersed between houses (z=-50, factor 0.38)
+    let tree_models = [
+        "models/suburban/tree-suburban-large.glb",
+        "models/suburban/tree-suburban-small.glb",
+    ];
+    let tree_scales = [160.0_f32, 120.0, 180.0, 110.0, 150.0, 130.0, 170.0, 140.0];
+    for (i, x) in (-1500..=1600i32).step_by(180).enumerate() {
+        let model = tree_models[i % tree_models.len()];
+        let scale = tree_scales[i % tree_scales.len()];
+        commands.spawn((
+            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
+            Transform::from_xyz(x as f32 + 60.0, -160.0, -50.0).with_scale(Vec3::new(scale, scale, 8.0)),
+            ParallaxLayer { factor: 0.38 },
+            Decoration,
+            ParallaxBackground,
+        ));
+    }
+
+    // Fences between houses at ground level (z=-50, factor 0.38)
+    for x in (-1500..=1600i32).step_by(80) {
+        commands.spawn((
+            SceneRoot(asset_server.load("models/suburban/fence-suburban.glb#Scene0")),
+            Transform::from_xyz(x as f32, -155.0, -50.0).with_scale(Vec3::new(40.0, 30.0, 6.0)),
+            ParallaxLayer { factor: 0.38 },
+            Decoration,
+            ParallaxBackground,
+        ));
+    }
+}
+
+// ── House tinting system ────────────────────────────────────────────────────
+
+/// 4 house color tints — cycled across spawned houses.
+const HOUSE_TINTS: [Color; 4] = [
+    Color::srgb(0.96, 0.92, 0.82), // beige
+    Color::srgb(0.97, 0.97, 0.95), // white
+    Color::srgb(0.55, 0.73, 0.87), // azul blue
+    Color::srgb(0.60, 0.76, 0.65), // cypress green
+];
+
+/// One-shot system: finds entities with `SceneTint` whose SceneRoot children
+/// have loaded, clones each child's `StandardMaterial`, applies the tint,
+/// and removes the `SceneTint` component so it only runs once.
+pub fn apply_scene_tints(
+    mut commands: Commands,
+    tint_query: Query<(Entity, &SceneTint, &Children)>,
+    child_query: Query<&Children>,
+    mat_query: Query<&MeshMaterial3d<StandardMaterial>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    for (entity, tint, top_children) in &tint_query {
+        // SceneRoot children may be nested — collect all descendants.
+        let mut found_any = false;
+        let mut stack: Vec<Entity> = top_children.iter().collect();
+        while let Some(child) = stack.pop() {
+            if let Ok(mat_handle) = mat_query.get(child)
+                && let Some(original) = materials.get(&mat_handle.0)
+            {
+                let mut modified = original.clone();
+                match tint {
+                    SceneTint::Multiply(color) => {
+                        let [r, g, b, a] = modified.base_color.to_srgba().to_f32_array();
+                        let [tr, tg, tb, _] = color.to_srgba().to_f32_array();
+                        modified.base_color = Color::srgba(r * tr, g * tg, b * tb, a);
+                    }
+                    SceneTint::Replace(color) => {
+                        modified.base_color = *color;
+                        // Clear texture so the flat color is visible instead
+                        // of being multiplied with the model's baked texture.
+                        modified.base_color_texture = None;
+                    }
+                }
+                let new_handle = materials.add(modified);
+                commands.entity(child).insert(MeshMaterial3d(new_handle));
+                found_any = true;
+            }
+            if let Ok(grandchildren) = child_query.get(child) {
+                stack.extend(grandchildren.iter());
+            }
+        }
+        // Only remove component once children have loaded and been tinted.
+        if found_any {
+            commands.entity(entity).remove::<SceneTint>();
+        }
     }
 }

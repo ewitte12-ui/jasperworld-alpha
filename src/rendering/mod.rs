@@ -2,12 +2,10 @@ pub mod atlas;
 pub mod camera;
 pub mod parallax;
 pub mod quad;
-pub mod subdivision_panorama;
-
 use bevy::prelude::*;
 
 use camera::{CameraPlugin, CameraPipeline, camera_snap};
-use parallax::update_parallax;
+use parallax::{update_parallax, apply_scene_tints};
 pub struct RenderingPlugin;
 
 impl Plugin for RenderingPlugin {
@@ -25,6 +23,7 @@ impl Plugin for RenderingPlugin {
                 (
                     camera_snap.in_set(CameraPipeline::Snap),
                     update_parallax.in_set(CameraPipeline::Parallax),
+                    apply_scene_tints,
                 ),
             );
     }

@@ -35,22 +35,10 @@ pub fn spawn_doors_for_level(
             (-351.0_f32, 441.0_f32)
         }
         LevelId::Subdivision => {
-            // origin_x = -864.0
-            // Door → layer 1: col 27 → -864 + 486 + 9 = -369.0  (under platform D, row8)
-            // Door → layer 2: col 46 → -864 + 828 + 9 =  -27.0  (under platform F_mid, row6)
-            (-369.0_f32, -27.0_f32)
-        }
-        LevelId::City => {
-            // origin_x = -1152.0
-            // Door → layer 1: col 28 → -1152 + 504 + 9 = -639.0
-            // Door → layer 2: col 55 → -1152 + 990 + 9 = -153.0
-            (-639.0_f32, -153.0_f32)
-        }
-        LevelId::Sanctuary => {
-            // origin_x = -1440.0
-            // Door → layer 1: col 27 → -1440 + 486 + 9 = -945.0
-            // Door → layer 2: col 60 → -1440 + 1080 + 9 = -351.0
-            (-945.0_f32, -351.0_f32)
+            // Same col positions as Forest for now
+            // Door → Sewers (layer 1): col 28 → -351.0
+            // Door → Rooftop (layer 2): col 72 → 441.0
+            (-351.0_f32, 441.0_f32)
         }
     };
 

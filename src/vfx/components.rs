@@ -30,6 +30,5 @@ pub struct WeatherEmitter {
 #[derive(Clone, Copy)]
 pub enum WeatherType {
     Leaves, // Forest
-    Rain,   // City
-    Dust,   // Sanctuary
+    Rain,   // Subdivision
 }

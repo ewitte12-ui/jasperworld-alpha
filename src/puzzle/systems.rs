@@ -100,7 +100,7 @@ pub fn check_level_exit(
 
             *collection_progress = CollectionProgress::default();
 
-            if game_progress.current_level_index >= 4 {
+            if game_progress.current_level_index >= 2 {
                 game_progress.game_complete = true;
                 // Game is over — clear immediately; no next level to guard.
                 game_progress.transition_in_progress = false;
