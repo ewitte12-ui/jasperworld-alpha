@@ -182,6 +182,7 @@ pub fn spawn_shared_background(
     // Subdivision: two planes — light (12%) for near houses, heavy (35%) for far
     //   houses — so the far row reads as visibly more distant.
     if matches!(level_id, crate::level::level_data::LevelId::Subdivision | crate::level::level_data::LevelId::City) {
+        let is_city = matches!(level_id, crate::level::level_data::LevelId::City);
         // Near attenuation (z=-38): light overlay for near buildings at z=-50
         let near_attn_mesh = meshes.add(Mesh::from(Rectangle::new(5000.0, 1600.0)));
         let near_attn_mat = materials.add(StandardMaterial {
@@ -199,10 +200,17 @@ pub fn spawn_shared_background(
             ParallaxLayer { factor: 0.38 },
             Decoration,
         ));
-        // Far attenuation (z=-75): heavier overlay for far houses at z=-80
+        // Far attenuation (z=-75): heavier overlay for far houses at z=-80.
+        // City uses near-black so it doesn't wash the night sky grey;
+        // Subdivision keeps the grey-blue for overcast depth.
+        let far_color = if is_city {
+            Color::srgba(0.03, 0.03, 0.06, 0.50)
+        } else {
+            Color::srgba(0.45, 0.50, 0.58, 0.50)
+        };
         let far_attn_mesh = meshes.add(Mesh::from(Rectangle::new(5000.0, 1600.0)));
         let far_attn_mat = materials.add(StandardMaterial {
-            base_color: Color::srgba(0.45, 0.50, 0.58, 0.50),
+            base_color: far_color,
             alpha_mode: AlphaMode::Blend,
             unlit: true,
             double_sided: true,
