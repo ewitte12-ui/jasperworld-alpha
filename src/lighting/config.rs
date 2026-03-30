@@ -24,10 +24,11 @@ impl LightingTheme {
     };
 
     /// Night-time moonlight — deep blue tones, very dim.
+    /// Collectibles use emissive materials so they glow independent of scene lighting.
     pub const CITY: Self = Self {
-        directional_color: Color::srgb(0.25, 0.28, 0.45), // cool moonlight blue
-        directional_illuminance: 2500.0,
-        ambient_color: Color::srgb(0.15, 0.18, 0.30), // deep blue-grey
-        ambient_brightness: 180.0,
+        directional_color: Color::srgb(0.22, 0.25, 0.42), // cool moonlight blue
+        directional_illuminance: 2200.0,
+        ambient_color: Color::srgb(0.12, 0.15, 0.28), // deep blue-grey
+        ambient_brightness: 160.0,
     };
 }

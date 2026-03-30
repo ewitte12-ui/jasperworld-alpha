@@ -18,6 +18,13 @@ pub struct CollectionProgress {
     pub stars_total: u32,
 }
 
+/// Marker: scene children haven't had emissive applied yet.
+/// Removed once the system clones + modifies the loaded GLB materials.
+#[derive(Component)]
+pub struct MakeEmissive {
+    pub color: LinearRgba,
+}
+
 #[derive(Message)]
 pub struct CollectedEvent {
     pub collectible_type: CollectibleType,
