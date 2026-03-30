@@ -22,4 +22,12 @@ impl LightingTheme {
         ambient_color: Color::srgb(0.35, 0.40, 0.50),
         ambient_brightness: 250.0,
     };
+
+    /// Night-time moonlight — deep blue tones, very dim.
+    pub const CITY: Self = Self {
+        directional_color: Color::srgb(0.25, 0.28, 0.45), // cool moonlight blue
+        directional_illuminance: 2500.0,
+        ambient_color: Color::srgb(0.15, 0.18, 0.30), // deep blue-grey
+        ambient_brightness: 180.0,
+    };
 }

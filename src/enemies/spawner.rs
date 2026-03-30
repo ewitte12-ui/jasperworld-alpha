@@ -16,7 +16,7 @@ use crate::physics::config::GameLayer;
 
 use crate::animation::components::{AtlasLayout, EnemyAnimState, SpriteAnimation};
 
-use super::components::{ContactDamage, Enemy, EnemyAI, EnemyType, PatrolOnly, StompImmune};
+use super::components::{ContactDamage, Enemy, EnemyAI, EnemyJump, EnemyType, PatrolOnly};
 
 fn speed_for_type(enemy_type: EnemyType) -> f32 {
     match enemy_type {
@@ -71,6 +71,7 @@ fn quad_size(enemy_type: EnemyType) -> (f32, f32) {
 /// **Contract:** `position.y` is the ground surface (top of the tile the enemy
 /// stands on, i.e. `ground_top`). The spawner adds `COLLIDER_H / 2` so the
 /// collider sits flush on the surface without penetrating it.
+#[allow(clippy::too_many_arguments)]
 pub fn spawn_enemy(
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,
@@ -79,8 +80,10 @@ pub fn spawn_enemy(
     enemy_type: EnemyType,
     position: Vec2,
     patrol_range: f32,
+    health: f32,
+    speed_override: Option<f32>,
 ) -> Entity {
-    let speed = speed_for_type(enemy_type);
+    let speed = speed_override.unwrap_or_else(|| speed_for_type(enemy_type));
     let texture: Handle<Image> = asset_server.load(texture_path(enemy_type));
 
     // Visual quad size may differ from collider (e.g. Dog uses 28×32 to match player).
@@ -149,7 +152,7 @@ pub fn spawn_enemy(
     let mut entity = commands.spawn((
         Enemy {
             enemy_type,
-            health: 50.0,
+            health,
             speed,
             patrol_range,
             spawn_x: position.x,
@@ -190,7 +193,12 @@ pub fn spawn_enemy(
     ));
 
     if enemy_type == EnemyType::Dog {
-        entity.insert(StompImmune);
+        entity.insert(EnemyJump {
+            // v = sqrt(2 × 980 × 45) ≈ 297 → 2.5 tile jump height.
+            // Row 6 platforms are 4 tiles up — 1.5 tile clearance.
+            impulse: 297.0,
+            cooldown: Timer::from_seconds(2.5, TimerMode::Repeating),
+        });
     }
 
     if matches!(enemy_type, EnemyType::Snake | EnemyType::Possum) {
@@ -211,12 +219,12 @@ pub fn spawn_enemies(
     // Forest enemies: col_x(col) = -864 + col*18 + 9
     // Y = ground_top = -146.0 (spawner adds COLLIDER_H/2 = 10 → center at -136).
     let enemies = [
-        (EnemyType::Dog,    Vec2::new(81.0,  -146.0), 90.0_f32),
-        (EnemyType::Snake,  Vec2::new(477.0, -146.0), 54.0_f32),
-        (EnemyType::Possum, Vec2::new(621.0, -146.0), 54.0_f32),
+        (EnemyType::Dog,    Vec2::new(81.0,  -146.0), 90.0_f32, 150.0),
+        (EnemyType::Snake,  Vec2::new(477.0, -146.0), 54.0_f32, 50.0),
+        (EnemyType::Possum, Vec2::new(621.0, -146.0), 54.0_f32, 50.0),
     ];
 
-    for (enemy_type, position, patrol_range) in enemies {
+    for (enemy_type, position, patrol_range, hp) in enemies {
         spawn_enemy(
             &mut commands,
             &mut meshes,
@@ -225,6 +233,8 @@ pub fn spawn_enemies(
             enemy_type,
             position,
             patrol_range,
+            hp,
+            None,
         );
     }
 }

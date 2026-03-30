@@ -52,6 +52,16 @@ pub struct PatrolOnly;
 #[derive(Resource)]
 pub struct TraversalBlockoutMode;
 
+/// Gives an enemy the ability to jump periodically.
+/// `impulse` is the initial velocity.y; `cooldown` controls how often.
+/// Dog uses impulse 297: v = sqrt(2 × 980 × 45) ≈ 297 reaches 2.5 tiles (45 units)
+/// under gravity 980. Row-6 platforms are 4 tiles up — 1.5 tile clearance.
+#[derive(Component)]
+pub struct EnemyJump {
+    pub impulse: f32,
+    pub cooldown: Timer,
+}
+
 /// Marks enemies that cannot be killed by stomping from above.
 /// A stomp still bounces the player; it just deals no damage.
 /// WHY Dog only: dogs have thick fur/skulls — stomping is ineffective.

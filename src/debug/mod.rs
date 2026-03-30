@@ -103,6 +103,7 @@ fn read_debug_config(
     let level_id = match cfg.level.as_str() {
         "Forest" => LevelId::Forest,
         "Subdivision" => LevelId::Subdivision,
+        "City" => LevelId::City,
         other => {
             warn!("[DEBUG] unknown level \"{other}\" — defaulting to Forest");
             LevelId::Forest
@@ -134,6 +135,7 @@ fn read_debug_config(
 
 // ── OnEnter(Playing): spawn target level ─────────────────────────────────────
 
+#[allow(clippy::too_many_arguments)]
 fn apply_debug_start(
     debug_cfg:     Option<Res<DebugStartConfig>>,
     mut commands:  Commands,
@@ -216,6 +218,7 @@ impl DebugViewMode {
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn toggle_layer_visibility(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut mode: ResMut<DebugViewMode>,
@@ -275,7 +278,7 @@ fn toggle_layer_visibility(
             || is_parallax
             || (is_deco && !is_fg_deco && z < -5.0)
             || (!is_fg_deco && !is_tile && !is_enemy && !is_collectible && z < -5.0);
-        let is_gameplay = is_tile || is_enemy || is_collectible || (z >= -5.0 && z <= 2.0 && !is_foreground);
+        let is_gameplay = is_tile || is_enemy || is_collectible || ((-5.0..=2.0).contains(&z) && !is_foreground);
 
         let visible = match m {
             DebugViewMode::Normal                => true,
@@ -308,6 +311,7 @@ fn log_decoration_counts(
     let level_name = match current_level.level_id {
         Some(LevelId::Forest) => "Forest",
         Some(LevelId::Subdivision) => "Subdivision",
+        Some(LevelId::City) => "City",
         None                  => "None",
     };
 
@@ -325,3 +329,4 @@ fn log_decoration_counts(
         tile_query.iter().count(),
     );
 }
+

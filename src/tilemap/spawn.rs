@@ -145,6 +145,7 @@ fn spawn_merged_run_colliders(
     let mut run_start: Option<usize> = None;
 
     // Iterate one past the end so any open run at the right edge gets flushed.
+    #[allow(clippy::needless_range_loop)]
     for col_idx in 0..=col_count {
         let continues_run = col_idx < col_count && row[col_idx] == target;
 

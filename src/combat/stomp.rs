@@ -1,15 +1,22 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
-use crate::enemies::components::{Enemy, StompImmune};
+use crate::enemies::components::Enemy;
 use crate::player::components::Player;
 
 use super::components::EnemyKillEvent;
 
+/// Stomp damage per hit. At 50 damage:
+///   - Standard enemies (50 HP) die in 1 stomp (unchanged feel).
+///   - Forest Dog (150 HP) dies in 3 stomps.
+///   - Subdivision Dog (250 HP) dies in 5 stomps.
+const STOMP_DAMAGE: f32 = 50.0;
+
 /// Detects when the player stomps an enemy from above.
+/// Deals STOMP_DAMAGE to the enemy's health; kills when health ≤ 0.
 pub fn check_stomp(
     mut player_query: Query<(&Transform, &mut LinearVelocity), With<Player>>,
-    enemy_query: Query<(Entity, &Transform, Has<StompImmune>), With<Enemy>>,
+    mut enemy_query: Query<(Entity, &Transform, &mut Enemy)>,
     mut kill_events: MessageWriter<EnemyKillEvent>,
 ) {
     let Ok((player_transform, mut player_vel)) = player_query.single_mut() else {
@@ -25,7 +32,7 @@ pub fn check_stomp(
     // Player bottom = center - 12 units
     let player_bottom = player_pos.y - 12.0;
 
-    for (enemy_entity, enemy_transform, stomp_immune) in enemy_query.iter() {
+    for (enemy_entity, enemy_transform, mut enemy) in enemy_query.iter_mut() {
         let enemy_pos = enemy_transform.translation.truncate();
         // Enemy top = center + 24 units
         let enemy_top = enemy_pos.y + 24.0;
@@ -39,9 +46,8 @@ pub fn check_stomp(
             // Always bounce the player so the landing has physical weight.
             player_vel.y = 300.0;
 
-            // Stomp-immune enemies (e.g. Dog) cannot be killed this way.
-            // Damage must come from a deliberate attack (tail slap or later mechanic).
-            if !stomp_immune {
+            enemy.health -= STOMP_DAMAGE;
+            if enemy.health <= 0.0 {
                 kill_events.write(EnemyKillEvent {
                     enemy: enemy_entity,
                     stomp: true,

@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "level": "Subdivision",
+  "level": "City",
   "layer": 0,
   "traversal_blockout": false
 }

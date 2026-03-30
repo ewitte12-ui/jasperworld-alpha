@@ -3,7 +3,7 @@ use bevy::prelude::*;
 
 use crate::player::components::Player;
 
-use super::components::{Enemy, EnemyAI, PatrolOnly};
+use super::components::{Enemy, EnemyAI, EnemyJump, PatrolOnly};
 
 pub fn enemy_ai(
     mut enemy_query: Query<(&Enemy, &mut EnemyAI, &mut LinearVelocity, &Transform)>,
@@ -39,6 +39,22 @@ pub fn enemy_ai(
                     velocity.x = 0.0;
                 }
             }
+        }
+    }
+}
+
+/// Applies a vertical impulse to enemies with `EnemyJump` when chasing or
+/// returning to spawn. Only triggers when grounded, with a cooldown between jumps.
+pub fn enemy_jump(
+    time: Res<Time>,
+    mut query: Query<(&EnemyAI, &mut EnemyJump, &mut LinearVelocity)>,
+) {
+    for (ai, mut jump, mut velocity) in &mut query {
+        jump.cooldown.tick(time.delta());
+        let pursuing = matches!(ai, EnemyAI::Chase | EnemyAI::Return);
+        // Only jump when pursuing the player and on the ground.
+        if pursuing && jump.cooldown.just_finished() && velocity.y.abs() < 5.0 {
+            velocity.y = jump.impulse;
         }
     }
 }
