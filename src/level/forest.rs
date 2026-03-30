@@ -76,57 +76,52 @@ fn forest_layer_0() -> LayerData {
     }
 }
 
-// ── Layer 1: Underground Burrow ───────────────────────────────────────────────
-// 96 cols × 22 rows, origin_x = -864.0, origin_y = -200.0
-// rows 0-1: solid floor
-// rows 2-12: walls (S at col 0 and col 95), interior E
-//   row 6 special: S col 0, E cols 1-2, P cols 3-7, E cols 8-44, P cols 45-49, E cols 50-94, S col 95
-//   row 10 special: S col 0, E cols 1-20, P cols 21-25, E cols 26-69, P cols 70-74, E cols 75-94, S col 95
-// rows 13-21: solid ceiling
+// ── Layer 1: Underground Cave/Burrow (single-screen) ─────────────────────────
+// 32 cols × 18 rows, origin (0, 0) — independent from surface layer.
+// Fully enclosed: solid floor (rows 0-1), walls (col 0/31), ceiling (rows 16-17).
+// Organic platform layout for vertical exploration.
 fn forest_layer_1() -> LayerData {
     let tiles: Vec<Vec<TileType>> = {
-        let solid = || vec![S; 96];
+        let solid = || vec![S; 32];
         let cave = |platforms: &[(usize, usize)]| {
-            let mut row = vec![E; 96];
+            let mut row = vec![E; 32];
             row[0] = S;
-            row[95] = S;
+            row[31] = S;
             for &(start, end) in platforms {
                 row[start..=end].fill(P);
             }
             row
         };
         vec![
-            solid(), // row 0
-            solid(), // row 1
+            solid(),                                // row 0  — floor
+            solid(),                                // row 1  — floor
             cave(&[]),                              // row 2
             cave(&[]),                              // row 3
             cave(&[]),                              // row 4
-            cave(&[]),                              // row 5
-            cave(&[(3, 7), (45, 49)]),              // row 6 — platforms at 3..=7 and 45..=49
+            cave(&[(5, 9), (22, 26)]),              // row 5  — low platforms
+            cave(&[]),                              // row 6
             cave(&[]),                              // row 7
             cave(&[]),                              // row 8
-            cave(&[]),                              // row 9
-            cave(&[(21, 25), (70, 74)]),            // row 10 — platforms at 21..=25 and 70..=74
+            cave(&[(12, 16)]),                      // row 9  — mid platform
+            cave(&[]),                              // row 10
             cave(&[]),                              // row 11
-            cave(&[]),                              // row 12
-            solid(), // row 13
-            solid(), // row 14
-            solid(), // row 15
-            solid(), // row 16
-            solid(), // row 17
-            solid(), // row 18
-            solid(), // row 19
-            solid(), // row 20
-            solid(), // row 21
+            cave(&[(20, 24)]),                      // row 12 — high platform
+            cave(&[]),                              // row 13
+            cave(&[]),                              // row 14
+            cave(&[]),                              // row 15
+            solid(),                                // row 16 — ceiling
+            solid(),                                // row 17 — ceiling
         ]
     };
 
     LayerData {
         id: 1,
         tiles,
-        origin_x: -864.0,
-        origin_y: -200.0,
-        spawn: Vec2::new(-819.0, -155.0),
+        // Origin far from main level so no surface decorations/backgrounds bleed in.
+        origin_x: 5000.0,
+        origin_y: 5000.0,
+        // Spawn on floor, near left side: col 2 = 5000 + 2*18 + 9 = 5045
+        spawn: Vec2::new(5045.0, 5063.0),
     }
 }
 

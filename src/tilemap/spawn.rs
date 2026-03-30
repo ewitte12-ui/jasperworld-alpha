@@ -17,6 +17,12 @@ const BRICK_W: f32 = 0.500; // brick native X width
 const BRICK_H: f32 = 0.500; // brick native Y height
 const PLATFORM_W: f32 = 1.082; // platform native X width (same as block-grass-low)
 const PLATFORM_H: f32 = 0.500; // platform native Y height
+// Cave sublevel — Nature Kit cliff_blockCave (1.0 × 1.0 × 1.0 cube)
+const CAVE_BLOCK_W: f32 = 1.000;
+const CAVE_BLOCK_H: f32 = 1.000;
+// Sewer sublevel — Graveyard Kit stone-wall (1.0 × 0.725 × 0.2) / brick-wall (1.0 × 0.725 × 0.3)
+const SEWER_WALL_W: f32 = 1.000;
+const SEWER_WALL_H: f32 = 0.725;
 
 /// Spawn all tiles for a 2D grid using 3D GLB models.
 ///
@@ -206,6 +212,10 @@ fn model_scale(model_path: &str) -> Vec3 {
         (BLOCK_LARGE_W, BLOCK_LARGE_H)
     } else if model_path.contains("platform") {
         (PLATFORM_W, PLATFORM_H)
+    } else if model_path.contains("cliff_blockCave") {
+        (CAVE_BLOCK_W, CAVE_BLOCK_H)
+    } else if model_path.contains("stone-wall") || model_path.contains("brick-wall") {
+        (SEWER_WALL_W, SEWER_WALL_H)
     } else if model_path.contains("brick") {
         (BRICK_W, BRICK_H)
     } else {
