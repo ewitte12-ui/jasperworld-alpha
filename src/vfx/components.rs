@@ -31,4 +31,5 @@ pub struct WeatherEmitter {
 pub enum WeatherType {
     Leaves, // Forest
     Rain,   // Subdivision
+    Dust,   // City
 }

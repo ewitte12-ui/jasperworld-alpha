@@ -20,7 +20,7 @@ impl Plugin for EnemiesPlugin {
         // No cleanup system is needed.
         app.add_systems(
             Update,
-            (ai::enemy_ai, ai::enemy_ai_state_machine)
+            (ai::enemy_ai, ai::enemy_ai_state_machine, ai::enemy_jump)
                 .run_if(in_state(AppState::Playing))
                 .run_if(not(resource_exists::<TraversalBlockoutMode>)),
         );

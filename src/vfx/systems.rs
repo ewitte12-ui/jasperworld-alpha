@@ -28,6 +28,7 @@ pub fn update_weather(
     let (particle_type, interval_secs) = match current_level.level_id {
         Some(LevelId::Forest) => (WeatherType::Leaves, 0.15),
         Some(LevelId::Subdivision) => (WeatherType::Rain, 0.08),
+        Some(LevelId::City) => (WeatherType::Dust, 0.12),
         _ => return,
     };
 
@@ -93,6 +94,38 @@ pub fn emit_weather_particles(
                     Particle {
                         velocity: Vec2::new(drift_x, -200.0),
                         lifetime: Timer::from_seconds(3.0, TimerMode::Once),
+                        fade: true,
+                    },
+                    Mesh3d(mesh),
+                    MeshMaterial3d(mat),
+                    Transform::from_xyz(x, spawn_y, 20.0),
+                    CameraRelativeVfx,
+                ));
+            }
+            WeatherType::Dust => {
+                // Small tan/beige dust motes — slow drift, no texture.
+                let x = cam_pos.x + (r1 - 0.5) * 400.0;
+                let spawn_y = cam_pos.y + 175.0;
+                let drift_x = (r2 - 0.5) * 40.0;
+                let tint = Color::srgba(
+                    0.65 + r3 * 0.15,  // warm tan
+                    0.58 + r3 * 0.12,
+                    0.42 + r3 * 0.13,
+                    0.5,
+                );
+                let mesh = meshes.add(Rectangle::new(4.0, 4.0));
+                let mat = materials.add(StandardMaterial {
+                    base_color: tint,
+                    unlit: true,
+                    alpha_mode: AlphaMode::Blend,
+                    double_sided: true,
+                    cull_mode: None,
+                    ..default()
+                });
+                commands.spawn((
+                    Particle {
+                        velocity: Vec2::new(drift_x, -50.0),
+                        lifetime: Timer::from_seconds(4.0, TimerMode::Once),
                         fade: true,
                     },
                     Mesh3d(mesh),
@@ -202,6 +235,7 @@ pub fn flash_level_name(
     let name = match current_level.level_id {
         Some(LevelId::Forest) => "Forest",
         Some(LevelId::Subdivision) => "Subdivision",
+        Some(LevelId::City) => "City",
         None => return,
     };
 

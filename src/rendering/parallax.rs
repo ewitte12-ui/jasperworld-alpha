@@ -122,9 +122,10 @@ pub fn spawn_shared_background(
     asset_server: &AssetServer,
     level_id: crate::level::level_data::LevelId,
 ) {
+    info!("[SHARED_BG] spawn_shared_background called for {:?}", level_id);
     // ── Snowy mountains (z = -70) — Forest only ───────────────────────────────
-    // Subdivision has houses instead of mountains; skip for that level.
-    if level_id != crate::level::level_data::LevelId::Subdivision {
+    // Subdivision has houses, City has skyscrapers; only Forest gets mountains.
+    if level_id == crate::level::level_data::LevelId::Forest {
         let mountain_scales = [178.0_f32, 160.0, 197.0, 167.0, 175.0, 185.0, 156.0, 192.0];
         let mountain_data: Vec<(f32, f32, f32)> = (-1500..=1600)
             .step_by(160)
@@ -180,8 +181,8 @@ pub fn spawn_shared_background(
     // Forest: single plane at z=-38 (18% dark) covers all background equally.
     // Subdivision: two planes — light (12%) for near houses, heavy (35%) for far
     //   houses — so the far row reads as visibly more distant.
-    if level_id == crate::level::level_data::LevelId::Subdivision {
-        // Near attenuation (z=-38): light overlay for near houses at z=-50
+    if matches!(level_id, crate::level::level_data::LevelId::Subdivision | crate::level::level_data::LevelId::City) {
+        // Near attenuation (z=-38): light overlay for near buildings at z=-50
         let near_attn_mesh = meshes.add(Mesh::from(Rectangle::new(5000.0, 1600.0)));
         let near_attn_mat = materials.add(StandardMaterial {
             base_color: Color::srgba(0.0, 0.0, 0.0, 0.12),
@@ -237,6 +238,10 @@ pub fn spawn_shared_background(
 
     // ── Clouds (z = -60) ──────────────────────────────────────────────────────
     // Span x = -1500..+1600 to match mountain coverage.
+    // City: clear night sky — no clouds.
+    if level_id == crate::level::level_data::LevelId::City {
+        return;
+    }
     let cloud_configs: &[(&str, f32, f32, f32)] = &[
         ("clouds/cloud1.png", -1480.0, 100.0, 0.50),
         ("clouds/cloud3.png", -1300.0, 130.0, 0.60),
@@ -404,6 +409,88 @@ pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &Asse
             ParallaxLayer { factor: 0.38 },
             Decoration,
             ParallaxBackground,
+        ));
+    }
+}
+
+/// Spawns city background layers — tall skyscrapers (near) and commercial buildings (far).
+/// Each entity is marked `Decoration` so it gets despawned on level transitions.
+/// Spans x = -1500..+1600 to cover every level's starting camera position.
+pub fn spawn_city_background(commands: &mut Commands, asset_server: &AssetServer) {
+    info!("[CITY_BG] spawn_city_background called");
+
+    // Near skyscrapers (z=-50, factor 0.38): tall, sparse — player can see through to far layer.
+    // Uniform XY scaling preserves model's natural proportions (skyscrapers are narrow by design).
+    // Flat Z (8.0) prevents 3D depth from showing as width under the -28° camera tilt.
+    //
+    // Scale sizing: camera at ground (min_y=34) sees y=-200 to y=162.
+    // Building base at ground_top (-146). Max visible height = 162-(-146) = 308 units ≈ 17 tiles.
+    // Min required height = 10 Jasper units = 180 world units.
+    // Scales assume Kenney skyscraper models are ~4 units tall:
+    //   scale 50 × 4 = 200 units (11 tiles), scale 77 × 4 = 308 units (17 tiles, fills screen).
+    let skyscraper_models = [
+        "models/city/building-skyscraper-a.glb",
+        "models/city/building-skyscraper-b.glb",
+        "models/city/building-skyscraper-c.glb",
+        "models/city/building-skyscraper-d.glb",
+        "models/city/building-skyscraper-e.glb",
+    ];
+    let skyscraper_scales = [114.0_f32, 96.0, 135.0, 88.0, 126.0, 105.0];
+    // Step 280 units → 12 buildings, sparse enough to see far layer through gaps.
+    // Slight Y rotation (~10°) reveals a sliver of the left face for 3D depth.
+    // 30% darker via SceneTint::Multiply so they read as mid-ground, not foreground.
+    let near_rotation = Quat::from_rotation_y(0.175);
+    let near_tint = Color::srgb(0.7, 0.7, 0.7);
+    let near_count = (-1500..=1600i32).step_by(280).count();
+    info!("[CITY_BG] spawning {} near skyscrapers at z=-50", near_count);
+    for (i, x) in (-1500..=1600i32).step_by(280).enumerate() {
+        let model = skyscraper_models[i % skyscraper_models.len()];
+        let s = skyscraper_scales[i % skyscraper_scales.len()];
+        info!("[CITY_BG] near[{}] model={} x={} scale={}", i, model, x, s);
+        commands.spawn((
+            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
+            Transform::from_xyz(x as f32, -146.0, -50.0)
+                .with_rotation(near_rotation)
+                .with_scale(Vec3::new(s, s, s * 0.3)),
+            ParallaxLayer { factor: 0.38 },
+            Decoration,
+            ParallaxBackground,
+            SceneTint::Multiply(near_tint),
+        ));
+    }
+
+    // Far commercial buildings (z=-80, factor 0.48): shorter, denser.
+    // Uniform XY scaling preserves model proportions. Flat Z (6.0).
+    // Scales assume commercial models are ~2.5 units tall:
+    //   scale 72 × 2.5 = 180 units (10 tiles, minimum), scale 100 × 2.5 = 250 units.
+    // Tinted darker via SceneTint::Multiply to convey distance at night.
+    let far_building_models = [
+        "models/city/building-a.glb",
+        "models/city/building-b.glb",
+        "models/city/building-c.glb",
+        "models/city/building-d.glb",
+        "models/city/building-e.glb",
+        "models/city/building-f.glb",
+        "models/city/low-detail-building-a.glb",
+        "models/city/low-detail-building-b.glb",
+        "models/city/low-detail-building-c.glb",
+    ];
+    let far_scales = [119.0_f32, 140.0, 109.0, 133.0, 115.0, 129.0, 112.0, 123.0, 118.0];
+    // Darker tint for night-time depth — buildings appear as silhouettes.
+    let night_tint = Color::srgb(0.4, 0.45, 0.55);
+    let far_count = (-1500..=1600i32).step_by(160).count();
+    info!("[CITY_BG] spawning {} far buildings at z=-80", far_count);
+    for (i, x) in (-1500..=1600i32).step_by(160).enumerate() {
+        let model = far_building_models[i % far_building_models.len()];
+        let s = far_scales[i % far_scales.len()];
+        commands.spawn((
+            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
+            Transform::from_xyz(x as f32, -146.0, -80.0)
+                .with_scale(Vec3::new(s, s * 1.2, 6.0)),
+            ParallaxLayer { factor: 0.48 },
+            Decoration,
+            ParallaxBackground,
+            SceneTint::Multiply(night_tint),
         ));
     }
 }

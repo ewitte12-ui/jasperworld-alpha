@@ -1,3 +1,4 @@
+pub mod city;
 pub mod components;
 pub mod doors;
 pub mod forest;
@@ -21,8 +22,9 @@ use crate::puzzle::components::{GameProgress, LevelExit, LevelGate};
 use crate::states::NewGameRequested;
 use crate::tilemap::spawn::spawn_tilemap;
 use crate::tilemap::tilemap::TILE_SIZE;
-use crate::rendering::parallax::{spawn_nature_background, spawn_shared_background, spawn_subdivision_background};
+use crate::rendering::parallax::{spawn_city_background, spawn_nature_background, spawn_shared_background, spawn_subdivision_background};
 use doors::TransitionDoor;
+use city::city_level;
 use forest::forest_level;
 use subdivision::subdivision_level;
 use level_data::{CurrentLevel, LevelId};
@@ -102,6 +104,9 @@ pub fn spawn_entities_for_level(
         }
         LevelId::Subdivision => {
             spawn_subdivision_inner(commands, meshes, materials, asset_server, progress, skip_enemies);
+        }
+        LevelId::City => {
+            spawn_city_inner(commands, meshes, materials, asset_server, progress, skip_enemies);
         }
     }
 }
@@ -225,12 +230,12 @@ fn spawn_forest_inner(
         // WHY not spawn at col 52 (x=81): col 52 is 3 tiles left of Platform F.  Even a moderate
         // range from there makes the right bound enter Platform F territory; shifting spawn to the
         // zone midpoint (col 47) gives symmetric reach with 2-tile clearance on both sides.
-        (EnemyType::Dog,    Vec2::new(col_x(47.0), ground_top), 72.0_f32), // ±4 tiles; readable arc from Platform E
-        (EnemyType::Snake,  Vec2::new(col_x(74.0), ground_top), 54.0_f32),
-        (EnemyType::Possum, Vec2::new(col_x(82.0), ground_top), 54.0_f32),
+        (EnemyType::Dog,    Vec2::new(col_x(47.0), ground_top), 72.0_f32, 150.0), // 3 stomps to kill
+        (EnemyType::Snake,  Vec2::new(col_x(74.0), ground_top), 54.0_f32, 50.0),
+        (EnemyType::Possum, Vec2::new(col_x(82.0), ground_top), 54.0_f32, 50.0),
     ];
-    for (etype, pos, patrol) in enemies {
-        spawn_enemy(commands, meshes, materials, asset_server, etype, pos, patrol);
+    for (etype, pos, patrol, hp) in enemies {
+        spawn_enemy(commands, meshes, materials, asset_server, etype, pos, patrol, hp, None);
     }
     } // skip_enemies
 }
@@ -302,11 +307,11 @@ fn spawn_subdivision_inner(
             ));
         });
 
-    // Exit — next_level irrelevant; game_complete fires at level_index >= 2
+    // Exit — transitions to City.
     commands.spawn((
         Transform::from_xyz(gate_x + 30.0, ground_y, 0.5),
         Visibility::Hidden,
-        LevelExit { next_level: LevelId::Subdivision, half_extents: Vec2::new(51.0, 100.0) },
+        LevelExit { next_level: LevelId::City, half_extents: Vec2::new(51.0, 100.0) },
     ));
 
     // End-zone landmark
@@ -320,12 +325,116 @@ fn spawn_subdivision_inner(
     if !skip_enemies {
     // Dog: wider patrol range (108 vs Forest's 72) for harder encounter
     let enemies = [
-        (EnemyType::Dog,    Vec2::new(col_x(50.0), ground_top), 108.0_f32),
-        (EnemyType::Snake,  Vec2::new(col_x(75.0), ground_top), 54.0_f32),
-        (EnemyType::Possum, Vec2::new(col_x(84.0), ground_top), 54.0_f32),
+        (EnemyType::Dog,    Vec2::new(col_x(50.0), ground_top), 108.0_f32, 250.0), // 5 stomps to kill
+        (EnemyType::Snake,  Vec2::new(col_x(75.0), ground_top), 54.0_f32, 50.0),
+        (EnemyType::Possum, Vec2::new(col_x(84.0), ground_top), 54.0_f32, 50.0),
     ];
-    for (etype, pos, patrol) in enemies {
-        spawn_enemy(commands, meshes, materials, asset_server, etype, pos, patrol);
+    for (etype, pos, patrol, hp) in enemies {
+        spawn_enemy(commands, meshes, materials, asset_server, etype, pos, patrol, hp, None);
+    }
+    } // skip_enemies
+}
+
+/// Inner logic for City level entity spawning.
+fn spawn_city_inner(
+    commands: &mut Commands,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<StandardMaterial>,
+    asset_server: &AssetServer,
+    progress: &mut CollectionProgress,
+    skip_enemies: bool,
+) {
+    const OX: f32 = -864.0;
+    const OY: f32 = -200.0;
+    let col_x = |col: f32| OX + col * 18.0 + 9.0;
+    let stand_y = |row: f32| OY + (row + 1.0) * 18.0 + 9.0;
+    let ground_y = stand_y(2.0);
+    let ground_top = OY + 3.0 * 18.0; // -146.0
+
+    // 11 stars, 10 required — same rule as Forest/Subdivision.
+    // Distributed across multiple heights to exploit the 44-row space.
+    let star_positions = [
+        Vec3::new(col_x(8.0),  ground_y,       1.0), // ground — early
+        Vec3::new(col_x(22.0), stand_y(6.0),   1.0), // low platform
+        Vec3::new(col_x(35.0), stand_y(10.0),  1.0), // mid platform
+        Vec3::new(col_x(45.0), stand_y(14.0),  1.0), // high platform
+        Vec3::new(col_x(55.0), ground_y,        1.0), // ground — midlevel
+        Vec3::new(col_x(63.0), stand_y(8.0),   1.0), // mid-low platform
+        Vec3::new(col_x(72.0), stand_y(18.0),  1.0), // very high
+        Vec3::new(col_x(32.0), stand_y(26.0),  1.0), // near-top — optional micro-objective
+        Vec3::new(col_x(52.0), stand_y(22.0),  1.0), // upper platform
+        Vec3::new(col_x(80.0), ground_y,        1.0), // ground — late
+        Vec3::new(col_x(87.0), ground_y,        1.0), // ground — near exit
+    ];
+
+    progress.stars_total = 10;
+    progress.stars_collected = 0;
+
+    for pos in &star_positions {
+        spawn_collectible(commands, meshes, materials, asset_server, *pos, CollectibleType::Star);
+    }
+
+    // 5 apples — mix of ground and platform placements.
+    let apple_positions = [
+        Vec3::new(col_x(15.0), ground_y,       1.0),
+        Vec3::new(col_x(30.0), stand_y(4.0),   1.0),
+        Vec3::new(col_x(50.0), stand_y(10.0),  1.0),
+        Vec3::new(col_x(70.0), ground_y,        1.0),
+        Vec3::new(col_x(85.0), stand_y(6.0),   1.0),
+    ];
+    for pos in &apple_positions {
+        spawn_collectible(commands, meshes, materials, asset_server, *pos, CollectibleType::HealthFood);
+    }
+
+    // Gate at col 91 (same position as other levels).
+    let gate_x = col_x(91.0);
+    let gate_center_y = ground_top + 200.0;
+    commands
+        .spawn((
+            Transform::from_xyz(gate_x, gate_center_y, 1.0),
+            Visibility::default(),
+            RigidBody::Static,
+            Collider::rectangle(36.0, 400.0),
+            LevelGate,
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                SceneRoot(asset_server.load("models/door-rotate-large.glb#Scene0")),
+                Transform::from_xyz(0.0, -200.0, 0.0)
+                    .with_scale(Vec3::new(18.0, 80.0, 7.0)),
+            ));
+        });
+
+    // Exit — game_complete fires at level_index >= 3.
+    commands.spawn((
+        Transform::from_xyz(gate_x + 30.0, ground_y, 0.5),
+        Visibility::Hidden,
+        LevelExit { next_level: LevelId::City, half_extents: Vec2::new(51.0, 100.0) },
+    ));
+
+    // End-zone landmark
+    commands.spawn((
+        SceneRoot(asset_server.load("models/door-open.glb#Scene0")),
+        Transform::from_xyz(gate_x + 40.0, ground_top, -1.0)
+            .with_scale(Vec3::new(60.0, 54.0, 7.0)),
+        components::Decoration,
+    ));
+
+    if !skip_enemies {
+    // City enemies — more enemies, harder Dog, all non-Dog take 2 stomps.
+    // Dog: 25% faster (150 vs 120), 10 stomps (500 HP), wider patrol.
+    // Snake/Possum/Rat: 100 HP (2 stomps each).
+    let enemies: &[(EnemyType, Vec2, f32, f32, Option<f32>)] = &[
+        (EnemyType::Dog,    Vec2::new(col_x(50.0), ground_top), 144.0, 500.0, Some(150.0)),
+        (EnemyType::Snake,  Vec2::new(col_x(25.0), ground_top),  54.0, 100.0, None),
+        (EnemyType::Snake,  Vec2::new(col_x(75.0), ground_top),  54.0, 100.0, None),
+        (EnemyType::Possum, Vec2::new(col_x(40.0), ground_top),  54.0, 100.0, None),
+        (EnemyType::Possum, Vec2::new(col_x(84.0), ground_top),  54.0, 100.0, None),
+        (EnemyType::Rat,    Vec2::new(col_x(60.0), ground_top),  72.0, 100.0, None),
+        (EnemyType::Rat,    Vec2::new(col_x(88.0), ground_top),  72.0, 100.0, None),
+    ];
+    for &(etype, pos, patrol, hp, spd) in enemies {
+        spawn_enemy(commands, meshes, materials, asset_server, etype, pos, patrol, hp, spd);
     }
     } // skip_enemies
 }
@@ -470,7 +579,184 @@ pub fn spawn_level_decorations(
                 ));
             }
         }
+        LevelId::City => {
+            info!("[CITY] spawn_level_decorations: entering City arm");
+            spawn_city_background(commands, asset_server);
+
+            // Night sky overlay — dark navy rectangle at z=-99, in front of the
+            // blue sky backdrop at z=-100. Hides daytime sky for night atmosphere.
+            let night_mesh = meshes.add(Rectangle::new(6400.0, 1800.0));
+            let night_mat = materials.add(StandardMaterial {
+                base_color: Color::srgb(0.08, 0.10, 0.18),
+                unlit: true,
+                alpha_mode: AlphaMode::Opaque,
+                ..default()
+            });
+            commands.spawn((
+                Mesh3d(night_mesh),
+                MeshMaterial3d(night_mat),
+                Transform::from_xyz(0.0, 0.0, -99.0),
+                crate::rendering::parallax::ParallaxLayer { factor: 0.20 },
+                components::Decoration,
+                crate::rendering::parallax::ParallaxBackground,
+            ));
+
+            // Decorative stars — tiny bright dots scattered in the night sky.
+            // z=-95: behind near attenuation (-38) but in front of night overlay (-99).
+            // Deterministic positions from a fixed seed pattern.
+            let star_mesh = meshes.add(Rectangle::new(2.0, 2.0));
+            for i in 0..40 {
+                let fi = i as f32;
+                // Pseudo-random scatter using golden-ratio-based hash.
+                let sx = ((fi * 137.508).sin() * 1500.0).rem_euclid(3100.0) - 1500.0;
+                let sy = ((fi * 251.317 + 3.0).sin() * 200.0).rem_euclid(400.0) + 100.0;
+                let brightness = 0.7 + ((fi * 317.432).sin() * 0.5 + 0.5) * 0.3;
+                let star_mat = materials.add(StandardMaterial {
+                    base_color: Color::srgba(brightness, brightness, brightness * 0.9, 0.9),
+                    unlit: true,
+                    alpha_mode: AlphaMode::Blend,
+                    ..default()
+                });
+                commands.spawn((
+                    Mesh3d(star_mesh.clone()),
+                    MeshMaterial3d(star_mat),
+                    Transform::from_xyz(sx, sy, -95.0),
+                    crate::rendering::parallax::ParallaxLayer { factor: 0.22 },
+                    components::Decoration,
+                    crate::rendering::parallax::ParallaxBackground,
+                ));
+            }
+
+            info!("[CITY] spawned night sky + {} decorative stars", 40);
+
+            // Ground-level city props (z=+3, in front of tile plane)
+            let ox = -864.0_f32;
+            let col_x_f = |col: f32| ox + col * 18.0 + 9.0;
+            // Taxis — 3 parked cars across the level, rotated 90° around Y so the
+            // side profile (lengthwise) is visible from the camera instead of the front.
+            // Scale (6, 28, 28): after 90° Y rotation, local X→world -Z, local Z→world X.
+            //   Visible length (world X) = model_length × 28  — full size, no squash.
+            //   Visible height (world Y) = model_height × 28  — full size.
+            //   Depth (world Z) = model_width × 6 = ±3 from center.
+            // At z=1, front face = 1+3 = 4, behind player (z=5) so Jasper runs in front.
+            let taxi_positions = [col_x_f(15.0), col_x_f(50.0), col_x_f(80.0)];
+            for tx in taxi_positions {
+                commands.spawn((
+                    SceneRoot(asset_server.load("models/city/taxi.glb#Scene0")),
+                    Transform::from_xyz(tx, -141.0, 1.0)
+                        .with_rotation(Quat::from_rotation_y(std::f32::consts::FRAC_PI_2))
+                        .with_scale(Vec3::new(6.0, 28.0, 28.0)),
+                    components::Decoration,
+                    components::ForegroundDecoration,
+                ));
+            }
+
+            // Street lights — every ~250 units along the ground.
+            // Scale 70: native H=0.675 → 0.675*70/18 = 2.6 Jasper units tall.
+            for x in (-1200..=1200i32).step_by(250) {
+                commands.spawn((
+                    SceneRoot(asset_server.load("models/city/light-curved.glb#Scene0")),
+                    Transform::from_xyz(x as f32, -141.0, 3.0)
+                        .with_scale(Vec3::new(70.0, 70.0, 16.0)),
+                    components::Decoration,
+                    components::ForegroundDecoration,
+                ));
+            }
+
+            // Construction cones — scattered urban clutter.
+            // Scale 134: native H=0.094 → 0.094*134/18 = 0.7 Jasper units tall.
+            let cone_positions = [col_x_f(10.0), col_x_f(45.0), col_x_f(70.0)];
+            for cx in cone_positions {
+                commands.spawn((
+                    SceneRoot(asset_server.load("models/city/construction-cone.glb#Scene0")),
+                    Transform::from_xyz(cx, -141.0, 3.0)
+                        .with_scale(Vec3::new(134.0, 134.0, 42.0)),
+                    components::Decoration,
+                    components::ForegroundDecoration,
+                ));
+            }
+
+            // Foreground trees — sparse, at level edges (it's a city).
+            let fg_trees: &[(&str, f32, f32, f32)] = &[
+                ("models/tree_fat.glb",     -450.0, -146.0, 80.0),
+                ("models/tree_oak.glb",      270.0, -146.0, 75.0),
+                ("models/tree_default.glb",  295.0, -146.0, 70.0),
+                ("models/tree_fat.glb",     -700.0, -146.0, 75.0),
+                ("models/tree_oak.glb",      550.0, -146.0, 70.0),
+            ];
+            for &(model, tx, ty, scale) in fg_trees {
+                commands.spawn((
+                    SceneRoot(asset_server.load(format!("{}#Scene0", model))),
+                    Transform::from_xyz(tx, ty, 10.0).with_scale(Vec3::new(scale, scale, 1.0)),
+                    components::Decoration,
+                    components::ForegroundDecoration,
+                ));
+            }
+            info!(
+                "[CITY] spawned 3 taxis, {} street lights, 3 cones, 5 trees",
+                (-1200..=1200i32).step_by(250).count()
+            );
+        }
     }
+}
+
+/// Spawns a solar panel canopy on the Subdivision Rooftop layer (layer 2).
+///
+/// Layout (bottom to top):
+///   z = +4  Opaque dark backdrop — hides parallax houses behind the panel
+///   z = +5  Semi-transparent dark-blue panel strip — the visible "solar panel"
+///
+/// Rain (z=+20) renders in front of both; clouds (z=-60) are dimly visible
+/// through the semi-transparent panel, giving the "rain above, player below" feel.
+///
+/// Entities carry `TileEntity` so they despawn automatically on layer switch.
+/// Only call when level_id == Subdivision && layer_index == 2.
+pub fn spawn_solar_panel_canopy(
+    commands: &mut Commands,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<StandardMaterial>,
+) {
+    // Row 14 top = 70.  Panel bottom sits ~2 tiles above that = 70 + 36 = 106.
+    // Panel is 18 units tall (1 tile thick) — feels like a low overhead structure.
+    let panel_bottom = 106.0;
+    let panel_height = 18.0;
+    let panel_center_y = panel_bottom + panel_height * 0.5; // 115
+    let level_width = 2000.0; // wider than the 1728-unit level for edge coverage
+
+    // Opaque backdrop: covers from panel bottom to well above camera top.
+    // Blocks parallax houses (z=-50/-80) and sky (z=-100) from showing
+    // above the panel. Uses a dark grey-blue matching the overcast sky overlay
+    // so the transition is seamless.
+    let backdrop_height = 500.0;
+    let backdrop_y = panel_bottom + backdrop_height * 0.5;
+    let backdrop_mesh = meshes.add(Rectangle::new(level_width, backdrop_height));
+    let backdrop_mat = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.42, 0.45, 0.52),
+        unlit: true,
+        alpha_mode: AlphaMode::Opaque,
+        ..default()
+    });
+    commands.spawn((
+        components::TileEntity,
+        Mesh3d(backdrop_mesh),
+        MeshMaterial3d(backdrop_mat),
+        Transform::from_xyz(0.0, backdrop_y, 4.0),
+    ));
+
+    // Solar panel: dark blue-grey, semi-transparent. Full level width.
+    let panel_mesh = meshes.add(Rectangle::new(level_width, panel_height));
+    let panel_mat = materials.add(StandardMaterial {
+        base_color: Color::srgba(0.10, 0.12, 0.25, 0.65),
+        unlit: true,
+        alpha_mode: AlphaMode::Blend,
+        ..default()
+    });
+    commands.spawn((
+        components::TileEntity,
+        Mesh3d(panel_mesh),
+        MeshMaterial3d(panel_mat),
+        Transform::from_xyz(0.0, panel_center_y, 5.0),
+    ));
 }
 
 /// Canonical level spawn entry point — shared by handle_new_game, apply_debug_start,
@@ -506,6 +792,7 @@ pub fn spawn_level_full(
     let level_data = match level_id {
         LevelId::Forest => forest_level(),
         LevelId::Subdivision => subdivision_level(),
+        LevelId::City => city_level(),
     };
 
     let layer_index = layer_index.min(level_data.layers.len().saturating_sub(1));
@@ -520,6 +807,7 @@ pub fn spawn_level_full(
     let (solid_model, platform_model) = match level_id {
         LevelId::Forest => ("models/block-grass-large.glb", "models/block-grass-low.glb"),
         LevelId::Subdivision => ("models/brick.glb", "models/brick.glb"),
+        LevelId::City => ("models/block-snow-large.glb", "models/block-moving-large.glb"),
     };
 
     current_level.level_id    = Some(level_id);
@@ -530,11 +818,17 @@ pub fn spawn_level_full(
     doors::spawn_doors_for_level(commands, asset_server, level_id);
     spawn_level_decorations(commands, meshes, materials, asset_server, level_id);
 
+    // Solar panel canopy on Subdivision Rooftop layer only.
+    if level_id == LevelId::Subdivision && layer_index == 2 {
+        spawn_solar_panel_canopy(commands, meshes, materials);
+    }
+
     commands.insert_resource(level_data);
 
     spawn
 }
 
+#[allow(clippy::too_many_arguments)]
 fn handle_new_game(
     mut commands: Commands,
     mut new_game: ResMut<NewGameRequested>,

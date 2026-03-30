@@ -4,6 +4,7 @@ use bevy::prelude::*;
 pub enum LevelId {
     Forest,
     Subdivision,
+    City,
 }
 
 /// A single layer within a level.

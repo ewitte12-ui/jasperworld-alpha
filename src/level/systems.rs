@@ -41,6 +41,8 @@ pub fn switch_layer(
     asset_server: Res<AssetServer>,
     door_query: Query<(&Transform, &super::doors::TransitionDoor), Without<Player>>,
     mut game_progress: ResMut<crate::puzzle::components::GameProgress>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     if !keyboard.just_pressed(KeyCode::KeyE) {
         return;
@@ -96,6 +98,7 @@ pub fn switch_layer(
     // Pick tile models based on current level theme.
     let (solid_model, platform_model) = match current_level.level_id {
         Some(LevelId::Subdivision) => ("models/brick.glb", "models/brick.glb"),
+        Some(LevelId::City) => ("models/block-snow-large.glb", "models/block-moving-large.glb"),
         _ => ("models/block-grass-large.glb", "models/block-grass-low.glb"),
     };
 
@@ -106,6 +109,11 @@ pub fn switch_layer(
         layer.origin_y + TILE_SIZE * 0.5,
     );
     spawn_tilemap(&mut commands, &asset_server, solid_model, platform_model, &layer.tiles, origin, 0.0);
+
+    // Solar panel canopy on Subdivision Rooftop layer only.
+    if current_level.level_id == Some(LevelId::Subdivision) && current_level.layer_index == 2 {
+        crate::level::spawn_solar_panel_canopy(&mut commands, &mut meshes, &mut materials);
+    }
 
     // Teleport player to the new layer's spawn point.
     if let Ok((mut player_transform, mut player_vel)) = player_query.single_mut() {
