@@ -617,7 +617,7 @@ pub fn spawn_level_decorations(
             // blue sky backdrop at z=-100. Hides daytime sky for night atmosphere.
             let night_mesh = meshes.add(Rectangle::new(6400.0, 1800.0));
             let night_mat = materials.add(StandardMaterial {
-                base_color: Color::srgb(0.08, 0.10, 0.18),
+                base_color: Color::srgb(0.02, 0.02, 0.04),
                 unlit: true,
                 alpha_mode: AlphaMode::Opaque,
                 ..default()
@@ -631,17 +631,22 @@ pub fn spawn_level_decorations(
                 crate::rendering::parallax::ParallaxBackground,
             ));
 
-            // Decorative stars — bright dots scattered in the night sky.
-            // z=-72: in front of far attenuation (-75) so haze does not obscure them.
-            // WHY z=-72 not z=-95: at z=-95 stars sat behind the 50% alpha far
-            // attenuation plane (z=-75), making them nearly invisible.
-            let star_mesh = meshes.add(Rectangle::new(4.0, 4.0));
-            for i in 0..40 {
+            // Decorative stars — 200 bright dots across the full night sky.
+            // z=-98: just in front of the night overlay (-99) but BEHIND both
+            // building layers (far=-80, near=-50) so buildings naturally occlude
+            // stars — no manual position avoidance needed.
+            // WHY 5×5 base: attenuation planes at z=-75 (50% near-black) and
+            // z=-38 (12% dark) sit in front, dimming stars ~44%. Larger size +
+            // full brightness compensates.
+            let star_mesh = meshes.add(Rectangle::new(5.0, 5.0));
+            for i in 0..200 {
                 let fi = i as f32;
-                // Pseudo-random scatter using golden-ratio-based hash.
-                let sx = ((fi * 137.508).sin() * 1500.0).rem_euclid(3100.0) - 1500.0;
-                let sy = ((fi * 251.317 + 3.0).sin() * 200.0).rem_euclid(400.0) + 100.0;
-                let brightness = 0.9 + ((fi * 317.432).sin() * 0.5 + 0.5) * 0.1;
+                // Golden-ratio-based scatter — covers x=-1700..1700, y=50..750.
+                let sx = ((fi * 137.508).sin() * 1600.0).rem_euclid(3400.0) - 1700.0;
+                let sy = ((fi * 251.317 + 3.0).sin() * 350.0).rem_euclid(700.0) + 50.0;
+                let brightness = 0.92 + ((fi * 317.432).sin() * 0.5 + 0.5) * 0.08;
+                // Slight size variation for natural feel (0.6× to 1.4×).
+                let size_var = 0.6 + ((fi * 193.271).sin() * 0.5 + 0.5) * 0.8;
                 let star_mat = materials.add(StandardMaterial {
                     base_color: Color::srgb(brightness, brightness, brightness * 0.95),
                     unlit: true,
@@ -651,14 +656,15 @@ pub fn spawn_level_decorations(
                 commands.spawn((
                     Mesh3d(star_mesh.clone()),
                     MeshMaterial3d(star_mat),
-                    Transform::from_xyz(sx, sy, -72.0),
+                    Transform::from_xyz(sx, sy, -98.0)
+                        .with_scale(Vec3::splat(size_var)),
                     crate::rendering::parallax::ParallaxLayer { factor: 0.22 },
                     components::Decoration,
                     crate::rendering::parallax::ParallaxBackground,
                 ));
             }
 
-            info!("[CITY] spawned night sky + {} decorative stars", 40);
+            info!("[CITY] spawned night sky + {} decorative stars", 200);
 
             // Ground-level city props (z=+3, in front of tile plane)
             let ox = -864.0_f32;
