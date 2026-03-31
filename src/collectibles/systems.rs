@@ -77,7 +77,11 @@ pub fn apply_emissive_to_collectibles(
             {
                 let mut modified = original.clone();
                 modified.emissive = emissive.color;
-                modified.unlit = true;
+                if !emissive.keep_lit {
+                    modified.unlit = true;
+                }
+                modified.double_sided = true;
+                modified.cull_mode = None;
                 let new_handle = materials.add(modified);
                 commands.entity(child).insert(MeshMaterial3d(new_handle));
                 found_any = true;
@@ -87,6 +91,7 @@ pub fn apply_emissive_to_collectibles(
             }
         }
         if found_any {
+            info!("[EMISSIVE] applied to entity {entity:?} keep_lit={}", emissive.keep_lit);
             commands.entity(entity).remove::<MakeEmissive>();
         }
     }
@@ -103,10 +108,11 @@ pub fn spawn_collectible(
     asset_server: &AssetServer,
     position: Vec3,
     collectible_type: CollectibleType,
+    emissive: bool,
 ) {
     match collectible_type {
-        CollectibleType::Star => spawn_star_3d(commands, asset_server, position),
-        CollectibleType::HealthFood => spawn_health_food_3d(commands, asset_server, position),
+        CollectibleType::Star => spawn_star_3d(commands, asset_server, position, emissive),
+        CollectibleType::HealthFood => spawn_health_food_3d(commands, asset_server, position, emissive),
     }
     let _ = (meshes, materials);
 }
@@ -118,33 +124,41 @@ pub fn spawn_collectible(
 /// logical position (used by pickup_collectibles distance check) is the
 /// Transform translation, which includes this offset — but pickup_radius is
 /// 64 units, so 6 units of vertical shift has zero gameplay impact.
-fn spawn_star_3d(commands: &mut Commands, asset_server: &AssetServer, position: Vec3) {
+fn spawn_star_3d(commands: &mut Commands, asset_server: &AssetServer, position: Vec3, emissive: bool) {
     let visual_offset = Vec3::new(0.0, 6.0, 0.0);
-    commands.spawn((
+    let mut entity = commands.spawn((
         SceneRoot(asset_server.load("models/star_collectible.glb#Scene0")),
         Transform::from_translation(position + visual_offset).with_scale(Vec3::splat(50.0)),
         Collectible {
             collectible_type: CollectibleType::Star,
         },
-        // Warm gold glow — visible even in dark City moonlight.
-        MakeEmissive { color: LinearRgba::new(2.0, 1.7, 0.4, 1.0) },
         Spinning { speed: 1.5 },
     ));
+    if emissive {
+        entity.insert(MakeEmissive {
+            color: LinearRgba::new(2.0, 1.7, 0.4, 1.0),
+            keep_lit: true,
+        });
+    }
 }
 
 /// Spawns apple.glb as a health pickup.
 ///
 /// Same visual Y offset as stars — prevents clipping into platform surfaces.
-fn spawn_health_food_3d(commands: &mut Commands, asset_server: &AssetServer, position: Vec3) {
+fn spawn_health_food_3d(commands: &mut Commands, asset_server: &AssetServer, position: Vec3, emissive: bool) {
     let visual_offset = Vec3::new(0.0, 6.0, 0.0);
-    commands.spawn((
+    let mut entity = commands.spawn((
         SceneRoot(asset_server.load("models/apple.glb#Scene0")),
         Transform::from_translation(position + visual_offset).with_scale(Vec3::splat(80.0)),
         Collectible {
             collectible_type: CollectibleType::HealthFood,
         },
-        // Bright red-green glow — visible even in dark City moonlight.
-        MakeEmissive { color: LinearRgba::new(1.5, 0.5, 0.3, 1.0) },
         Spinning { speed: 1.5 },
     ));
+    if emissive {
+        entity.insert(MakeEmissive {
+            color: LinearRgba::new(1.5, 0.5, 0.3, 1.0),
+            keep_lit: true,
+        });
+    }
 }
