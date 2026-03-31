@@ -25,6 +25,11 @@ pub fn update_weather(
         commands.entity(entity).despawn();
     }
 
+    // No weather effects in underground sublevels (layer 1).
+    if current_level.layer_index == 1 {
+        return;
+    }
+
     let (particle_type, interval_secs) = match current_level.level_id {
         Some(LevelId::Forest) => (WeatherType::Leaves, 0.15),
         Some(LevelId::Subdivision) => (WeatherType::Rain, 0.08),

@@ -148,7 +148,7 @@ fn spawn_forest_inner(
         Vec3::new(col_x(85.0), ground_y,       1.0), // ground — Screen 3
     ];
     for pos in star_positions {
-        spawn_collectible(commands, meshes, materials, asset_server, pos, CollectibleType::Star);
+        spawn_collectible(commands, meshes, materials, asset_server, pos, CollectibleType::Star, false);
     }
     // WHY stars_total = 10 with 11 spawned: the row 14 star (index 6) is the
     // optional micro-objective.  Gate opens when 10 are collected so the
@@ -183,7 +183,7 @@ fn spawn_forest_inner(
         Vec3::new(col_x(79.0), stand_y(10.0), 1.0),
     ];
     for pos in apple_positions {
-        spawn_collectible(commands, meshes, materials, asset_server, pos, CollectibleType::HealthFood);
+        spawn_collectible(commands, meshes, materials, asset_server, pos, CollectibleType::HealthFood, false);
     }
 
     let gate_x = col_x(91.0);
@@ -271,7 +271,7 @@ fn spawn_subdivision_inner(
         Vec3::new(col_x(87.0), ground_y,       1.0),
     ];
     for pos in star_positions {
-        spawn_collectible(commands, meshes, materials, asset_server, pos, CollectibleType::Star);
+        spawn_collectible(commands, meshes, materials, asset_server, pos, CollectibleType::Star, false);
     }
     progress.stars_total = 10;
     progress.stars_collected = 0;
@@ -285,7 +285,7 @@ fn spawn_subdivision_inner(
         Vec3::new(col_x(80.0), stand_y(10.0), 1.0),
     ];
     for pos in apple_positions {
-        spawn_collectible(commands, meshes, materials, asset_server, pos, CollectibleType::HealthFood);
+        spawn_collectible(commands, meshes, materials, asset_server, pos, CollectibleType::HealthFood, false);
     }
 
     // Gate at col 91
@@ -371,7 +371,7 @@ fn spawn_city_inner(
     progress.stars_collected = 0;
 
     for pos in &star_positions {
-        spawn_collectible(commands, meshes, materials, asset_server, *pos, CollectibleType::Star);
+        spawn_collectible(commands, meshes, materials, asset_server, *pos, CollectibleType::Star, true);
     }
 
     // 5 apples — mix of ground and platform placements.
@@ -383,7 +383,7 @@ fn spawn_city_inner(
         Vec3::new(col_x(85.0), stand_y(6.0),   1.0),
     ];
     for pos in &apple_positions {
-        spawn_collectible(commands, meshes, materials, asset_server, *pos, CollectibleType::HealthFood);
+        spawn_collectible(commands, meshes, materials, asset_server, *pos, CollectibleType::HealthFood, true);
     }
 
     // Gate at col 91 (same position as other levels).
@@ -785,24 +785,83 @@ pub fn spawn_sublevel_decorations(
             ("models/sewer/brick-wall.glb", col_x(10.0), row_y(15.0), 16.0, 4.0),
             ("models/sewer/brick-wall.glb", col_x(22.0), row_y(15.0), 16.0, 4.0),
         ],
-        // ── City Subway: columns, lights, construction barriers ──────────
+        // ── City Subway: structural columns and wall segments ─────────────
         LevelId::City => &[
-            // Platform columns
-            ("models/city/light-curved.glb",       col_x(5.0),  row_y(2.0), 40.0, 10.0),
-            ("models/city/light-curved.glb",       col_x(16.0), row_y(2.0), 40.0, 10.0),
-            ("models/city/light-curved.glb",       col_x(27.0), row_y(2.0), 40.0, 10.0),
-            // Construction cones
-            ("models/city/construction-cone.glb",  col_x(9.0),  row_y(2.0), 80.0, 25.0),
-            ("models/city/construction-cone.glb",  col_x(22.0), row_y(2.0), 80.0, 25.0),
+            // Stone columns — subway support pillars
+            ("models/sewer/column-large.glb",      col_x(8.0),  row_y(2.0), 18.0, 6.0),
+            ("models/sewer/column-large.glb",      col_x(16.0), row_y(2.0), 18.0, 6.0),
+            ("models/sewer/column-large.glb",      col_x(24.0), row_y(2.0), 18.0, 6.0),
+            // Wall segments along ceiling
+            ("models/sewer/brick-wall.glb",        col_x(6.0),  row_y(15.0), 16.0, 4.0),
+            ("models/sewer/brick-wall.glb",        col_x(16.0), row_y(15.0), 16.0, 4.0),
+            ("models/sewer/brick-wall.glb",        col_x(26.0), row_y(15.0), 16.0, 4.0),
         ],
     };
 
+    // Cave/Sewer: emissive glow (bioluminescent/atmospheric).
+    // Subway: NO emissive — lit by point lights for proper 3D edge definition.
+    let glow = match level_id {
+        LevelId::Forest      => Some(LinearRgba::new(1.2, 0.8, 0.4, 1.0)),
+        LevelId::Subdivision => Some(LinearRgba::new(0.4, 0.7, 0.4, 1.0)),
+        LevelId::City        => None, // point lights instead
+    };
+
+    info!(
+        "[SUBLEVEL_DECOR] level={:?} origin=({origin_x}, {origin_y}) decor_count={} glow={:?}",
+        level_id, decor.len(), glow.is_some(),
+    );
     for &(model, x, y, sxy, sz) in decor {
-        commands.spawn((
+        info!(
+            "[SUBLEVEL_DECOR] spawn model={model} pos=({x}, {y}, 3.0) scale=({sxy}, {sxy}, {sz})"
+        );
+        let mut entity = commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", model))),
             Transform::from_xyz(x, y, 3.0).with_scale(Vec3::new(sxy, sxy, sz)),
             components::TileEntity,
             components::ForegroundDecoration,
+        ));
+        if let Some(color) = glow {
+            entity.insert(crate::collectibles::components::MakeEmissive { color, keep_lit: true });
+        }
+    }
+
+    // Sublevel point lights — carry TileEntity for auto-despawn.
+    let lights: &[(f32, f32, Color, f32)] = match level_id {
+        // Cave: warm amber torches — high intensity to illuminate vertex-color models
+        LevelId::Forest => &[
+            (col_x(8.0),  row_y(8.0),  Color::srgb(1.0, 0.6, 0.2), 200000.0),
+            (col_x(22.0), row_y(8.0),  Color::srgb(1.0, 0.6, 0.2), 200000.0),
+            (col_x(15.0), row_y(4.0),  Color::srgb(1.0, 0.6, 0.2), 150000.0),
+        ],
+        // Sewer: green-tinted industrial lighting
+        LevelId::Subdivision => &[
+            (col_x(8.0),  row_y(8.0),  Color::srgb(0.5, 0.8, 0.4), 150000.0),
+            (col_x(16.0), row_y(4.0),  Color::srgb(0.6, 0.8, 0.5), 120000.0),
+            (col_x(24.0), row_y(8.0),  Color::srgb(0.5, 0.8, 0.4), 150000.0),
+        ],
+        // Subway: cool fluorescent station lighting — multiple fixtures
+        LevelId::City => &[
+            (col_x(5.0),  row_y(13.0), Color::srgb(0.9, 0.9, 1.0), 120000.0),
+            (col_x(12.0), row_y(13.0), Color::srgb(0.9, 0.9, 1.0), 120000.0),
+            (col_x(20.0), row_y(13.0), Color::srgb(0.9, 0.9, 1.0), 120000.0),
+            (col_x(27.0), row_y(13.0), Color::srgb(0.9, 0.9, 1.0), 120000.0),
+        ],
+    };
+
+    info!("[SUBLEVEL_LIGHTS] spawning {} lights", lights.len());
+    for &(lx, ly, color, intensity) in lights {
+        info!("[SUBLEVEL_LIGHTS] pos=({lx}, {ly}, 10.0) intensity={intensity}");
+        commands.spawn((
+            PointLight {
+                color,
+                intensity,
+                radius: 0.5,
+                range: 200.0,
+                shadows_enabled: false,
+                ..default()
+            },
+            Transform::from_xyz(lx, ly, 10.0),
+            components::TileEntity,
         ));
     }
 }
@@ -941,9 +1000,9 @@ pub fn spawn_level_full(
         let center_y = oy + 9.0 * TILE_SIZE;
 
         let bg_color = match level_id {
-            LevelId::Forest      => Color::srgb(0.08, 0.06, 0.04),
-            LevelId::Subdivision => Color::srgb(0.04, 0.06, 0.04),
-            LevelId::City        => Color::srgb(0.05, 0.05, 0.08),
+            LevelId::Forest      => Color::srgb(0.12, 0.10, 0.07),
+            LevelId::Subdivision => Color::srgb(0.08, 0.10, 0.07),
+            LevelId::City        => Color::srgb(0.10, 0.10, 0.15),
         };
         let bg_mesh = meshes.add(Rectangle::new(2000.0, 1000.0));
         let bg_mat = materials.add(StandardMaterial {

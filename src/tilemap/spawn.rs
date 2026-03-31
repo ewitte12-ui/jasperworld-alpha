@@ -23,6 +23,13 @@ const CAVE_BLOCK_H: f32 = 1.000;
 // Sewer sublevel — Graveyard Kit stone-wall (1.0 × 0.725 × 0.2) / brick-wall (1.0 × 0.725 × 0.3)
 const SEWER_WALL_W: f32 = 1.000;
 const SEWER_WALL_H: f32 = 0.725;
+const SEWER_WALL_Z_STONE: f32 = 0.200; // stone-wall native Z depth
+const SEWER_WALL_Z_BRICK: f32 = 0.300; // brick-wall native Z depth
+// City — block-snow-large (2.082 × 1.0 × 2.082), block-moving-large (1.0 × 0.5 × 1.0)
+const SNOW_LARGE_W: f32 = 2.082;
+const SNOW_LARGE_H: f32 = 1.000;
+const MOVING_LARGE_W: f32 = 1.000;
+const MOVING_LARGE_H: f32 = 0.500;
 
 /// Spawn all tiles for a 2D grid using 3D GLB models.
 ///
@@ -206,36 +213,42 @@ fn spawn_merged_run_colliders(
 /// Returns the non-uniform scale that makes a Kenney Platformer Kit model fill
 /// exactly `TILE_SIZE × TILE_SIZE` world units.
 fn model_scale(model_path: &str) -> Vec3 {
-    let (w, h) = if model_path.contains("block-grass-low") {
-        (BLOCK_LOW_W, BLOCK_LOW_H)
+    // (native_width, native_height, native_z_depth)
+    let (w, h, z) = if model_path.contains("block-grass-low") {
+        (BLOCK_LOW_W, BLOCK_LOW_H, 0.500)
     } else if model_path.contains("block-grass") {
-        (BLOCK_LARGE_W, BLOCK_LARGE_H)
+        (BLOCK_LARGE_W, BLOCK_LARGE_H, 1.000)
+    } else if model_path.contains("block-snow") {
+        (SNOW_LARGE_W, SNOW_LARGE_H, 2.082)
+    } else if model_path.contains("block-moving") {
+        (MOVING_LARGE_W, MOVING_LARGE_H, 1.000)
     } else if model_path.contains("platform") {
-        (PLATFORM_W, PLATFORM_H)
+        (PLATFORM_W, PLATFORM_H, 0.500)
     } else if model_path.contains("cliff_blockCave") {
-        (CAVE_BLOCK_W, CAVE_BLOCK_H)
-    } else if model_path.contains("stone-wall") || model_path.contains("brick-wall") {
-        (SEWER_WALL_W, SEWER_WALL_H)
+        (CAVE_BLOCK_W, CAVE_BLOCK_H, 1.000)
+    } else if model_path.contains("stone-wall") {
+        (SEWER_WALL_W, SEWER_WALL_H, SEWER_WALL_Z_STONE)
+    } else if model_path.contains("brick-wall") {
+        (SEWER_WALL_W, SEWER_WALL_H, SEWER_WALL_Z_BRICK)
     } else if model_path.contains("brick") {
-        (BRICK_W, BRICK_H)
+        (BRICK_W, BRICK_H, 0.500)
     } else {
-        // Unknown model — use a reasonable uniform scale.
+        warn!("model_scale: unknown model {model_path}, using fallback");
         return Vec3::splat(TILE_SIZE);
     };
-    // Z scale gives the blocks visible depth from the -28° camera tilt,
-    // making the green grass top face clearly visible.
-    // Ground/brick tiles get thick Z so the grass/brick top face is clearly
-    // visible from the -28° camera tilt. Platforms use a thinner Z so they
-    // don't look like chunky slabs.
-    let z_scale = if model_path.contains("block-grass-low") { 3.0 } else { 6.0 };
+    // Target ~6 world units of visual depth for solid tiles.
+    // z_scale = target_depth / native_z
+    let target_depth = if model_path.contains("block-grass-low") { 3.0 } else { 6.0 };
+    let z_scale = target_depth / z;
     Vec3::new(TILE_SIZE / w, TILE_SIZE / h, z_scale)
 }
 
-/// Same as `model_scale` but with extra Z depth so the top face is more
-/// visible from the -28° camera tilt. Used for brick platform tiles.
+/// Same as `model_scale` but targets ~10 world units of Z depth so the top
+/// face is more visible from the -28° camera tilt. Used for platform tiles.
 fn model_scale_platform(model_path: &str) -> Vec3 {
     let mut s = model_scale(model_path);
-    s.z = 10.0;
+    // Scale from ~6 target depth to ~10 (multiply by 10/6 ≈ 1.67).
+    s.z = s.z * 10.0 / 6.0;
     s
 }
 

@@ -20,9 +20,14 @@ pub struct CollectionProgress {
 
 /// Marker: scene children haven't had emissive applied yet.
 /// Removed once the system clones + modifies the loaded GLB materials.
+///
+/// `keep_lit`: when true, scene lighting is preserved (unlit stays false)
+/// so directional light/shadow still defines 3D edges. When false, the
+/// material is set to unlit (flat glow, no edge definition).
 #[derive(Component)]
 pub struct MakeEmissive {
     pub color: LinearRgba,
+    pub keep_lit: bool,
 }
 
 #[derive(Message)]

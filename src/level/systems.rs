@@ -129,19 +129,29 @@ pub fn switch_layer(
     // Sublevel setup: dark background, decorations, return door.
     // All carry TileEntity so they auto-despawn on layer switch.
     // Uses the layer's origin so positions work regardless of where the grid is.
+    info!(
+        "[SUBLEVEL] layer_index={} origin=({}, {}) spawn=({}, {}) grid={}x{}",
+        current_level.layer_index,
+        layer.origin_x, layer.origin_y,
+        layer.spawn.x, layer.spawn.y,
+        layer.cols(), layer.rows(),
+    );
     if current_level.layer_index == 1 {
         let ox = layer.origin_x;
         let oy = layer.origin_y;
         // Center of 32×18 grid: (ox + 16*18, oy + 9*18)
         let center_x = ox + 16.0 * TILE_SIZE;
         let center_y = oy + 9.0 * TILE_SIZE;
+        info!(
+            "[SUBLEVEL] entering sublevel: ox={ox} oy={oy} center=({center_x}, {center_y})"
+        );
 
         // Dark background at z=-5: in front of ALL parallax backgrounds
         // (mountains at z=-50, clouds z=-60, sky z=-100) but behind tiles (z=0).
         let bg_color = match current_level.level_id {
-            Some(LevelId::Forest)      => Color::srgb(0.08, 0.06, 0.04),
-            Some(LevelId::Subdivision) => Color::srgb(0.04, 0.06, 0.04),
-            Some(LevelId::City)        => Color::srgb(0.05, 0.05, 0.08),
+            Some(LevelId::Forest)      => Color::srgb(0.12, 0.10, 0.07),
+            Some(LevelId::Subdivision) => Color::srgb(0.08, 0.10, 0.07),
+            Some(LevelId::City)        => Color::srgb(0.10, 0.10, 0.15),
             _                          => Color::srgb(0.05, 0.05, 0.05),
         };
         let bg_mesh = meshes.add(Rectangle::new(2000.0, 1000.0));
@@ -241,5 +251,15 @@ pub fn camera_clamp(
         cam.translation.y = cam.translation.y.clamp(min_y, max_y);
     } else {
         cam.translation.y = (level_bottom + level_top) * 0.5;
+    }
+
+    // Debug: log camera bounds after layer switch
+    if current_level.is_changed() {
+        info!(
+            "[CAMERA_CLAMP] layer={} bounds=({level_left}..{level_right}, {level_bottom}..{level_top}) \
+             cam=({:.1}, {:.1}) min_x={min_x:.1} max_x={max_x:.1} min_y={min_y:.1} max_y={max_y:.1} \
+             half_width={half_width:.1}",
+            current_level.layer_index, cam.translation.x, cam.translation.y,
+        );
     }
 }
