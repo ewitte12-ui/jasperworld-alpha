@@ -327,9 +327,12 @@ pub fn spawn_nature_background(commands: &mut Commands, asset_server: &AssetServ
     for (i, x) in (-1500..=1600i32).step_by(60).enumerate() {
         let model = tree_models[i % tree_models.len()];
         let scale = tree_scales[i % tree_scales.len()];
+        // Center-anchored models (tree_oak) need +scale/2 to ground their base.
+        let y_base = -160.0;
+        let y = if model.contains("tree_oak") { y_base + scale * 0.5 } else { y_base };
         commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32, -160.0, -50.0).with_scale(Vec3::new(scale, scale, 6.0)),
+            Transform::from_xyz(x as f32, y, -50.0).with_scale(Vec3::new(scale, scale, 6.0)),
             ParallaxLayer { factor: 0.38 },
             Decoration,
             ParallaxBackground,

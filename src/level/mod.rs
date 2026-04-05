@@ -534,10 +534,11 @@ pub fn spawn_level_decorations(
             // Original -367/-342 were inside that range and occluded the door.
             // -450/-420 are clearly left of the door's edge.
             let fg_trees: &[(&str, f32, f32, f32)] = &[
-                ("models/tree_oak.glb",  -450.0, -146.0, 95.0),
+                // center-anchored model: y raised by scale/2 to ground the base
+                ("models/tree_oak.glb",  -450.0,  -98.5, 95.0), // y = -146.0 + 95.0 * 0.5
                 ("models/tree_fat.glb",  -420.0, -146.0, 80.0),
                 ("models/tree_pine.glb",  270.0, -146.0, 90.0),
-                ("models/tree_oak.glb",   295.0, -146.0, 85.0),
+                ("models/tree_oak.glb",   295.0, -103.5, 85.0), // y = -146.0 + 85.0 * 0.5
             ];
             for &(model, tx, ty, scale) in fg_trees {
                 commands.spawn((
@@ -716,10 +717,11 @@ pub fn spawn_level_decorations(
             // Foreground trees — sparse, at level edges (it's a city).
             let fg_trees: &[(&str, f32, f32, f32)] = &[
                 ("models/tree_fat.glb",     -450.0, -146.0, 80.0),
-                ("models/tree_oak.glb",      270.0, -146.0, 75.0),
+                // center-anchored model: y raised by scale/2 to ground the base
+                ("models/tree_oak.glb",      270.0, -108.5, 75.0), // y = -146.0 + 75.0 * 0.5
                 ("models/tree_default.glb",  295.0, -146.0, 70.0),
                 ("models/tree_fat.glb",     -700.0, -146.0, 75.0),
-                ("models/tree_oak.glb",      550.0, -146.0, 70.0),
+                ("models/tree_oak.glb",      550.0, -111.0, 70.0), // y = -146.0 + 70.0 * 0.5
             ];
             for &(model, tx, ty, scale) in fg_trees {
                 commands.spawn((
