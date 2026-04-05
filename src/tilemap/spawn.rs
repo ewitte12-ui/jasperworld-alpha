@@ -30,6 +30,14 @@ const SNOW_LARGE_W: f32 = 2.082;
 const SNOW_LARGE_H: f32 = 1.000;
 const MOVING_LARGE_W: f32 = 1.000;
 const MOVING_LARGE_H: f32 = 0.500;
+// Cement platform — native ~1.0 × 1.0 × 1.0 cube, center-anchored.
+const CEMENT_W: f32 = 0.992;   // native X width
+const CEMENT_H: f32 = 1.000;   // native Y height
+const CEMENT_Z: f32 = 0.982;   // native Z depth
+// Grass block — native ~1.0 × 1.0 × 1.0 cube, center-anchored.
+const GRASS_W: f32 = 0.968;   // native X width
+const GRASS_H: f32 = 1.000;   // native Y height
+const GRASS_Z: f32 = 0.974;   // native Z depth
 
 /// Spawn all tiles for a 2D grid using 3D GLB models.
 ///
@@ -55,7 +63,7 @@ pub fn spawn_tilemap(
     spawn_tilemap_inner(commands, asset_server, solid_model, platform_model, grid, origin, z, None);
 }
 
-/// Same as `spawn_tilemap` but applies a color tint to platform tiles.
+/// Same as `spawn_tilemap` but applies a color tint to all tiles.
 #[allow(clippy::too_many_arguments)]
 pub fn spawn_tilemap_tinted(
     commands: &mut Commands,
@@ -65,9 +73,9 @@ pub fn spawn_tilemap_tinted(
     grid: &[Vec<TileType>],
     origin: Vec2,
     z: f32,
-    platform_tint: Color,
+    tile_tint: Color,
 ) {
-    spawn_tilemap_inner(commands, asset_server, solid_model, platform_model, grid, origin, z, Some(platform_tint));
+    spawn_tilemap_inner(commands, asset_server, solid_model, platform_model, grid, origin, z, Some(tile_tint));
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -79,7 +87,7 @@ fn spawn_tilemap_inner(
     grid: &[Vec<TileType>],
     origin: Vec2,
     z: f32,
-    platform_tint: Option<Color>,
+    tile_tint: Option<Color>,
 ) {
     // ── Pass 1: visuals (one GLB model per tile, no collider) ────────────────
     for (row_idx, row) in grid.iter().enumerate() {
@@ -97,11 +105,7 @@ fn spawn_tilemap_inner(
                 solid_model
             };
 
-            let vis_scale = if tile_type == TileType::Platform {
-                model_scale_platform(model)
-            } else {
-                model_scale(model)
-            };
+            let child_xform = child_transform_for_model(model, tile_type == TileType::Platform);
             let scene_handle = asset_server.load(format!("{}#Scene0", model));
 
             // Visual entity: same world position as the original physics entity
@@ -111,7 +115,8 @@ fn spawn_tilemap_inner(
             // apply_scene_tints walks Children of the tinted entity to find
             // MeshMaterial3d handles — the mesh entities are children of the
             // SceneRoot entity, not children of the TileEntity parent.
-            let tint_platform = tile_type == TileType::Platform && platform_tint.is_some();
+            // Multiply preserves cement texture detail while applying the color tint.
+            let tint_tile = tile_tint.is_some();
             commands
                 .spawn((
                     TileEntity,
@@ -121,10 +126,10 @@ fn spawn_tilemap_inner(
                 .with_children(|parent| {
                     let mut child = parent.spawn((
                         SceneRoot(scene_handle),
-                        Transform::from_xyz(0.0, -TILE_SIZE * 0.5, 0.0).with_scale(vis_scale),
+                        child_xform,
                     ));
-                    if tint_platform {
-                        child.insert(SceneTint::Replace(platform_tint.unwrap()));
+                    if tint_tile {
+                        child.insert(SceneTint::Multiply(tile_tint.unwrap()));
                     }
                 });
         }
@@ -210,6 +215,43 @@ fn spawn_merged_run_colliders(
     }
 }
 
+/// Returns the child `Transform` (scale + rotation + offset) for a tile's GLB model.
+///
+/// Most models are bottom-anchored and only need scale + a -TILE_SIZE/2 Y offset.
+/// The cement-platform model is center-anchored and rotated 90° around Y so its
+/// long axis runs horizontally.
+fn child_transform_for_model(model_path: &str, is_platform: bool) -> Transform {
+    // Center-anchored cube models (cement-platform, grass-block).
+    let cube_dims = if model_path.contains("cement-platform") {
+        Some((CEMENT_W, CEMENT_H, CEMENT_Z))
+    } else if model_path.contains("grass-block") {
+        Some((GRASS_W, GRASS_H, GRASS_Z))
+    } else {
+        None
+    };
+
+    if let Some((w, h, z)) = cube_dims {
+        // Native ~1:1 aspect ratio. Center-anchored.
+        // Scale X and Y uniformly to fill TILE_SIZE, preserving native proportions.
+        // Parent at (wx, wy+2.0, z); center-anchored full-tile height → Y offset = 0.
+        let target_depth = 5.0;
+        let uniform = TILE_SIZE / w;
+        Transform::from_xyz(0.0, 0.0, 0.0)
+            .with_scale(Vec3::new(
+                uniform,
+                uniform * (h / w),
+                target_depth / z,
+            ))
+    } else {
+        let vis_scale = if is_platform {
+            model_scale_platform(model_path)
+        } else {
+            model_scale(model_path)
+        };
+        Transform::from_xyz(0.0, -TILE_SIZE * 0.5, 0.0).with_scale(vis_scale)
+    }
+}
+
 /// Returns the non-uniform scale that makes a Kenney Platformer Kit model fill
 /// exactly `TILE_SIZE × TILE_SIZE` world units.
 fn model_scale(model_path: &str) -> Vec3 {
@@ -222,6 +264,14 @@ fn model_scale(model_path: &str) -> Vec3 {
         (SNOW_LARGE_W, SNOW_LARGE_H, 2.082)
     } else if model_path.contains("block-moving") {
         (MOVING_LARGE_W, MOVING_LARGE_H, 1.000)
+    } else if model_path.contains("cement-platform") {
+        // Handled by child_transform_for_model; should never reach here.
+        warn!("model_scale called for cement-platform — use child_transform_for_model instead");
+        return Vec3::splat(TILE_SIZE);
+    } else if model_path.contains("grass-block") {
+        // Handled by child_transform_for_model; should never reach here.
+        warn!("model_scale called for grass-block — use child_transform_for_model instead");
+        return Vec3::splat(TILE_SIZE);
     } else if model_path.contains("platform") {
         (PLATFORM_W, PLATFORM_H, 0.500)
     } else if model_path.contains("cliff_blockCave") {
