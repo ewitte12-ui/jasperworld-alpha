@@ -1,4 +1,26 @@
 # CLAUDE.md
+
+## Agent Structure
+
+Use subagents for all work while making changes no matter how trivial.  The main conversation (Opus) coordinates and synthesizes. Subagents run in parallel when tasks are independent.
+
+| Agent | Model | When to Use |
+|-------|-------|-------------|
+| **Main** | Opus | Coordination, synthesis, user communication |
+| **Research** | Sonnet | When investigating unknowns, searching docs, exploring APIs |
+| **Coding** | Sonnet | Always when writing or modifying code |
+| **Testing** | Sonnet | Always when coding — validate syntax, check builds, verify changes |
+| **Critic** | Sonnet | Always when coding — audit changes for bugs, regressions, edge cases |
+| **Debug** | Sonnet | When diagnosing crashes, unexpected behavior, or pipeline failures |
+
+### Rules
+- **Always** use coding + testing + critic agents together when making ANY changes, no matter how trivial
+- **Never** skip the critic — it catches regressions before they ship
+- Launch agents in **parallel** when their tasks are independent
+- The debug agent should trace through actual code paths, not guess
+
+---
+
 **Guardrail‑First Instructions for Working in This Repository**
 
 ---

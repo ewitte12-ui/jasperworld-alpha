@@ -20,7 +20,7 @@ use crate::enemies::spawner::spawn_enemy;
 use crate::player::components::Player;
 use crate::puzzle::components::{GameProgress, LevelExit, LevelGate};
 use crate::states::NewGameRequested;
-use crate::tilemap::spawn::spawn_tilemap;
+use crate::tilemap::spawn::{spawn_tilemap, spawn_tilemap_tinted};
 use crate::tilemap::tilemap::TILE_SIZE;
 use crate::rendering::parallax::{spawn_city_background, spawn_nature_background, spawn_shared_background, spawn_subdivision_background};
 use doors::TransitionDoor;
@@ -937,11 +937,20 @@ pub fn spawn_solar_panel_canopy(
 pub fn tile_models_for_layer(level_id: LevelId, layer_index: usize) -> (&'static str, &'static str) {
     match (level_id, layer_index) {
         (LevelId::Forest, 1)      => ("models/cave/cliff_blockCave_stone.glb", "models/cave/cliff_blockCave_rock.glb"),
-        (LevelId::Subdivision, 1) => ("models/sewer/stone-wall.glb", "models/sewer/brick-wall.glb"),
-        (LevelId::City, 1)        => ("models/brick.glb", "models/block-moving-large.glb"),
-        (LevelId::Subdivision, _) => ("models/brick.glb", "models/brick.glb"),
-        (LevelId::City, _)        => ("models/block-snow-large.glb", "models/block-moving-large.glb"),
-        _                         => ("models/block-grass-large.glb", "models/block-grass-low.glb"),
+        (LevelId::Subdivision, 1) => ("models/cement-platform.glb", "models/cement-platform.glb"),
+        (LevelId::City, 1)        => ("models/cement-platform.glb", "models/cement-platform.glb"),
+        (LevelId::Subdivision, _) => ("models/cement-platform.glb", "models/cement-platform.glb"),
+        (LevelId::City, _)        => ("models/cement-platform.glb", "models/cement-platform.glb"),
+        _                         => ("models/grass-block.glb", "models/grass-block.glb"),
+    }
+}
+
+/// Returns an optional tint color for tiles in a given level.
+/// Subdivision uses a red/brick tint; others use no tint.
+pub fn tile_tint_for_layer(level_id: LevelId) -> Option<Color> {
+    match level_id {
+        LevelId::Subdivision => Some(Color::srgb(0.75, 0.22, 0.18)),
+        _ => None,
     }
 }
 
@@ -982,7 +991,11 @@ pub fn spawn_level_full(
     current_level.level_id    = Some(level_id);
     current_level.layer_index = layer_index;
 
-    spawn_tilemap(commands, asset_server, solid_model, platform_model, &tiles, origin, 0.0);
+    if let Some(tint) = tile_tint_for_layer(level_id) {
+        spawn_tilemap_tinted(commands, asset_server, solid_model, platform_model, &tiles, origin, 0.0, tint);
+    } else {
+        spawn_tilemap(commands, asset_server, solid_model, platform_model, &tiles, origin, 0.0);
+    }
     spawn_entities_for_level(commands, meshes, materials, asset_server, progress, level_id, skip_enemies);
     doors::spawn_doors_for_level(commands, asset_server, level_id);
     spawn_level_decorations(commands, meshes, materials, asset_server, level_id);

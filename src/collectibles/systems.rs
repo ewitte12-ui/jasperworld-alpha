@@ -77,7 +77,13 @@ pub fn apply_emissive_to_collectibles(
             {
                 let mut modified = original.clone();
                 modified.emissive = emissive.color;
-                if !emissive.keep_lit {
+                if emissive.keep_lit {
+                    // Neutral white base so PBR lighting gives clean 3D shading
+                    // without the original texture being desaturated by cool
+                    // City ambient light. The emissive provides the color.
+                    modified.base_color = Color::WHITE;
+                    modified.base_color_texture = None;
+                } else {
                     modified.unlit = true;
                 }
                 modified.double_sided = true;
@@ -136,8 +142,21 @@ fn spawn_star_3d(commands: &mut Commands, asset_server: &AssetServer, position: 
     ));
     if emissive {
         entity.insert(MakeEmissive {
-            color: LinearRgba::new(2.0, 1.7, 0.4, 1.0),
-            keep_lit: true,
+            color: LinearRgba::new(8.0, 6.8, 1.6, 1.0),
+            keep_lit: false,
+        });
+        // Warm point light illuminates surrounding geometry in dark City scenes.
+        entity.with_children(|parent| {
+            parent.spawn((
+                PointLight {
+                    color: Color::srgb(1.0, 0.85, 0.3),
+                    intensity: 50000.0,
+                    range: 120.0,
+                    shadows_enabled: false,
+                    ..default()
+                },
+                Transform::default(),
+            ));
         });
     }
 }
@@ -157,8 +176,21 @@ fn spawn_health_food_3d(commands: &mut Commands, asset_server: &AssetServer, pos
     ));
     if emissive {
         entity.insert(MakeEmissive {
-            color: LinearRgba::new(1.5, 0.5, 0.3, 1.0),
-            keep_lit: true,
+            color: LinearRgba::new(6.0, 2.0, 1.2, 1.0),
+            keep_lit: false,
+        });
+        // Warm point light illuminates surrounding geometry in dark City scenes.
+        entity.with_children(|parent| {
+            parent.spawn((
+                PointLight {
+                    color: Color::srgb(1.0, 0.5, 0.2),
+                    intensity: 40000.0,
+                    range: 120.0,
+                    shadows_enabled: false,
+                    ..default()
+                },
+                Transform::default(),
+            ));
         });
     }
 }
