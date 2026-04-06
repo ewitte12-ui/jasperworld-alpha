@@ -528,17 +528,18 @@ pub fn spawn_level_decorations(
             // Foreground framing trees (z = +10) — bookend the left/right level edges.
             // Must live here (not Startup) per jasper_background_parallax_lifecycle_guardrail:
             // biome-specific art is level content, not engine setup.
-            // WHY left trees at -367/-342: at the original -295/-270 they sat only 2.5 cols
-            // from Platform D, occluding the approach.  -367/-342 gives a 117-unit clear window.
-            // WHY -450/-420: door 1 is at x=-351 (footprint ≈ -381 to -321).
-            // Original -367/-342 were inside that range and occluded the door.
-            // -450/-420 are clearly left of the door's edge.
+            // WHY left trees at -525/-440: door 1 is at x=-351 (footprint ≈ -381 to -321).
+            // oak half-width = 95*0.4 = 38; fat half-width = 80*0.46 = 36.8.
+            // -525 oak right edge ≈ -487; -440 fat left edge ≈ -477 → 10-unit gap between them.
+            // -440 fat right edge ≈ -403; door left edge = -381 → 22-unit clearance from door.
+            // WHY right trees at 240/330: pine half-width = 90*0.31 = 27.9; oak half-width = 85*0.4 = 34.
+            // pine right edge ≈ 268; oak left edge ≈ 296 → 28-unit gap between them.
             let fg_trees: &[(&str, f32, f32, f32)] = &[
                 // center-anchored model: y raised by scale/2 to ground the base
-                ("models/tree_oak.glb",  -450.0,  -98.5, 95.0), // y = -146.0 + 95.0 * 0.5
-                ("models/tree_fat.glb",  -420.0, -146.0, 80.0),
-                ("models/tree_pine.glb",  270.0, -146.0, 90.0),
-                ("models/tree_oak.glb",   295.0, -103.5, 85.0), // y = -146.0 + 85.0 * 0.5
+                ("models/tree_oak.glb",  -525.0,  -98.5, 95.0), // moved left; gap from fat = 10 units
+                ("models/tree_fat.glb",  -440.0, -106.0, 80.0), // moved left; gap from door 1 = 22 units
+                ("models/tree_pine.glb",  240.0, -101.0, 90.0), // moved left from 270
+                ("models/tree_oak.glb",   330.0, -103.5, 85.0), // moved right from 295; gap from pine = 28 units
             ];
             for &(model, tx, ty, scale) in fg_trees {
                 commands.spawn((
@@ -672,18 +673,19 @@ pub fn spawn_level_decorations(
             let col_x_f = |col: f32| ox + col * 18.0 + 9.0;
             // Taxis — 3 parked cars across the level, rotated 90° around Y so the
             // side profile (lengthwise) is visible from the camera instead of the front.
-            // Scale (6, 28, 28): after 90° Y rotation, local X→world -Z, local Z→world X.
-            //   Visible length (world X) = model_length × 28  — full size, no squash.
-            //   Visible height (world Y) = model_height × 28  — full size.
-            //   Depth (world Z) = model_width × 6 = ±3 from center.
-            // At z=1, front face = 1+3 = 4, behind player (z=5) so Jasper runs in front.
+            // Trellis model native dims: X=0.470, Y=0.351, Z=1.000 (center-anchored).
+            // Scale (8, 45, 45): after 90° Y rotation, local X→world -Z, local Z→world X.
+            //   Visible length (world X) = 1.0 × 45  = 45 units (~2.5 tiles).
+            //   Visible height (world Y) = 0.351 × 45 = 15.8 units (~0.9 tiles).
+            //   Depth (world Z) = 0.470 × 8 = 3.8 units.
+            // Y = -138.0: ground(-146) + half_height(0.351*45/2 ≈ 7.9) ≈ -138.
             let taxi_positions = [col_x_f(15.0), col_x_f(50.0), col_x_f(80.0)];
             for tx in taxi_positions {
                 commands.spawn((
                     SceneRoot(asset_server.load("models/city/taxi.glb#Scene0")),
-                    Transform::from_xyz(tx, -141.0, 1.0)
+                    Transform::from_xyz(tx, -138.0, 1.0)
                         .with_rotation(Quat::from_rotation_y(std::f32::consts::FRAC_PI_2))
-                        .with_scale(Vec3::new(6.0, 28.0, 28.0)),
+                        .with_scale(Vec3::new(8.0, 45.0, 45.0)),
                     components::Decoration,
                     components::ForegroundDecoration,
                 ));
@@ -715,13 +717,16 @@ pub fn spawn_level_decorations(
             }
 
             // Foreground trees — sparse, at level edges (it's a city).
+            // WHY left fat tree at -500: door 1 is at x=-351 (footprint ≈ -381 to -321).
+            // fat half-width = 80*0.46 = 36.8; right edge ≈ -463 → 82-unit clearance from door.
+            // WHY oak/default pair at 230/340: oak half-width = 75*0.4 = 30; default half-width = 70*0.5 = 35.
+            // oak right edge ≈ 260; default left edge ≈ 305 → 45-unit gap between them.
             let fg_trees: &[(&str, f32, f32, f32)] = &[
-                ("models/tree_fat.glb",     -450.0, -146.0, 80.0),
-                // center-anchored model: y raised by scale/2 to ground the base
-                ("models/tree_oak.glb",      270.0, -108.5, 75.0), // y = -146.0 + 75.0 * 0.5
-                ("models/tree_default.glb",  295.0, -146.0, 70.0),
-                ("models/tree_fat.glb",     -700.0, -146.0, 75.0),
-                ("models/tree_oak.glb",      550.0, -111.0, 70.0), // y = -146.0 + 70.0 * 0.5
+                ("models/tree_fat.glb",     -500.0, -106.0, 80.0), // moved left; gap from door 1 = 82 units
+                ("models/tree_oak.glb",      230.0, -108.5, 75.0), // moved left from 270
+                ("models/tree_default.glb",  340.0, -111.0, 70.0), // moved right from 295; gap from oak = 45 units; Y adjusted from -146.0 to -111.0 (+35 = scale/2) for center-anchored Trellis model
+                ("models/tree_fat.glb",     -700.0, -108.5, 75.0), // unchanged
+                ("models/tree_oak.glb",      550.0, -111.0, 70.0), // unchanged
             ];
             for &(model, tx, ty, scale) in fg_trees {
                 commands.spawn((
