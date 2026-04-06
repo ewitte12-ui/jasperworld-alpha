@@ -303,8 +303,8 @@ pub fn spawn_nature_background(commands: &mut Commands, asset_server: &AssetServ
         "models/tree_cone_dark.glb",
     ];
     let dark_tree_scales = [52.0_f32, 44.0, 58.0, 46.0, 54.0, 48.0, 56.0, 43.0];
-    // Step 80 units from -1500 to +1600 → ~39 trees, good mid-layer density.
-    for (i, x) in (-1500..=1600i32).step_by(80).enumerate() {
+    // Step 100 units → ~31 trees, evenly spaced with no overlap.
+    for (i, x) in (-1500..=1600i32).step_by(100).enumerate() {
         let model = dark_tree_models[i % dark_tree_models.len()];
         let scale = dark_tree_scales[i % dark_tree_scales.len()];
         commands.spawn((
@@ -323,13 +323,14 @@ pub fn spawn_nature_background(commands: &mut Commands, asset_server: &AssetServ
         "models/tree_fat.glb",
     ];
     let tree_scales = [93.0_f32, 82.0, 103.0, 89.0, 98.0, 84.0, 101.0, 91.0];
-    // Step 60 units → ~52 trees, denser near layer.
-    for (i, x) in (-1500..=1600i32).step_by(60).enumerate() {
+    // Step 163 units → ~20 trees, evenly spaced with no overlap.
+    for (i, x) in (-1500..=1600i32).step_by(163).enumerate() {
         let model = tree_models[i % tree_models.len()];
         let scale = tree_scales[i % tree_scales.len()];
-        // Center-anchored models (tree_oak) need +scale/2 to ground their base.
+        // Center-anchored Trellis models need +scale/2 to ground their base.
         let y_base = -160.0;
-        let y = if model.contains("tree_oak") { y_base + scale * 0.5 } else { y_base };
+        let center_anchored = model.contains("tree_oak") || model.contains("tree_pine") || model.contains("tree_fat") || model.contains("tree_default");
+        let y = if center_anchored { y_base + scale * 0.5 } else { y_base };
         commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", model))),
             Transform::from_xyz(x as f32, y, -50.0).with_scale(Vec3::new(scale, scale, 6.0)),

@@ -262,8 +262,9 @@ fn spawn_title_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
         (80.0_f32, "models/tree_oak.glb#Scene0"),
     ];
     for (x, model) in &framing {
-        // Center-anchored models (tree_oak) need +scale/2 to ground their base.
-        let y = if model.contains("tree_oak") { -44.0 + 18.0 * 0.5 } else { -44.0 };
+        // Center-anchored Trellis models need +scale/2 to ground their base.
+        let center_anchored = model.contains("tree_oak") || model.contains("tree_fat");
+        let y = if center_anchored { -44.0 + 18.0 * 0.5 } else { -44.0 };
         commands.spawn((
             SceneRoot(asset_server.load(*model)),
             Transform {
