@@ -314,10 +314,16 @@ fn spawn_title_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Positive z values place props in front of the raccoon.
     // Scale z is intentionally thin (2–4) — props are decorative dressing only.
     commands.spawn((
-        SceneRoot(asset_server.load("models/rock_largeA.glb#Scene0")),
+        SceneRoot(asset_server.load("models/large_rock.glb#Scene0")),
         Transform {
-            translation: Vec3::new(-32.0, RACCOON_Y, 2.0),
-            scale: Vec3::new(8.0, 8.0, 3.0),
+            // large_rock.glb is center-anchored (Y: -0.429→0.429).
+            // Shift up by (0.858 * 8.0) / 2 = 3.4 so base sits at RACCOON_Y.
+            // Rotate -90° Y so front faces camera (Tripo models face +X by default).
+            translation: Vec3::new(-32.0, RACCOON_Y + 3.4, 2.0),
+            rotation: Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2),
+            // After -90° Y rotation: local Z→world X, local X→world Z.
+            // Swap X/Z so depth stays thin and width stays full.
+            scale: Vec3::new(3.0, 8.0, 8.0),
             ..default()
         },
         TitleSceneEntity,
