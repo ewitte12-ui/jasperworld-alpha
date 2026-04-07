@@ -60,6 +60,14 @@ pub enum EnemyAnimState {
 #[derive(Component)]
 pub struct PlayerModelVisual;
 
+/// Marker on the skeleton's root bone entity. The walk animation has
+/// root motion that drifts Y downward over loops; `pin_player_root_bone`
+/// resets Y to this stored value each frame after animation evaluation.
+#[derive(Component)]
+pub struct PlayerRootBone {
+    pub original_y: f32,
+}
+
 /// Marker on the player entity at spawn. Removed once the AnimationPlayer
 /// descendant is found and the animation graph is wired up. While this
 /// marker is present, `setup_player_animation` polls each frame.

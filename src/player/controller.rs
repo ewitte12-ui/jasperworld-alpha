@@ -56,11 +56,11 @@ pub fn setup_player_physics(
         },
     });
 
-    // Model native height ≈ 1.0 unit (bottom-anchored, Y=0 to Y≈1.0).
-    // City lamp post (0.675 × 70 = 47.25 world units) should be 1.2× Jasper's
-    // height → Jasper = 47.25 / 1.2 ≈ 39.4 → scale ≈ 40.
+    // Model native height ≈ 0.943 units (bottom-anchored, Y=0 to Y≈0.943).
+    // Scale 37.1 → ~35 world units tall (~1.9 tiles).
+    // MUST match base_scale in animation/systems.rs — animation overwrites scale each frame.
     // WHAT BREAKS: if changed, visual size mismatches collider/world geometry.
-    let model_scale = 40.0;
+    let model_scale = 37.1;
 
     // The collider is centered on the entity position. Tnua floats the entity
     // so collider bottom sits at ground level. The model's Y=0 is at the

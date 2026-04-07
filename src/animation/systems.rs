@@ -8,7 +8,7 @@ use crate::player::components::{FacingDirection, Player};
 
 use super::components::{
     EnemyAnimState, PlayerAnimGraph, PlayerAnimState, PlayerClipsPending, PlayerModelPending,
-    PlayerModelVisual, SpriteAnimation,
+    PlayerModelVisual, PlayerRootBone, SpriteAnimation,
 };
 
 /// Determines the player's animation state based on physics velocity and status components.
@@ -234,6 +234,9 @@ pub fn finalize_player_animation(
     mut anim_graphs: ResMut<Assets<AnimationGraph>>,
     pending_query: Query<(Entity, &PlayerClipsPending, &Children), With<Player>>,
     visual_query: Query<Entity, With<PlayerModelVisual>>,
+    children_query: Query<&Children>,
+    name_query: Query<&Name>,
+    transform_query: Query<&Transform>,
 ) {
     let Ok((player_entity, pending, player_children)) = pending_query.single() else {
         return;
@@ -280,6 +283,28 @@ pub fn finalize_player_animation(
         hurt: hurt_index,
         current: PlayerAnimState::Idle,
     });
+
+    // Find and tag the "Root" bone to pin its Y position (prevents walk
+    // animation root motion from drifting the character underground).
+    {
+        let mut bone_queue: Vec<Entity> = vec![anim_entity];
+        while let Some(e) = bone_queue.pop() {
+            if let Ok(name) = name_query.get(e) {
+                if name.as_str() == "Root" {
+                    if let Ok(bone_transform) = transform_query.get(e) {
+                        commands.entity(e).insert(PlayerRootBone {
+                            original_y: bone_transform.translation.y,
+                        });
+                        info!("[ANIM] tagged Root bone {e:?} original_y={}", bone_transform.translation.y);
+                    }
+                    break;
+                }
+            }
+            if let Ok(children) = children_query.get(e) {
+                bone_queue.extend(children.iter());
+            }
+        }
+    }
 
     // Finalization complete — remove the pending marker.
     commands.entity(player_entity).remove::<PlayerClipsPending>();
@@ -421,6 +446,16 @@ pub fn drive_player_animation(
     anim_graph.current = *anim_state;
 }
 
+/// Resets the root bone's Y translation after Bevy's animation evaluation.
+/// Prevents walk animation root motion from accumulating vertical drift.
+pub fn pin_player_root_bone(
+    mut query: Query<(&mut Transform, &PlayerRootBone)>,
+) {
+    for (mut transform, root_bone) in &mut query {
+        transform.translation.y = root_bone.original_y;
+    }
+}
+
 /// Procedural animation for the player's static 3D model (no bones/skeleton).
 ///
 /// Reads `PlayerAnimState` and `FacingDirection` from the physics parent,
@@ -468,7 +503,7 @@ pub fn animate_player_procedural(
     // Base values matching controller.rs spawn — DO NOT change independently.
     // model_y_offset = -float_height + 8.0 = -3.0
     let base_y: f32 = -3.0;
-    let base_scale: f32 = 40.0;
+    let base_scale: f32 = 37.1;
 
     // Facing rotation: model faces +X (right) natively.
     // Right = -45° Y rotation for camera read angle.
@@ -532,7 +567,7 @@ pub fn animate_player_procedural(
                 // Vertical stretch (squash and stretch principle).
                 // Y stretched, X/Z compressed to maintain volume feel.
                 transform.translation = Vec3::new(0.0, base_y + 1.0, 0.0);
-                transform.scale = Vec3::new(33.0, 37.0, 33.0);
+                transform.scale = Vec3::new(base_scale * 0.825, base_scale * 0.925, base_scale * 0.825);
 
                 // No additional rotation beyond facing.
                 transform.rotation = facing_rotation;
