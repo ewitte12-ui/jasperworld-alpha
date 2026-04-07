@@ -38,6 +38,14 @@ pub enum CameraPipeline {
 #[derive(Component)]
 pub struct PrimaryDirectionalLight;
 
+/// Marker for the fill (sky-bounce) directional light.
+///
+/// WHY: Enables `update_lighting` to uniquely query the fill light so its
+/// color and illuminance can be adjusted per-level theme, just like the
+/// primary sun light.
+#[derive(Component)]
+pub struct FillDirectionalLight;
+
 /// Role marker for the single persistent gameplay camera.
 ///
 /// WHY: Per jasper_camera_role_identity_guardrail, every camera must carry
@@ -130,5 +138,6 @@ fn setup_camera(mut commands: Commands) {
             ..default()
         },
         Transform::from_xyz(0.0, -200.0, 200.0).looking_at(Vec3::ZERO, Vec3::Y),
+        FillDirectionalLight,
     ));
 }

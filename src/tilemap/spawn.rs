@@ -38,6 +38,10 @@ const CEMENT_Z: f32 = 0.982;   // native Z depth
 const GRASS_W: f32 = 0.968;   // native X width
 const GRASS_H: f32 = 1.000;   // native Y height
 const GRASS_Z: f32 = 0.974;   // native Z depth
+// Redbricks — native ~1.0 × 0.933 × 0.950 cube, center-anchored.
+const REDBRICKS_W: f32 = 1.000;   // native X width
+const REDBRICKS_H: f32 = 0.933;   // native Y height
+const REDBRICKS_Z: f32 = 0.950;   // native Z depth
 
 /// Spawn all tiles for a 2D grid using 3D GLB models.
 ///
@@ -221,11 +225,13 @@ fn spawn_merged_run_colliders(
 /// The cement-platform model is center-anchored and rotated 90° around Y so its
 /// long axis runs horizontally.
 fn child_transform_for_model(model_path: &str, is_platform: bool) -> Transform {
-    // Center-anchored cube models (cement-platform, grass-block).
+    // Center-anchored cube models (cement-platform, grass-block, redbricks).
     let cube_dims = if model_path.contains("cement-platform") {
         Some((CEMENT_W, CEMENT_H, CEMENT_Z))
     } else if model_path.contains("grass-block") {
         Some((GRASS_W, GRASS_H, GRASS_Z))
+    } else if model_path.contains("redbricks") {
+        Some((REDBRICKS_W, REDBRICKS_H, REDBRICKS_Z))
     } else {
         None
     };
@@ -271,6 +277,10 @@ fn model_scale(model_path: &str) -> Vec3 {
     } else if model_path.contains("grass-block") {
         // Handled by child_transform_for_model; should never reach here.
         warn!("model_scale called for grass-block — use child_transform_for_model instead");
+        return Vec3::splat(TILE_SIZE);
+    } else if model_path.contains("redbricks") {
+        // Handled by child_transform_for_model; should never reach here.
+        warn!("model_scale called for redbricks — use child_transform_for_model instead");
         return Vec3::splat(TILE_SIZE);
     } else if model_path.contains("platform") {
         (PLATFORM_W, PLATFORM_H, 0.500)
