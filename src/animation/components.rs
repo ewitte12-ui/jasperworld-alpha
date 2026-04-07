@@ -10,8 +10,18 @@ pub struct AtlasLayout {
 }
 
 impl AtlasLayout {
-    pub const RACCOON: Self = Self { cols: 4, rows: 4, texture_w: 512.0, texture_h: 512.0 };
-    pub const ENEMY: Self = Self { cols: 4, rows: 2, texture_w: 512.0, texture_h: 256.0 };
+    pub const RACCOON: Self = Self {
+        cols: 4,
+        rows: 4,
+        texture_w: 512.0,
+        texture_h: 512.0,
+    };
+    pub const ENEMY: Self = Self {
+        cols: 4,
+        rows: 2,
+        texture_w: 512.0,
+        texture_h: 256.0,
+    };
 
     /// Returns [u_min, v_min, u_max, v_max] with half-texel inset.
     pub fn uv_for_index(&self, index: usize) -> [f32; 4] {

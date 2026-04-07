@@ -207,4 +207,3 @@ pub fn spawn_toggle_row(
             });
         });
 }
-

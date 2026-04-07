@@ -3,7 +3,9 @@ use bevy::prelude::*;
 use crate::combat::components::Health;
 use crate::player::components::Player;
 
-use super::components::{CollectedEvent, Collectible, CollectibleType, CollectionProgress, MakeEmissive};
+use super::components::{
+    CollectedEvent, Collectible, CollectibleType, CollectionProgress, MakeEmissive,
+};
 
 /// Marker component for collectibles that spin in place.
 #[derive(Component)]
@@ -42,7 +44,10 @@ pub fn pickup_collectibles(
             match collectible.collectible_type {
                 CollectibleType::Star => {
                     progress.stars_collected += 1;
-                    info!("Star collected! {}/{}", progress.stars_collected, progress.stars_total);
+                    info!(
+                        "Star collected! {}/{}",
+                        progress.stars_collected, progress.stars_total
+                    );
                 }
                 CollectibleType::HealthFood => {
                     if let Ok(mut health) = health_query.single_mut() {
@@ -97,7 +102,10 @@ pub fn apply_emissive_to_collectibles(
             }
         }
         if found_any {
-            info!("[EMISSIVE] applied to entity {entity:?} keep_lit={}", emissive.keep_lit);
+            info!(
+                "[EMISSIVE] applied to entity {entity:?} keep_lit={}",
+                emissive.keep_lit
+            );
             commands.entity(entity).remove::<MakeEmissive>();
         }
     }
@@ -118,7 +126,9 @@ pub fn spawn_collectible(
 ) {
     match collectible_type {
         CollectibleType::Star => spawn_star_3d(commands, asset_server, position, emissive),
-        CollectibleType::HealthFood => spawn_health_food_3d(commands, asset_server, position, emissive),
+        CollectibleType::HealthFood => {
+            spawn_health_food_3d(commands, asset_server, position, emissive)
+        }
     }
     let _ = (meshes, materials);
 }
@@ -130,7 +140,12 @@ pub fn spawn_collectible(
 /// logical position (used by pickup_collectibles distance check) is the
 /// Transform translation, which includes this offset — but pickup_radius is
 /// 64 units, so 6 units of vertical shift has zero gameplay impact.
-fn spawn_star_3d(commands: &mut Commands, asset_server: &AssetServer, position: Vec3, emissive: bool) {
+fn spawn_star_3d(
+    commands: &mut Commands,
+    asset_server: &AssetServer,
+    position: Vec3,
+    emissive: bool,
+) {
     let visual_offset = Vec3::new(0.0, 6.0, 0.0);
     let mut entity = commands.spawn((
         SceneRoot(asset_server.load("models/star_collectible.glb#Scene0")),
@@ -164,7 +179,12 @@ fn spawn_star_3d(commands: &mut Commands, asset_server: &AssetServer, position: 
 /// Spawns apple.glb as a health pickup.
 ///
 /// Same visual Y offset as stars — prevents clipping into platform surfaces.
-fn spawn_health_food_3d(commands: &mut Commands, asset_server: &AssetServer, position: Vec3, emissive: bool) {
+fn spawn_health_food_3d(
+    commands: &mut Commands,
+    asset_server: &AssetServer,
+    position: Vec3,
+    emissive: bool,
+) {
     let visual_offset = Vec3::new(0.0, 6.0, 0.0);
     let mut entity = commands.spawn((
         SceneRoot(asset_server.load("models/apple.glb#Scene0")),

@@ -26,21 +26,21 @@ use crate::states::{AppState, NewGameRequested};
 
 #[derive(Deserialize)]
 struct DebugStartFile {
-    enabled:             bool,
-    level:               String,
-    layer:               usize,
+    enabled: bool,
+    level: String,
+    layer: usize,
     /// When true, all enemies are suppressed for clean traversal testing.
     /// Defaults to false when the field is absent from the JSON.
     #[serde(default)]
-    traversal_blockout:  bool,
+    traversal_blockout: bool,
 }
 
 // ── Resource — present only when debug start is active ───────────────────────
 
 #[derive(Resource)]
 pub struct DebugStartConfig {
-    pub level_id:          LevelId,
-    pub layer_index:       usize,
+    pub level_id: LevelId,
+    pub layer_index: usize,
     pub traversal_blockout: bool,
 }
 
@@ -68,10 +68,7 @@ impl Plugin for DebugStartPlugin {
             .add_systems(OnEnter(AppState::Playing), apply_debug_start)
             .add_systems(
                 Update,
-                (
-                    toggle_layer_visibility,
-                    log_decoration_counts,
-                )
+                (toggle_layer_visibility, log_decoration_counts)
                     .run_if(in_state(AppState::Playing)),
             );
     }
@@ -120,7 +117,7 @@ fn read_debug_config(
 
     commands.insert_resource(DebugStartConfig {
         level_id,
-        layer_index:       cfg.layer,
+        layer_index: cfg.layer,
         traversal_blockout: cfg.traversal_blockout,
     });
 
@@ -137,12 +134,12 @@ fn read_debug_config(
 
 #[allow(clippy::too_many_arguments)]
 fn apply_debug_start(
-    debug_cfg:     Option<Res<DebugStartConfig>>,
-    mut commands:  Commands,
-    asset_server:  Res<AssetServer>,
-    mut meshes:    ResMut<Assets<Mesh>>,
+    debug_cfg: Option<Res<DebugStartConfig>>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut progress:  ResMut<CollectionProgress>,
+    mut progress: ResMut<CollectionProgress>,
     mut current_level: ResMut<CurrentLevel>,
     mut player_query: Query<&mut Transform, With<Player>>,
     mut game_progress: ResMut<crate::puzzle::components::GameProgress>,
@@ -199,20 +196,20 @@ fn apply_debug_start(
 impl DebugViewMode {
     fn next(self) -> Self {
         match self {
-            Self::Normal                => Self::ForegroundOnly,
-            Self::ForegroundOnly        => Self::BackgroundOnly,
-            Self::BackgroundOnly        => Self::GameplayOnly,
-            Self::GameplayOnly          => Self::ForegroundPlusGameplay,
+            Self::Normal => Self::ForegroundOnly,
+            Self::ForegroundOnly => Self::BackgroundOnly,
+            Self::BackgroundOnly => Self::GameplayOnly,
+            Self::GameplayOnly => Self::ForegroundPlusGameplay,
             Self::ForegroundPlusGameplay => Self::Normal,
         }
     }
 
     fn label(self) -> &'static str {
         match self {
-            Self::Normal                => "Normal (all visible)",
-            Self::ForegroundOnly        => "Foreground only",
-            Self::BackgroundOnly        => "Background only",
-            Self::GameplayOnly          => "Gameplay only",
+            Self::Normal => "Normal (all visible)",
+            Self::ForegroundOnly => "Foreground only",
+            Self::BackgroundOnly => "Background only",
+            Self::GameplayOnly => "Gameplay only",
             Self::ForegroundPlusGameplay => "Foreground + Gameplay",
         }
     }
@@ -237,7 +234,10 @@ fn toggle_layer_visibility(
             Has<crate::enemies::components::Enemy>,
             Has<crate::collectibles::components::Collectible>,
         ),
-        (Without<crate::player::components::Player>, Without<Camera3d>),
+        (
+            Without<crate::player::components::Player>,
+            Without<Camera3d>,
+        ),
     >,
 ) {
     // Direct mode selection: F1–F5.  F9 cycles sequentially.
@@ -258,12 +258,25 @@ fn toggle_layer_visibility(
     };
 
     let Some(m) = new_mode else { return };
-    if *mode == m { return; }
+    if *mode == m {
+        return;
+    }
     *mode = m;
 
     info!("[DEBUG] Layer isolation: {}", m.label());
 
-    for (global_tf, mut vis, is_fg_deco, is_parallax_bg, is_parallax, is_deco, is_tile, is_enemy, is_collectible) in query.iter_mut() {
+    for (
+        global_tf,
+        mut vis,
+        is_fg_deco,
+        is_parallax_bg,
+        is_parallax,
+        is_deco,
+        is_tile,
+        is_enemy,
+        is_collectible,
+    ) in query.iter_mut()
+    {
         // Classify by marker first, Z-range fallback for untagged entities.
         //
         // Foreground: ForegroundDecoration marker, or z > 2 (ground props,
@@ -278,17 +291,22 @@ fn toggle_layer_visibility(
             || is_parallax
             || (is_deco && !is_fg_deco && z < -5.0)
             || (!is_fg_deco && !is_tile && !is_enemy && !is_collectible && z < -5.0);
-        let is_gameplay = is_tile || is_enemy || is_collectible || ((-5.0..=2.0).contains(&z) && !is_foreground);
+        let is_gameplay =
+            is_tile || is_enemy || is_collectible || ((-5.0..=2.0).contains(&z) && !is_foreground);
 
         let visible = match m {
-            DebugViewMode::Normal                => true,
-            DebugViewMode::ForegroundOnly        => is_foreground,
-            DebugViewMode::BackgroundOnly        => is_background,
-            DebugViewMode::GameplayOnly          => is_gameplay,
+            DebugViewMode::Normal => true,
+            DebugViewMode::ForegroundOnly => is_foreground,
+            DebugViewMode::BackgroundOnly => is_background,
+            DebugViewMode::GameplayOnly => is_gameplay,
             DebugViewMode::ForegroundPlusGameplay => is_foreground || is_gameplay,
         };
 
-        *vis = if visible { Visibility::Inherited } else { Visibility::Hidden };
+        *vis = if visible {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        };
     }
 }
 
@@ -312,7 +330,7 @@ fn log_decoration_counts(
         Some(LevelId::Forest) => "Forest",
         Some(LevelId::Subdivision) => "Subdivision",
         Some(LevelId::City) => "City",
-        None                  => "None",
+        None => "None",
     };
 
     info!(
@@ -329,4 +347,3 @@ fn log_decoration_counts(
         tile_query.iter().count(),
     );
 }
-

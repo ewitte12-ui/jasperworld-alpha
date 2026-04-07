@@ -11,7 +11,6 @@ use avian2d::prelude::*;
 use bevy::mesh::VertexAttributeValues;
 use bevy::prelude::*;
 
-
 use crate::physics::config::GameLayer;
 
 use crate::animation::components::{AtlasLayout, EnemyAnimState, SpriteAnimation};
@@ -43,10 +42,10 @@ fn texture_path(enemy_type: EnemyType) -> &'static str {
 fn atlas_grid(enemy_type: EnemyType) -> (f32, f32) {
     match enemy_type {
         EnemyType::Dog => (4.0, 2.0),      // 512×256, 4×2 grid
-        EnemyType::Squirrel => (4.0, 2.0),  // 512×256, 4×2 grid
-        EnemyType::Snake => (4.0, 2.0),     // 512×256, 4×2 grid
-        EnemyType::Possum => (4.0, 2.0),    // 512×256, 4×2 grid
-        EnemyType::Rat => (4.0, 2.0),       // 512×256, 4×2 grid
+        EnemyType::Squirrel => (4.0, 2.0), // 512×256, 4×2 grid
+        EnemyType::Snake => (4.0, 2.0),    // 512×256, 4×2 grid
+        EnemyType::Possum => (4.0, 2.0),   // 512×256, 4×2 grid
+        EnemyType::Rat => (4.0, 2.0),      // 512×256, 4×2 grid
     }
 }
 
@@ -59,10 +58,10 @@ const COLLIDER_H: f32 = 20.0;
 fn quad_size(enemy_type: EnemyType) -> (f32, f32) {
     match enemy_type {
         EnemyType::Dog => (28.0, 32.0),      // match player quad
-        EnemyType::Squirrel => (28.0, 32.0),  // match player quad
-        EnemyType::Snake => (28.0, 32.0),     // match player quad
-        EnemyType::Possum => (28.0, 32.0),    // match player quad
-        EnemyType::Rat => (28.0, 32.0),       // match player quad
+        EnemyType::Squirrel => (28.0, 32.0), // match player quad
+        EnemyType::Snake => (28.0, 32.0),    // match player quad
+        EnemyType::Possum => (28.0, 32.0),   // match player quad
+        EnemyType::Rat => (28.0, 32.0),      // match player quad
     }
 }
 
@@ -109,10 +108,10 @@ pub fn spawn_enemy(
     mesh_data.insert_attribute(
         Mesh::ATTRIBUTE_POSITION,
         VertexAttributeValues::Float32x3(vec![
-            [hw,  hh + y_offset, 0.0],  // TR
+            [hw, hh + y_offset, 0.0],   // TR
             [-hw, hh + y_offset, 0.0],  // TL
             [-hw, -hh + y_offset, 0.0], // BL
-            [hw,  -hh + y_offset, 0.0], // BR
+            [hw, -hh + y_offset, 0.0],  // BR
         ]),
     );
 
@@ -161,8 +160,7 @@ pub fn spawn_enemy(
         ContactDamage { amount: 25.0 },
         Mesh3d(mesh),
         MeshMaterial3d(material),
-        Transform::from_xyz(position.x, center_y, 0.5)
-            .with_scale(Vec3::splat(1.0)),
+        Transform::from_xyz(position.x, center_y, 5.0).with_scale(Vec3::splat(1.0)),
         RigidBody::Dynamic,
         // Capsule instead of rectangle: rounded bottom/top slide over individual tile
         // seam edges without catching.  Rectangle colliders catch on the vertical face
@@ -219,8 +217,8 @@ pub fn spawn_enemies(
     // Forest enemies: col_x(col) = -864 + col*18 + 9
     // Y = ground_top = -146.0 (spawner adds COLLIDER_H/2 = 10 → center at -136).
     let enemies = [
-        (EnemyType::Dog,    Vec2::new(81.0,  -146.0), 90.0_f32, 150.0),
-        (EnemyType::Snake,  Vec2::new(477.0, -146.0), 54.0_f32, 50.0),
+        (EnemyType::Dog, Vec2::new(81.0, -146.0), 90.0_f32, 150.0),
+        (EnemyType::Snake, Vec2::new(477.0, -146.0), 54.0_f32, 50.0),
         (EnemyType::Possum, Vec2::new(621.0, -146.0), 54.0_f32, 50.0),
     ];
 

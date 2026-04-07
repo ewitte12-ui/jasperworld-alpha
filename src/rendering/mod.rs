@@ -4,8 +4,8 @@ pub mod parallax;
 pub mod quad;
 use bevy::prelude::*;
 
-use camera::{CameraPlugin, CameraPipeline, camera_snap};
-use parallax::{update_parallax, apply_scene_tints};
+use camera::{CameraPipeline, CameraPlugin, camera_snap};
+use parallax::{apply_scene_tints, update_parallax};
 pub struct RenderingPlugin;
 
 impl Plugin for RenderingPlugin {
@@ -15,7 +15,13 @@ impl Plugin for RenderingPlugin {
             // All four stages run every Update frame; .chain() enforces strict ordering.
             .configure_sets(
                 Update,
-                (CameraPipeline::Follow, CameraPipeline::Clamp, CameraPipeline::Snap, CameraPipeline::Parallax).chain(),
+                (
+                    CameraPipeline::Follow,
+                    CameraPipeline::Clamp,
+                    CameraPipeline::Snap,
+                    CameraPipeline::Parallax,
+                )
+                    .chain(),
             )
             .add_systems(Startup, load_atlas_resources)
             .add_systems(

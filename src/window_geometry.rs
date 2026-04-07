@@ -55,11 +55,15 @@ pub fn persist_window_geometry(
     mut last: Local<Option<GeomSnapshot>>,
     quit: Res<crate::states::QuitRequested>,
 ) {
-    if quit.0 { return; }
+    if quit.0 {
+        return;
+    }
     let Ok(window) = windows.single() else { return };
 
     // Position only becomes WindowPosition::At once the OS has placed the window.
-    let WindowPosition::At(pos) = window.position else { return };
+    let WindowPosition::At(pos) = window.position else {
+        return;
+    };
 
     let w = window.width() as u32;
     let h = window.height() as u32;

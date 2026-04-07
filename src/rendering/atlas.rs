@@ -113,10 +113,30 @@ mod tests {
         let expected_u_max = (config.tile_size - 0.5) / sheet_w;
         let expected_v_max = (config.tile_size - 0.5) / sheet_h;
 
-        assert!(approx_eq(uv[0], expected_u_min), "u_min expected {}, got {}", expected_u_min, uv[0]);
-        assert!(approx_eq(uv[1], expected_v_min), "v_min expected {}, got {}", expected_v_min, uv[1]);
-        assert!(approx_eq(uv[2], expected_u_max), "u_max expected {}, got {}", expected_u_max, uv[2]);
-        assert!(approx_eq(uv[3], expected_v_max), "v_max expected {}, got {}", expected_v_max, uv[3]);
+        assert!(
+            approx_eq(uv[0], expected_u_min),
+            "u_min expected {}, got {}",
+            expected_u_min,
+            uv[0]
+        );
+        assert!(
+            approx_eq(uv[1], expected_v_min),
+            "v_min expected {}, got {}",
+            expected_v_min,
+            uv[1]
+        );
+        assert!(
+            approx_eq(uv[2], expected_u_max),
+            "u_max expected {}, got {}",
+            expected_u_max,
+            uv[2]
+        );
+        assert!(
+            approx_eq(uv[3], expected_v_max),
+            "v_max expected {}, got {}",
+            expected_v_max,
+            uv[3]
+        );
     }
 
     #[test]
@@ -136,7 +156,12 @@ mod tests {
             expected_u_min,
             uv[0]
         );
-        assert!(approx_eq(uv[1], expected_v_min), "v_min expected {}, got {}", expected_v_min, uv[1]);
+        assert!(
+            approx_eq(uv[1], expected_v_min),
+            "v_min expected {}, got {}",
+            expected_v_min,
+            uv[1]
+        );
     }
 
     #[test]
@@ -150,7 +175,12 @@ mod tests {
         let row_origin = config.tile_size + config.spacing; // = 19
         let expected_u_min = 0.5 / sheet_w;
         let expected_v_min = (row_origin + 0.5) / sheet_h;
-        assert!(approx_eq(uv[0], expected_u_min), "u_min expected {}, got {}", expected_u_min, uv[0]);
+        assert!(
+            approx_eq(uv[0], expected_u_min),
+            "u_min expected {}, got {}",
+            expected_u_min,
+            uv[0]
+        );
         assert!(
             approx_eq(uv[1], expected_v_min),
             "v_min expected {}, got {}",

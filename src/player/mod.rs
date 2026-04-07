@@ -7,11 +7,11 @@ use avian2d::prelude::PhysicsSchedule;
 use bevy::prelude::*;
 use bevy_tnua::{TnuaControllerPlugin, TnuaUserControlsSystems};
 
+use crate::rendering::camera::CameraPipeline;
 use components::PlayerControlScheme;
-use controller::setup_player_physics;
+use controller::{neutralize_player_material, setup_player_physics};
 use input::player_input;
 use systems::{camera_follow, player_clamp};
-use crate::rendering::camera::CameraPipeline;
 
 use crate::states::AppState;
 
@@ -37,5 +37,10 @@ impl Plugin for PlayerPlugin {
             )
                 .run_if(in_state(AppState::Playing)),
         );
+
+        // Runs unconditionally (not gated by AppState) because GLB mesh entities
+        // spawn asynchronously and may resolve during any state. The
+        // `PlayerMaterialNeutralized` guard ensures each mesh is processed once.
+        app.add_systems(Update, neutralize_player_material);
     }
 }

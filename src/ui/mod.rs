@@ -13,18 +13,17 @@ pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, systems::spawn_hud)
-            .add_systems(
-                Update,
-                (
-                    systems::update_health_display.run_if(in_state(AppState::Playing)),
-                    systems::update_star_counter.run_if(in_state(AppState::Playing)),
-                    systems::update_level_name.run_if(in_state(AppState::Playing)),
-                    pause::toggle_pause
-                        .run_if(in_state(AppState::Playing).or(in_state(AppState::Paused))),
-                    manage_hud_visibility,
-                ),
-            );
+        app.add_systems(Startup, systems::spawn_hud).add_systems(
+            Update,
+            (
+                systems::update_health_display.run_if(in_state(AppState::Playing)),
+                systems::update_star_counter.run_if(in_state(AppState::Playing)),
+                systems::update_level_name.run_if(in_state(AppState::Playing)),
+                pause::toggle_pause
+                    .run_if(in_state(AppState::Playing).or(in_state(AppState::Paused))),
+                manage_hud_visibility,
+            ),
+        );
     }
 }
 

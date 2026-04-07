@@ -5,7 +5,9 @@ use crate::level::level_data::{CurrentLevel, LevelId};
 use crate::particles::components::Particle;
 use crate::rendering::camera::GameplayCamera;
 
-use super::components::{CameraRelativeVfx, LevelNameFlash, ScreenFlash, WeatherEmitter, WeatherType};
+use super::components::{
+    CameraRelativeVfx, LevelNameFlash, ScreenFlash, WeatherEmitter, WeatherType,
+};
 
 // ── Weather ──────────────────────────────────────────────────────────────────
 
@@ -80,12 +82,7 @@ pub fn emit_weather_particles(
                 let x = cam_pos.x + (r1 - 0.5) * 400.0;
                 let spawn_y = cam_pos.y + 175.0;
                 let drift_x = (r2 - 0.5) * 15.0;
-                let tint = Color::srgba(
-                    0.7 + r3 * 0.2,
-                    0.75 + r3 * 0.2,
-                    0.9 + r3 * 0.1,
-                    0.7,
-                );
+                let tint = Color::srgba(0.7 + r3 * 0.2, 0.75 + r3 * 0.2, 0.9 + r3 * 0.1, 0.7);
                 let mesh = meshes.add(Rectangle::new(2.0, 10.0));
                 let mat = materials.add(StandardMaterial {
                     base_color: tint,
@@ -113,7 +110,7 @@ pub fn emit_weather_particles(
                 let spawn_y = cam_pos.y + 175.0;
                 let drift_x = (r2 - 0.5) * 40.0;
                 let tint = Color::srgba(
-                    0.65 + r3 * 0.15,  // warm tan
+                    0.65 + r3 * 0.15, // warm tan
                     0.58 + r3 * 0.12,
                     0.42 + r3 * 0.13,
                     0.5,
@@ -173,7 +170,6 @@ pub fn emit_weather_particles(
                     CameraRelativeVfx,
                 ));
             }
-
         }
     }
 }

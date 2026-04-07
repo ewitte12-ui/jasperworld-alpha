@@ -17,7 +17,10 @@ pub fn camera_follow(
     player_query: Query<&Transform, (With<Player>, Without<Camera3d>)>,
     // WHY GameplayCamera: bare With<Camera3d> is invalid per camera_role_identity_guardrail.
     // Must target the gameplay camera specifically so title/debug cameras don't interfere.
-    mut camera_query: Query<&mut Transform, (With<Camera3d>, With<GameplayCamera>, Without<Player>)>,
+    mut camera_query: Query<
+        &mut Transform,
+        (With<Camera3d>, With<GameplayCamera>, Without<Player>),
+    >,
 ) {
     let Ok(player_transform) = player_query.single() else {
         return;
@@ -57,7 +60,9 @@ pub fn player_clamp(
     mut player_query: Query<&mut Transform, With<Player>>,
 ) {
     let Some(level_data) = level_data else { return };
-    let Ok(mut tf) = player_query.single_mut() else { return };
+    let Ok(mut tf) = player_query.single_mut() else {
+        return;
+    };
 
     let layer = &level_data.layers[current_level.layer_index];
     let level_left = layer.origin_x;

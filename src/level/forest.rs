@@ -1,15 +1,11 @@
-use bevy::prelude::*;
-use crate::tilemap::tilemap::TileType::{self, Empty as E, Platform as P, Solid as S};
 use super::level_data::{LayerData, LevelData, LevelId};
+use crate::tilemap::tilemap::TileType::{self, Empty as E, Platform as P, Solid as S};
+use bevy::prelude::*;
 
 pub fn forest_level() -> LevelData {
     LevelData {
         id: LevelId::Forest,
-        layers: vec![
-            forest_layer_0(),
-            forest_layer_1(),
-            forest_layer_2(),
-        ],
+        layers: vec![forest_layer_0(), forest_layer_1(), forest_layer_2()],
     }
 }
 
@@ -42,28 +38,28 @@ fn forest_layer_0() -> LayerData {
             row
         };
         vec![
-            solid(), // row 0
-            solid(), // row 1
-            solid(), // row 2
-            empty(), // row 3
-            empty(), // row 4
-            empty(), // row 5
+            solid(),                                                           // row 0
+            solid(),                                                           // row 1
+            solid(),                                                           // row 2
+            empty(),                                                           // row 3
+            empty(),                                                           // row 4
+            empty(),                                                           // row 5
             plat(&[(4, 8), (22, 26), (35, 39), (55, 60), (67, 71), (83, 87)]), // row 6
-            empty(), // row 7
-            empty(), // row 8
-            empty(), // row 9
+            empty(),                                                           // row 7
+            empty(),                                                           // row 8
+            empty(),                                                           // row 9
             plat(&[(13, 18), (44, 46), (75, 80)]), // row 10 — Plat E trimmed; gap 47–54 forces ground drop into Dog zone
-            empty(), // row 11
-            empty(), // row 12
-            empty(), // row 13
-            plat(&[(48, 52), (68, 72)]), // row 14
-            empty(), // row 15
-            empty(), // row 16
-            empty(), // row 17
-            empty(), // row 18
-            empty(), // row 19
-            empty(), // row 20
-            empty(), // row 21
+            empty(),                               // row 11
+            empty(),                               // row 12
+            empty(),                               // row 13
+            plat(&[(48, 52), (68, 72)]),           // row 14
+            empty(),                               // row 15
+            empty(),                               // row 16
+            empty(),                               // row 17
+            empty(),                               // row 18
+            empty(),                               // row 19
+            empty(),                               // row 20
+            empty(),                               // row 21
         ]
     };
 
@@ -93,24 +89,24 @@ fn forest_layer_1() -> LayerData {
             row
         };
         vec![
-            solid(),                                // row 0  — floor
-            solid(),                                // row 1  — floor
-            cave(&[]),                              // row 2
-            cave(&[]),                              // row 3
-            cave(&[]),                              // row 4
-            cave(&[(5, 9), (22, 26)]),              // row 5  — low platforms
-            cave(&[]),                              // row 6
-            cave(&[]),                              // row 7
-            cave(&[]),                              // row 8
-            cave(&[(12, 16)]),                      // row 9  — mid platform
-            cave(&[]),                              // row 10
-            cave(&[]),                              // row 11
-            cave(&[(20, 24)]),                      // row 12 — high platform
-            cave(&[]),                              // row 13
-            cave(&[]),                              // row 14
-            cave(&[]),                              // row 15
-            solid(),                                // row 16 — ceiling
-            solid(),                                // row 17 — ceiling
+            solid(),                   // row 0  — floor
+            solid(),                   // row 1  — floor
+            cave(&[]),                 // row 2
+            cave(&[]),                 // row 3
+            cave(&[]),                 // row 4
+            cave(&[(5, 9), (22, 26)]), // row 5  — low platforms
+            cave(&[]),                 // row 6
+            cave(&[]),                 // row 7
+            cave(&[]),                 // row 8
+            cave(&[(12, 16)]),         // row 9  — mid platform
+            cave(&[]),                 // row 10
+            cave(&[]),                 // row 11
+            cave(&[(20, 24)]),         // row 12 — high platform
+            cave(&[]),                 // row 13
+            cave(&[]),                 // row 14
+            cave(&[]),                 // row 15
+            solid(),                   // row 16 — ceiling
+            solid(),                   // row 17 — ceiling
         ]
     };
 
@@ -147,28 +143,28 @@ fn forest_layer_2() -> LayerData {
             row
         };
         vec![
-            solid(), // row 0
-            solid(), // row 1
-            solid(), // row 2
-            empty(), // row 3
-            empty(), // row 4
-            empty(), // row 5
+            solid(),                                        // row 0
+            solid(),                                        // row 1
+            solid(),                                        // row 2
+            empty(),                                        // row 3
+            empty(),                                        // row 4
+            empty(),                                        // row 5
             plat(&[(6, 10), (32, 36), (62, 66), (88, 91)]), // row 6
-            empty(), // row 7
-            empty(), // row 8
-            empty(), // row 9
-            plat(&[(16, 20), (48, 52), (78, 82)]), // row 10
-            empty(), // row 11
-            empty(), // row 12
-            empty(), // row 13
-            plat(&[(25, 29), (65, 69)]), // row 14
-            empty(), // row 15
-            empty(), // row 16
-            empty(), // row 17
-            empty(), // row 18
-            empty(), // row 19
-            empty(), // row 20
-            empty(), // row 21
+            empty(),                                        // row 7
+            empty(),                                        // row 8
+            empty(),                                        // row 9
+            plat(&[(16, 20), (48, 52), (78, 82)]),          // row 10
+            empty(),                                        // row 11
+            empty(),                                        // row 12
+            empty(),                                        // row 13
+            plat(&[(25, 29), (65, 69)]),                    // row 14
+            empty(),                                        // row 15
+            empty(),                                        // row 16
+            empty(),                                        // row 17
+            empty(),                                        // row 18
+            empty(),                                        // row 19
+            empty(),                                        // row 20
+            empty(),                                        // row 21
         ]
     };
 

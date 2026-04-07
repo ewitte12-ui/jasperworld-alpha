@@ -31,17 +31,17 @@ const SNOW_LARGE_H: f32 = 1.000;
 const MOVING_LARGE_W: f32 = 1.000;
 const MOVING_LARGE_H: f32 = 0.500;
 // Cement platform — native ~1.0 × 1.0 × 1.0 cube, center-anchored.
-const CEMENT_W: f32 = 0.992;   // native X width
-const CEMENT_H: f32 = 1.000;   // native Y height
-const CEMENT_Z: f32 = 0.982;   // native Z depth
+const CEMENT_W: f32 = 0.992; // native X width
+const CEMENT_H: f32 = 1.000; // native Y height
+const CEMENT_Z: f32 = 0.982; // native Z depth
 // Grass block — native ~1.0 × 1.0 × 1.0 cube, center-anchored.
-const GRASS_W: f32 = 0.968;   // native X width
-const GRASS_H: f32 = 1.000;   // native Y height
-const GRASS_Z: f32 = 0.974;   // native Z depth
+const GRASS_W: f32 = 0.968; // native X width
+const GRASS_H: f32 = 1.000; // native Y height
+const GRASS_Z: f32 = 0.974; // native Z depth
 // Redbricks — native ~1.0 × 0.933 × 0.950 cube, center-anchored.
-const REDBRICKS_W: f32 = 1.000;   // native X width
-const REDBRICKS_H: f32 = 0.933;   // native Y height
-const REDBRICKS_Z: f32 = 0.950;   // native Z depth
+const REDBRICKS_W: f32 = 1.000; // native X width
+const REDBRICKS_H: f32 = 0.933; // native Y height
+const REDBRICKS_Z: f32 = 0.950; // native Z depth
 
 /// Spawn all tiles for a 2D grid using 3D GLB models.
 ///
@@ -64,7 +64,16 @@ pub fn spawn_tilemap(
     origin: Vec2,
     z: f32,
 ) {
-    spawn_tilemap_inner(commands, asset_server, solid_model, platform_model, grid, origin, z, None);
+    spawn_tilemap_inner(
+        commands,
+        asset_server,
+        solid_model,
+        platform_model,
+        grid,
+        origin,
+        z,
+        None,
+    );
 }
 
 /// Same as `spawn_tilemap` but applies a color tint to all tiles.
@@ -79,7 +88,16 @@ pub fn spawn_tilemap_tinted(
     z: f32,
     tile_tint: Color,
 ) {
-    spawn_tilemap_inner(commands, asset_server, solid_model, platform_model, grid, origin, z, Some(tile_tint));
+    spawn_tilemap_inner(
+        commands,
+        asset_server,
+        solid_model,
+        platform_model,
+        grid,
+        origin,
+        z,
+        Some(tile_tint),
+    );
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -128,10 +146,7 @@ fn spawn_tilemap_inner(
                     Visibility::default(),
                 ))
                 .with_children(|parent| {
-                    let mut child = parent.spawn((
-                        SceneRoot(scene_handle),
-                        child_xform,
-                    ));
+                    let mut child = parent.spawn((SceneRoot(scene_handle), child_xform));
                     if tint_tile {
                         child.insert(SceneTint::Multiply(tile_tint.unwrap()));
                     }
@@ -242,12 +257,11 @@ fn child_transform_for_model(model_path: &str, is_platform: bool) -> Transform {
         // Parent at (wx, wy+2.0, z); center-anchored full-tile height → Y offset = 0.
         let target_depth = 5.0;
         let uniform = TILE_SIZE / w;
-        Transform::from_xyz(0.0, 0.0, 0.0)
-            .with_scale(Vec3::new(
-                uniform,
-                uniform * (h / w),
-                target_depth / z,
-            ))
+        Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::new(
+            uniform,
+            uniform * (h / w),
+            target_depth / z,
+        ))
     } else {
         let vis_scale = if is_platform {
             model_scale_platform(model_path)
@@ -298,7 +312,11 @@ fn model_scale(model_path: &str) -> Vec3 {
     };
     // Target ~6 world units of visual depth for solid tiles.
     // z_scale = target_depth / native_z
-    let target_depth = if model_path.contains("block-grass-low") { 3.0 } else { 6.0 };
+    let target_depth = if model_path.contains("block-grass-low") {
+        3.0
+    } else {
+        6.0
+    };
     let z_scale = target_depth / z;
     Vec3::new(TILE_SIZE / w, TILE_SIZE / h, z_scale)
 }

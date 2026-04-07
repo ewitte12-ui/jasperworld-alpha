@@ -20,7 +20,10 @@ use jaspersworld::resources::{
     RebindingState, SaveSlots,
 };
 use jaspersworld::save_load::SaveLoadPlugin;
-use jaspersworld::states::{AppState, NewGameRequested, QuitRequested, SaveLoadMode, SaveLoadReturnState, SettingsReturnState, SettingsTab};
+use jaspersworld::states::{
+    AppState, NewGameRequested, QuitRequested, SaveLoadMode, SaveLoadReturnState,
+    SettingsReturnState, SettingsTab,
+};
 use jaspersworld::tilemap::TilemapPlugin;
 use jaspersworld::title::TitleBackgroundPlugin;
 use jaspersworld::ui::UiPlugin;
@@ -53,57 +56,60 @@ fn main() {
     let mut app = App::new();
 
     app.add_plugins(
-            DefaultPlugins
-                .set(ImagePlugin::default_nearest())
-                .set(WindowPlugin {
-                    primary_window: Some(initial_window),
-                    ..default()
-                }),
-        )
-        // States
-        .init_state::<AppState>()
-        .add_sub_state::<SettingsTab>()
-        // Menu/settings resources
-        .init_resource::<GraphicsSettings>()
-        .init_resource::<AudioSettings>()
-        .init_resource::<ControlBindings>()
-        .init_resource::<RebindingState>()
-        .init_resource::<SaveSlots>()
-        .init_resource::<SettingsReturnState>()
-        .init_resource::<SaveLoadMode>()
-        .init_resource::<SaveLoadReturnState>()
-        .init_resource::<PendingSaveSlot>()
-        .init_resource::<PendingLoadSlot>()
-        .init_resource::<NewGameRequested>()
-        .init_resource::<QuitRequested>()
-        // Gameplay plugins
-        .add_plugins(PhysicsPlugin)
-        .add_plugins(RenderingPlugin)
-        .add_plugins(TilemapPlugin)
-        .add_plugins(LevelPlugin)
-        .add_plugins(PlayerPlugin)
-        .add_plugins(EnemiesPlugin)
-        .add_plugins(CombatPlugin)
-        .add_plugins(CollectiblesPlugin)
-        .add_plugins(PuzzlePlugin)
-        .add_plugins(UiPlugin)
-        .add_plugins(DialoguePlugin)
-        .add_plugins(SaveLoadPlugin)
-        .add_plugins(AudioPlugin)
-        .add_plugins(AnimationPlugin)
-        .add_plugins(ParticlesPlugin)
-        .add_plugins(LightingPlugin)
-        .add_plugins(VfxPlugin)
-        // Menu plugin (title, main menu, pause, settings, save/load)
-        .add_plugins(MenuPlugin)
-        .add_plugins(TitleBackgroundPlugin)
-        // Global systems
-        .add_systems(Startup, load_settings)
-        .add_systems(Update, (
+        DefaultPlugins
+            .set(ImagePlugin::default_nearest())
+            .set(WindowPlugin {
+                primary_window: Some(initial_window),
+                ..default()
+            }),
+    )
+    // States
+    .init_state::<AppState>()
+    .add_sub_state::<SettingsTab>()
+    // Menu/settings resources
+    .init_resource::<GraphicsSettings>()
+    .init_resource::<AudioSettings>()
+    .init_resource::<ControlBindings>()
+    .init_resource::<RebindingState>()
+    .init_resource::<SaveSlots>()
+    .init_resource::<SettingsReturnState>()
+    .init_resource::<SaveLoadMode>()
+    .init_resource::<SaveLoadReturnState>()
+    .init_resource::<PendingSaveSlot>()
+    .init_resource::<PendingLoadSlot>()
+    .init_resource::<NewGameRequested>()
+    .init_resource::<QuitRequested>()
+    // Gameplay plugins
+    .add_plugins(PhysicsPlugin)
+    .add_plugins(RenderingPlugin)
+    .add_plugins(TilemapPlugin)
+    .add_plugins(LevelPlugin)
+    .add_plugins(PlayerPlugin)
+    .add_plugins(EnemiesPlugin)
+    .add_plugins(CombatPlugin)
+    .add_plugins(CollectiblesPlugin)
+    .add_plugins(PuzzlePlugin)
+    .add_plugins(UiPlugin)
+    .add_plugins(DialoguePlugin)
+    .add_plugins(SaveLoadPlugin)
+    .add_plugins(AudioPlugin)
+    .add_plugins(AnimationPlugin)
+    .add_plugins(ParticlesPlugin)
+    .add_plugins(LightingPlugin)
+    .add_plugins(VfxPlugin)
+    // Menu plugin (title, main menu, pause, settings, save/load)
+    .add_plugins(MenuPlugin)
+    .add_plugins(TitleBackgroundPlugin)
+    // Global systems
+    .add_systems(Startup, load_settings)
+    .add_systems(
+        Update,
+        (
             apply_audio_settings,
             apply_graphics_settings,
             persist_window_geometry,
-        ));
+        ),
+    );
 
     // DEBUG ONLY — compiled out in release builds (`cargo build --release`)
     #[cfg(debug_assertions)]

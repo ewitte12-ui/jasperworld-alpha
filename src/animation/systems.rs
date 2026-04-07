@@ -17,14 +17,7 @@ use super::components::{
 /// `PlayerAnimState`. The actual visual animation is handled by
 /// `animate_player_procedural`.
 pub fn update_player_anim_state(
-    mut query: Query<
-        (
-            &LinearVelocity,
-            &mut PlayerAnimState,
-            Option<&Invulnerable>,
-        ),
-        With<Player>,
-    >,
+    mut query: Query<(&LinearVelocity, &mut PlayerAnimState, Option<&Invulnerable>), With<Player>>,
 ) {
     let Ok((velocity, mut anim_state, invulnerable)) = query.single_mut() else {
         return;
@@ -125,10 +118,10 @@ pub fn animate_sprites(
 
         // Rectangle vertex order: TR(0), TL(1), BL(2), BR(3)
         let new_uvs: Vec<[f32; 2]> = vec![
-            [u_max, v_min],  // 0 = TR
-            [u_min, v_min],  // 1 = TL
-            [u_min, v_max],  // 2 = BL
-            [u_max, v_max],  // 3 = BR
+            [u_max, v_min], // 0 = TR
+            [u_min, v_min], // 1 = TL
+            [u_min, v_max], // 2 = BL
+            [u_max, v_max], // 3 = BR
         ];
 
         if let Some(mesh) = meshes.get_mut(&mesh3d.0) {
@@ -181,7 +174,10 @@ pub fn setup_player_animation(
         }
     }
 
-    info!("[ANIM] setup: searched {visited} descendants, found AnimationPlayer: {}", anim_entity.is_some());
+    info!(
+        "[ANIM] setup: searched {visited} descendants, found AnimationPlayer: {}",
+        anim_entity.is_some()
+    );
 
     if let Some(ae) = anim_entity {
         info!("[ANIM] setup: anim_entity={ae:?}");
@@ -217,7 +213,9 @@ pub fn setup_player_animation(
     });
 
     // Remove the polling marker — setup phase is done; finalize takes over.
-    commands.entity(player_entity).remove::<PlayerModelPending>();
+    commands
+        .entity(player_entity)
+        .remove::<PlayerModelPending>();
 }
 
 /// Waits for all 4 animation clips to finish loading, then builds the
@@ -272,7 +270,9 @@ pub fn finalize_player_animation(
         .entity(anim_entity)
         .insert(AnimationGraphHandle(graph_handle));
 
-    info!("[ANIM] graph wired: player={player_entity:?} anim={anim_entity:?} idle={idle_index:?} walk={walk_index:?} jump={jump_index:?} hurt={hurt_index:?}");
+    info!(
+        "[ANIM] graph wired: player={player_entity:?} anim={anim_entity:?} idle={idle_index:?} walk={walk_index:?} jump={jump_index:?} hurt={hurt_index:?}"
+    );
 
     // Store the graph wiring on the player entity for drive_player_animation.
     commands.entity(player_entity).insert(PlayerAnimGraph {
@@ -295,7 +295,10 @@ pub fn finalize_player_animation(
                         commands.entity(e).insert(PlayerRootBone {
                             original_y: bone_transform.translation.y,
                         });
-                        info!("[ANIM] tagged Root bone {e:?} original_y={}", bone_transform.translation.y);
+                        info!(
+                            "[ANIM] tagged Root bone {e:?} original_y={}",
+                            bone_transform.translation.y
+                        );
                     }
                     break;
                 }
@@ -307,7 +310,9 @@ pub fn finalize_player_animation(
     }
 
     // Finalization complete — remove the pending marker.
-    commands.entity(player_entity).remove::<PlayerClipsPending>();
+    commands
+        .entity(player_entity)
+        .remove::<PlayerClipsPending>();
 
     // Remove SceneRoot from the visual child entity to stop Bevy's scene
     // spawner from re-syncing the scene hierarchy on subsequent frames.
@@ -348,7 +353,10 @@ pub fn debug_animation_state(
 
     // Check if the entity even exists
     let entity_exists = anim_player_query.get(anim_graph.anim_entity).is_ok();
-    info!("[ANIM-DEBUG] anim_entity {:?} query result: exists={entity_exists}", anim_graph.anim_entity);
+    info!(
+        "[ANIM-DEBUG] anim_entity {:?} query result: exists={entity_exists}",
+        anim_graph.anim_entity
+    );
 
     if let Ok((anim_player, graph_handle)) = anim_player_query.get(anim_graph.anim_entity) {
         let has_graph = graph_handle.is_some();
@@ -364,8 +372,10 @@ pub fn debug_animation_state(
     }
 
     // Also check: does drive_player_animation's query type find it?
-    info!("[ANIM-DEBUG] drive query would find it: {}",
-        anim_player_query.get(anim_graph.anim_entity).is_ok());
+    info!(
+        "[ANIM-DEBUG] drive query would find it: {}",
+        anim_player_query.get(anim_graph.anim_entity).is_ok()
+    );
 }
 
 /// Drives skeletal animation based on the current `PlayerAnimState`.
@@ -404,10 +414,16 @@ pub fn drive_player_animation(
                     return;
                 }
                 // Nothing playing — fall through to restart
-                info!("[ANIM] drive: state={:?} matches current but nothing playing, restarting", *anim_state);
+                info!(
+                    "[ANIM] drive: state={:?} matches current but nothing playing, restarting",
+                    *anim_state
+                );
             }
             Err(_) => {
-                info!("[ANIM] drive: CANNOT FIND AnimationPlayer on {:?}!", anim_graph.anim_entity);
+                info!(
+                    "[ANIM] drive: CANNOT FIND AnimationPlayer on {:?}!",
+                    anim_graph.anim_entity
+                );
                 return;
             }
         }
@@ -424,13 +440,14 @@ pub fn drive_player_animation(
         .playing_animations()
         .filter(|(_, a)| !a.is_finished())
         .count();
-    info!(
-        "[ANIM] drive: before stop — playing={playing_count} active={active_count}"
-    );
+    info!("[ANIM] drive: before stop — playing={playing_count} active={active_count}");
 
     anim_player.stop_all();
 
-    info!("[ANIM] drive: starting {:?} (index {:?})", *anim_state, desired_index);
+    info!(
+        "[ANIM] drive: starting {:?} (index {:?})",
+        *anim_state, desired_index
+    );
 
     match *anim_state {
         PlayerAnimState::Idle | PlayerAnimState::Walking => {
@@ -448,9 +465,7 @@ pub fn drive_player_animation(
 
 /// Resets the root bone's Y translation after Bevy's animation evaluation.
 /// Prevents walk animation root motion from accumulating vertical drift.
-pub fn pin_player_root_bone(
-    mut query: Query<(&mut Transform, &PlayerRootBone)>,
-) {
+pub fn pin_player_root_bone(mut query: Query<(&mut Transform, &PlayerRootBone)>) {
     for (mut transform, root_bone) in &mut query {
         transform.translation.y = root_bone.original_y;
     }
@@ -486,7 +501,12 @@ pub fn pin_player_root_bone(
 pub fn animate_player_procedural(
     time: Res<Time>,
     parent_query: Query<
-        (&PlayerAnimState, &FacingDirection, &Children, Option<&PlayerAnimGraph>),
+        (
+            &PlayerAnimState,
+            &FacingDirection,
+            &Children,
+            Option<&PlayerAnimGraph>,
+        ),
         With<Player>,
     >,
     mut visual_query: Query<&mut Transform, With<PlayerModelVisual>>,
@@ -541,11 +561,8 @@ pub fn animate_player_procedural(
                 transform.translation = Vec3::new(0.0, base_y + bob, 0.0);
 
                 // Gentle scale pulse on Y axis for breathing feel.
-                transform.scale = Vec3::new(
-                    base_scale,
-                    base_scale + (t * 2.0).sin() * 0.3,
-                    base_scale,
-                );
+                transform.scale =
+                    Vec3::new(base_scale, base_scale + (t * 2.0).sin() * 0.3, base_scale);
 
                 // No additional rotation beyond facing.
                 transform.rotation = facing_rotation;
@@ -567,7 +584,8 @@ pub fn animate_player_procedural(
                 // Vertical stretch (squash and stretch principle).
                 // Y stretched, X/Z compressed to maintain volume feel.
                 transform.translation = Vec3::new(0.0, base_y + 1.0, 0.0);
-                transform.scale = Vec3::new(base_scale * 0.825, base_scale * 0.925, base_scale * 0.825);
+                transform.scale =
+                    Vec3::new(base_scale * 0.825, base_scale * 0.925, base_scale * 0.825);
 
                 // No additional rotation beyond facing.
                 transform.rotation = facing_rotation;

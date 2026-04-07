@@ -124,9 +124,26 @@ pub fn switch_layer(
         None => None,
     };
     if let Some(tint) = tile_tint {
-        spawn_tilemap_tinted(&mut commands, &asset_server, solid_model, platform_model, &layer.tiles, origin, 0.0, tint);
+        spawn_tilemap_tinted(
+            &mut commands,
+            &asset_server,
+            solid_model,
+            platform_model,
+            &layer.tiles,
+            origin,
+            0.0,
+            tint,
+        );
     } else {
-        spawn_tilemap(&mut commands, &asset_server, solid_model, platform_model, &layer.tiles, origin, 0.0);
+        spawn_tilemap(
+            &mut commands,
+            &asset_server,
+            solid_model,
+            platform_model,
+            &layer.tiles,
+            origin,
+            0.0,
+        );
     }
 
     // Solar panel canopy on Subdivision Rooftop layer only.
@@ -140,9 +157,12 @@ pub fn switch_layer(
     info!(
         "[SUBLEVEL] layer_index={} origin=({}, {}) spawn=({}, {}) grid={}x{}",
         current_level.layer_index,
-        layer.origin_x, layer.origin_y,
-        layer.spawn.x, layer.spawn.y,
-        layer.cols(), layer.rows(),
+        layer.origin_x,
+        layer.origin_y,
+        layer.spawn.x,
+        layer.spawn.y,
+        layer.cols(),
+        layer.rows(),
     );
     if current_level.layer_index == 1 {
         let ox = layer.origin_x;
@@ -150,17 +170,15 @@ pub fn switch_layer(
         // Center of 32×18 grid: (ox + 16*18, oy + 9*18)
         let center_x = ox + 16.0 * TILE_SIZE;
         let center_y = oy + 9.0 * TILE_SIZE;
-        info!(
-            "[SUBLEVEL] entering sublevel: ox={ox} oy={oy} center=({center_x}, {center_y})"
-        );
+        info!("[SUBLEVEL] entering sublevel: ox={ox} oy={oy} center=({center_x}, {center_y})");
 
         // Dark background at z=-5: in front of ALL parallax backgrounds
         // (mountains at z=-50, clouds z=-60, sky z=-100) but behind tiles (z=0).
         let bg_color = match current_level.level_id {
-            Some(LevelId::Forest)      => Color::srgb(0.12, 0.10, 0.07),
+            Some(LevelId::Forest) => Color::srgb(0.12, 0.10, 0.07),
             Some(LevelId::Subdivision) => Color::srgb(0.08, 0.10, 0.07),
-            Some(LevelId::City)        => Color::srgb(0.10, 0.10, 0.15),
-            _                          => Color::srgb(0.05, 0.05, 0.05),
+            Some(LevelId::City) => Color::srgb(0.10, 0.10, 0.15),
+            _ => Color::srgb(0.05, 0.05, 0.05),
         };
         let bg_mesh = meshes.add(Rectangle::new(2000.0, 1000.0));
         let bg_mat = materials.add(StandardMaterial {
@@ -186,8 +204,7 @@ pub fn switch_layer(
         let door_y = oy + 2.0 * TILE_SIZE;
         commands.spawn((
             SceneRoot(asset_server.load("models/door-rotate.glb#Scene0")),
-            Transform::from_xyz(door_x, door_y, 1.0)
-                .with_scale(Vec3::new(60.0, 54.0, 7.0)),
+            Transform::from_xyz(door_x, door_y, 1.0).with_scale(Vec3::new(60.0, 54.0, 7.0)),
             super::doors::TransitionDoor { target_layer: 0 },
             TileEntity,
         ));
