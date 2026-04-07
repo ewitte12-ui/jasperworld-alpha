@@ -388,67 +388,76 @@ pub fn spawn_nature_background(commands: &mut Commands, asset_server: &AssetServ
 /// Each entity is marked `Decoration` so it gets despawned on level transitions.
 /// Spans x = -1500..+1600 to cover every level's starting camera position.
 pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &AssetServer) {
-    // Near houses (z=-50, factor 0.45): 5-7 Jasper units tall (90-126 world units)
+    // Near houses (z=-50, factor 0.45): Tripo house models with own textures.
+    // Mixed anchoring: a-d center-anchored (Y min < 0), e-k bottom-anchored (Y min = 0).
+    // WHY native_h * scale * 0.5: center-anchored models sit with origin at their midpoint,
+    // so we shift up by half their world-space height to align their base with Y=-160.
+    // WHY scales 300-400: doubled from 150-200 for larger visual presence.
+    // WHY PI rotation: Tripo models face -Z by default; rotate 180° around Y so
+    // the front face points towards the camera (which looks down -Z).
     let house_models = [
-        "models/suburban/building-type-a.glb",
-        "models/suburban/building-type-b.glb",
-        "models/suburban/building-type-c.glb",
-        "models/suburban/building-type-d.glb",
-        "models/suburban/building-type-e.glb",
-        "models/suburban/building-type-f.glb",
-        "models/suburban/building-type-g.glb",
-        "models/suburban/building-type-h.glb",
+        ("models/suburban/house_a.glb", 0.660_f32, true),
+        ("models/suburban/house_b.glb", 0.797, true),
+        ("models/suburban/house_c.glb", 0.585, true),
+        ("models/suburban/house_d.glb", 0.477, true),
+        ("models/suburban/house_e.glb", 0.549, false),
+        ("models/suburban/house_f.glb", 0.876, false),
+        ("models/suburban/house_g.glb", 1.000, false),
+        ("models/suburban/house_h.glb", 0.552, false),
+        ("models/suburban/house_i.glb", 1.000, false),
+        ("models/suburban/house_j.glb", 0.611, false),
+        ("models/suburban/house_k.glb", 0.639, false),
     ];
-    let house_scales = [119.0_f32, 150.0, 113.0, 158.0, 125.0, 138.0, 115.0, 148.0];
-    for (i, x) in (-1500..=1600i32).step_by(240).enumerate() {
-        let model = house_models[i % house_models.len()];
+    let house_scales = [308.0_f32, 282.0, 334.0, 326.0, 299.0, 273.0, 290.0, 343.0, 317.0, 264.0, 331.0];
+    let face_camera = Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2);
+    for (i, x) in (-1500..=1600i32).step_by(344).enumerate() {
+        let (model, native_h, center_anchored) = house_models[i % house_models.len()];
         let scale = house_scales[i % house_scales.len()];
-        let tint = HOUSE_TINTS[i % HOUSE_TINTS.len()];
+        let y = if center_anchored {
+            -146.0 + native_h * scale * 0.5
+        } else {
+            -146.0
+        };
         commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32, -160.0, -50.0).with_scale(Vec3::new(
-                scale,
-                scale,
-                scale * 0.35,
-            )),
-            // WHY 0.45: near houses at z=-50 are the closest background layer.
-            // Lower factor = less camera tracking = reads as nearer to player.
-            // 0.45 gives clear separation from far houses (0.70) and sky (0.95).
+            Transform::from_xyz(x as f32, y, -50.0)
+                .with_rotation(face_camera)
+                // After -90° Y rotation: local Z→world X (visible width),
+                // local X→world Z (depth). Flatten X (depth), keep Z (width) full.
+                .with_scale(Vec3::new(scale * 0.35, scale, scale)),
             ParallaxLayer { factor: 0.45 },
             Decoration,
             ParallaxBackground,
-            SceneTint::Multiply(tint),
         ));
     }
 
-    // Far houses (z=-80, factor 0.70): slightly smaller distant row (still 5-7 range)
+    // Far houses (z=-80, factor 0.70): smaller distant row using subset of house models.
+    // WHY scales 170-220: doubled from 85-110 for larger visual presence.
     let far_house_models = [
-        "models/suburban/building-type-i.glb",
-        "models/suburban/building-type-j.glb",
-        "models/suburban/building-type-f.glb",
-        "models/suburban/building-type-g.glb",
-        "models/suburban/building-type-h.glb",
+        ("models/suburban/house_e.glb", 0.549_f32, false),
+        ("models/suburban/house_g.glb", 1.000, false),
+        ("models/suburban/house_b.glb", 0.797, true),
+        ("models/suburban/house_i.glb", 1.000, false),
+        ("models/suburban/house_k.glb", 0.639, false),
+        ("models/suburban/house_a.glb", 0.660, true),
     ];
-    let far_house_scales = [59.0_f32, 68.0, 62.0, 75.0, 64.0, 60.0, 70.0, 62.0];
-    for (i, x) in (-1500..=1600i32).step_by(200).enumerate() {
-        let model = far_house_models[i % far_house_models.len()];
+    let far_house_scales = [167.0_f32, 150.0, 185.0, 158.0, 176.0, 155.0, 194.0, 162.0];
+    for (i, x) in (-1500..=1600i32).step_by(207).enumerate() {
+        let (model, native_h, center_anchored) = far_house_models[i % far_house_models.len()];
         let scale = far_house_scales[i % far_house_scales.len()];
-        // Offset by 2 so far row doesn't repeat the same color sequence as near row
-        let tint = HOUSE_TINTS[(i + 2) % HOUSE_TINTS.len()];
+        let y = if center_anchored {
+            -160.0 + native_h * scale * 0.5
+        } else {
+            -160.0
+        };
         commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32, -160.0, -80.0).with_scale(Vec3::new(
-                scale,
-                scale,
-                scale * 0.30,
-            )),
-            // WHY 0.70: far houses at z=-80 are the mid-distance background layer.
-            // High factor = tracks camera closely = reads as farther away.
-            // 0.70 sits between near houses (0.45) and clouds (0.80).
+            Transform::from_xyz(x as f32, y, -80.0)
+                .with_rotation(face_camera)
+                .with_scale(Vec3::new(scale * 0.30, scale, scale)),
             ParallaxLayer { factor: 0.70 },
             Decoration,
             ParallaxBackground,
-            SceneTint::Multiply(tint),
         ));
     }
 
@@ -466,19 +475,6 @@ pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &Asse
             Transform::from_xyz(x as f32 + 60.0, -160.0, -50.0)
                 .with_scale(Vec3::new(scale, scale, 8.0)),
             // WHY 0.45: suburban trees at z=-50 are in the near background layer.
-            // Matches near houses (0.45) so the entire z=-50 layer scrolls uniformly.
-            ParallaxLayer { factor: 0.45 },
-            Decoration,
-            ParallaxBackground,
-        ));
-    }
-
-    // Fences between houses at ground level (z=-50, factor 0.45)
-    for x in (-1500..=1600i32).step_by(80) {
-        commands.spawn((
-            SceneRoot(asset_server.load("models/suburban/fence-suburban.glb#Scene0")),
-            Transform::from_xyz(x as f32, -155.0, -50.0).with_scale(Vec3::new(40.0, 30.0, 6.0)),
-            // WHY 0.45: fences at z=-50 are in the near background layer.
             // Matches near houses (0.45) so the entire z=-50 layer scrolls uniformly.
             ParallaxLayer { factor: 0.45 },
             Decoration,
@@ -528,11 +524,15 @@ pub fn spawn_city_background(commands: &mut Commands, asset_server: &AssetServer
         // and shift Y up by half scaled height for center-anchoring (base sits at ground).
         // - skyscraper-a: native dims X=0.508, Y=1.0, Z=0.482; old Kenney H=2.88
         // - skyscraper-b: native dims X=0.319, Y=1.0, Z=0.322; old Kenney H=4.48
+        // - skyscraper-c: native dims X=0.320, Y=1.0, Z=0.327; old Kenney H=4.08
         let (s, y_base) = if model.contains("skyscraper-a") {
             let s = s * 2.88; // old Kenney skyscraper-a native H=2.88
             (s, -146.0 + s * 0.5)
         } else if model.contains("skyscraper-b") {
             let s = s * 4.48; // old Kenney skyscraper-b native H=4.48
+            (s, -146.0 + s * 0.5)
+        } else if model.contains("skyscraper-c") {
+            let s = s * 4.08; // old Kenney skyscraper-c native H=4.08
             (s, -146.0 + s * 0.5)
         } else {
             (s, -146.0)
@@ -593,16 +593,6 @@ pub fn spawn_city_background(commands: &mut Commands, asset_server: &AssetServer
         ));
     }
 }
-
-// ── House tinting system ────────────────────────────────────────────────────
-
-/// 4 house color tints — cycled across spawned houses.
-const HOUSE_TINTS: [Color; 4] = [
-    Color::srgb(0.96, 0.92, 0.82), // beige
-    Color::srgb(0.97, 0.97, 0.95), // white
-    Color::srgb(0.55, 0.73, 0.87), // azul blue
-    Color::srgb(0.60, 0.76, 0.65), // cypress green
-];
 
 /// One-shot system: finds entities with `SceneTint` whose SceneRoot children
 /// have loaded, clones each child's `StandardMaterial`, applies the tint,

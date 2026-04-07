@@ -640,95 +640,91 @@ pub fn spawn_level_decorations(
             // Non-uniform scale: thin Z breaks the boxy look of GLB props placed flat.
             // Scale reference: 1J = Jasper sprite height (32 world units), halved.
             // sxy = target_J × 32.0 / native_model_Y / 2;  sz keeps original ratio.
-            // All items placed on ground (y=-141) or valid platforms only.
-            //   Row 6 platforms (y=-69):  4-8, 22-26, 35-39, 55-60, 67-71, 83-87
-            //   Row 10 platforms (y=3):   13-18, 44-46, 75-80
-            //   Row 14 platforms (y=75):  48-52, 68-72
+            // All items placed on ground (y=-146) or valid platforms only.
+            // Bottom-anchored Y = ground_top formula: OY + (row+1)*18
+            //   Ground (row 2 top): -146.0
+            //   Row 6 platforms:    -74.0
+            //   Row 10 platforms:   -2.0
+            //   Row 14 platforms:   70.0
+            // Center-anchored rocks add half-height offset above these values.
             let decor: &[(&str, f32, f32, f32, f32)] = &[
-                // ── y = -141 ground ──────────────────────────────────────────
-                ("models/rock_smallA.glb", col_x_f(3.0), -141.0, 34.0, 13.0),
-                ("models/grass_large.glb", col_x_f(7.0), -141.0, 38.0, 12.0),
-                ("models/plant_bush.glb", col_x_f(9.0), -141.0, 49.0, 27.0),
-                ("models/rock_tallA.glb", col_x_f(10.0), -141.0, 24.0, 8.0),
+                // ── y = -146 ground ─────────────────────────────────────────
+                ("models/small_rock.glb", col_x_f(3.0), -142.8, 13.0, 5.0),
+                ("models/grass_large.glb", col_x_f(7.0), -146.0, 38.0, 12.0),
+                ("models/plant_bush.glb", col_x_f(9.0), -146.0, 49.0, 27.0),
+                ("models/large_rock.glb", col_x_f(10.0), -134.0, 28.0, 9.0),
                 (
                     "models/plant_bushLarge.glb",
                     col_x_f(15.0),
-                    -141.0,
+                    -146.0,
                     79.0,
                     43.0,
                 ),
-                ("models/flower_redA.glb", col_x_f(18.0), -141.0, 66.0, 17.0),
-                (
-                    "models/flower_yellowA.glb",
-                    col_x_f(22.0),
-                    -141.0,
-                    101.0,
-                    26.0,
-                ),
-                ("models/rock_tallA.glb", col_x_f(30.0), -141.0, 24.0, 8.0),
-                ("models/rock_smallA.glb", col_x_f(35.0), -141.0, 34.0, 13.0),
+                ("models/flower_redA.glb", col_x_f(18.0), -146.0, 66.0, 17.0),
+                ("models/yellow_flower.glb", col_x_f(22.0), -136.0, 20.0, 5.0),
+                ("models/large_rock.glb", col_x_f(30.0), -134.0, 28.0, 9.0),
+                ("models/small_rock.glb", col_x_f(35.0), -142.8, 13.0, 5.0),
                 (
                     "models/plant_bushLarge.glb",
                     col_x_f(43.0),
-                    -141.0,
+                    -146.0,
                     79.0,
                     43.0,
                 ),
-                ("models/rock_tallA.glb", col_x_f(55.0), -141.0, 24.0, 8.0),
-                (
-                    "models/flower_yellowA.glb",
-                    col_x_f(58.0),
-                    -141.0,
-                    101.0,
-                    26.0,
-                ),
-                ("models/rock_smallA.glb", col_x_f(85.0), -141.0, 34.0, 13.0),
-                // ── y = -69 row 6 platforms ──────────────────────────────────
-                (
-                    "models/flower_yellowA.glb",
-                    col_x_f(5.0),
-                    -69.0,
-                    101.0,
-                    26.0,
-                ),
-                ("models/rock_smallA.glb", col_x_f(8.0), -69.0, 34.0, 13.0),
-                ("models/rock_smallA.glb", col_x_f(23.0), -69.0, 34.0, 13.0),
-                ("models/plant_bush.glb", col_x_f(24.0), -69.0, 49.0, 27.0),
-                ("models/flower_redA.glb", col_x_f(25.0), -69.0, 66.0, 17.0),
-                ("models/grass_large.glb", col_x_f(36.0), -69.0, 38.0, 12.0),
-                ("models/plant_bush.glb", col_x_f(37.0), -69.0, 49.0, 27.0),
-                ("models/flower_redA.glb", col_x_f(57.0), -69.0, 66.0, 17.0),
-                ("models/rock_smallA.glb", col_x_f(84.0), -69.0, 34.0, 13.0),
-                // ── y = 3 row 10 platforms ───────────────────────────────────
-                ("models/rock_smallA.glb", col_x_f(14.0), 3.0, 34.0, 13.0),
-                ("models/grass_large.glb", col_x_f(16.0), 3.0, 38.0, 12.0),
-                ("models/flower_redA.glb", col_x_f(17.0), 3.0, 66.0, 17.0),
-                ("models/rock_smallA.glb", col_x_f(45.0), 3.0, 34.0, 13.0),
-                ("models/flower_yellowA.glb", col_x_f(46.0), 3.0, 101.0, 26.0),
-                ("models/grass_large.glb", col_x_f(76.0), 3.0, 38.0, 12.0),
-                ("models/rock_smallA.glb", col_x_f(78.0), 3.0, 34.0, 13.0),
-                ("models/plant_bushLarge.glb", col_x_f(80.0), 3.0, 79.0, 43.0),
-                // ── y = 75 row 14 platforms ──────────────────────────────────
+                ("models/large_rock.glb", col_x_f(55.0), -134.0, 28.0, 9.0),
+                ("models/yellow_flower.glb", col_x_f(58.0), -136.0, 20.0, 5.0),
+                ("models/small_rock.glb", col_x_f(85.0), -142.8, 13.0, 5.0),
+                // ── y = -74 row 6 platforms ──────────────────────────────────
+                ("models/yellow_flower.glb", col_x_f(5.0), -64.0, 20.0, 5.0),
+                ("models/small_rock.glb", col_x_f(8.0), -70.8, 13.0, 5.0),
+                ("models/small_rock.glb", col_x_f(23.0), -70.8, 13.0, 5.0),
+                ("models/plant_bush.glb", col_x_f(24.0), -74.0, 49.0, 27.0),
+                ("models/flower_redA.glb", col_x_f(25.0), -74.0, 66.0, 17.0),
+                ("models/grass_large.glb", col_x_f(36.0), -74.0, 38.0, 12.0),
+                ("models/plant_bush.glb", col_x_f(37.0), -74.0, 49.0, 27.0),
+                ("models/flower_redA.glb", col_x_f(57.0), -74.0, 66.0, 17.0),
+                ("models/small_rock.glb", col_x_f(84.0), -70.8, 13.0, 5.0),
+                // ── y = -2 row 10 platforms ──────────────────────────────────
+                ("models/small_rock.glb", col_x_f(14.0), 1.2, 13.0, 5.0),
+                ("models/grass_large.glb", col_x_f(16.0), -2.0, 38.0, 12.0),
+                ("models/flower_redA.glb", col_x_f(17.0), -2.0, 66.0, 17.0),
+                ("models/small_rock.glb", col_x_f(45.0), 1.2, 13.0, 5.0),
+                ("models/yellow_flower.glb", col_x_f(46.0), 8.0, 20.0, 5.0),
+                ("models/grass_large.glb", col_x_f(76.0), -2.0, 38.0, 12.0),
+                ("models/small_rock.glb", col_x_f(78.0), 1.2, 13.0, 5.0),
+                ("models/plant_bushLarge.glb", col_x_f(80.0), -2.0, 79.0, 43.0),
+                // ── y = 70 row 14 platforms ──────────────────────────────────
                 (
                     "models/plant_bushLarge.glb",
                     col_x_f(49.0),
-                    75.0,
+                    70.0,
                     79.0,
                     43.0,
                 ),
-                ("models/rock_smallA.glb", col_x_f(52.0), 75.0, 34.0, 13.0),
-                ("models/plant_bush.glb", col_x_f(68.0), 75.0, 49.0, 27.0),
-                ("models/flower_redA.glb", col_x_f(69.0), 75.0, 66.0, 17.0),
-                ("models/grass_large.glb", col_x_f(70.0), 75.0, 38.0, 12.0),
-                ("models/plant_bush.glb", col_x_f(71.0), 75.0, 49.0, 27.0),
+                ("models/small_rock.glb", col_x_f(52.0), 73.2, 13.0, 5.0),
+                ("models/plant_bush.glb", col_x_f(68.0), 70.0, 49.0, 27.0),
+                ("models/flower_redA.glb", col_x_f(69.0), 70.0, 66.0, 17.0),
+                ("models/grass_large.glb", col_x_f(70.0), 70.0, 38.0, 12.0),
+                ("models/plant_bush.glb", col_x_f(71.0), 70.0, 49.0, 27.0),
             ];
+            // Tripo rock models face +X by default; rotate -90° Y so front faces camera.
+            // After rotation local Z→world X, local X→world Z, so swap X/Z scales.
+            let rock_rot = Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2);
             for &(model, x, y, sxy, sz) in decor {
+                let is_tripo = model.contains("large_rock") || model.contains("small_rock") || model.contains("yellow_flower");
+                let xform = if is_tripo {
+                    Transform::from_xyz(x, y, -15.0)
+                        .with_rotation(rock_rot)
+                        .with_scale(Vec3::new(sz, sxy, sxy))
+                } else {
+                    Transform::from_xyz(x, y, -15.0)
+                        .with_scale(Vec3::new(sxy, sxy, sz))
+                };
                 commands.spawn((
                     SceneRoot(asset_server.load(format!("{}#Scene0", model))),
                     // z=-15: pushed behind Jasper's z=5 plane so the 3D volume of
                     // these props does not protrude into Jasper's depth layer.
-                    // Previously z=+3, which caused Z-depth clipping with z=5 player.
-                    Transform::from_xyz(x, y, -15.0).with_scale(Vec3::new(sxy, sxy, sz)),
+                    xform,
                     components::Decoration,
                     components::ForegroundDecoration,
                 ));
@@ -780,80 +776,6 @@ pub fn spawn_level_decorations(
                 components::Decoration,
                 crate::rendering::parallax::ParallaxBackground,
             ));
-
-            // Ground-level suburban props (z=-15, behind Jasper's z=5 plane to avoid depth clipping)
-            let ox = -864.0_f32;
-            let col_x_f = |col: f32| ox + col * 18.0 + 9.0;
-            // (model, x, y, scale_xy, scale_z)
-            let decor: &[(&str, f32, f32, f32, f32)] = &[
-                (
-                    "models/suburban/planter.glb",
-                    col_x_f(4.0),
-                    -141.0,
-                    20.0,
-                    10.0,
-                ),
-                (
-                    "models/suburban/fence-suburban.glb",
-                    col_x_f(15.0),
-                    -141.0,
-                    30.0,
-                    8.0,
-                ),
-                (
-                    "models/suburban/planter.glb",
-                    col_x_f(28.0),
-                    -141.0,
-                    18.0,
-                    9.0,
-                ),
-                (
-                    "models/suburban/fence-suburban.glb",
-                    col_x_f(42.0),
-                    -141.0,
-                    30.0,
-                    8.0,
-                ),
-                (
-                    "models/suburban/planter.glb",
-                    col_x_f(55.0),
-                    -141.0,
-                    22.0,
-                    11.0,
-                ),
-                (
-                    "models/suburban/fence-suburban.glb",
-                    col_x_f(65.0),
-                    -141.0,
-                    30.0,
-                    8.0,
-                ),
-                (
-                    "models/suburban/planter.glb",
-                    col_x_f(78.0),
-                    -141.0,
-                    20.0,
-                    10.0,
-                ),
-                (
-                    "models/suburban/fence-suburban.glb",
-                    col_x_f(88.0),
-                    -141.0,
-                    30.0,
-                    8.0,
-                ),
-            ];
-            for &(model, x, y, sxy, sz) in decor {
-                commands.spawn((
-                    SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-                    // z=-15: pushed behind Jasper's z=5 plane so the 3D volume of
-                    // these props does not protrude into Jasper's depth layer.
-                    // Previously z=+3, which caused Z-depth clipping with z=5 player.
-                    Transform::from_xyz(x, y, -15.0).with_scale(Vec3::new(sxy, sxy, sz)),
-                    components::Decoration,
-                    components::ForegroundDecoration,
-                ));
-            }
 
             // Foreground framing — suburban trees at level edges (z=+10)
             let fg_trees: &[(&str, f32, f32, f32)] = &[
@@ -1085,13 +1007,13 @@ pub fn spawn_sublevel_decorations(
             ),
             ("models/mushrooms.glb", col_x(26.0), row_y(2.0), 28.0, 11.0),
             // Rocks on ground
-            ("models/rock_tallA.glb", col_x(10.0), row_y(2.0), 24.0, 8.0),
+            ("models/large_rock.glb", col_x(10.0), row_y(2.0) + 12.0, 28.0, 9.0),
             (
-                "models/rock_smallA.glb",
+                "models/small_rock.glb",
                 col_x(21.0),
-                row_y(2.0),
-                34.0,
+                row_y(2.0) + 3.2,
                 13.0,
+                5.0,
             ),
         ],
         // ── Subdivision Sewer: columns, iron fences, wall segments ────────
@@ -1216,9 +1138,17 @@ pub fn spawn_sublevel_decorations(
         info!(
             "[SUBLEVEL_DECOR] spawn model={model} pos=({x}, {y}, 3.0) scale=({sxy}, {sxy}, {sz})"
         );
+        let is_tripo_rock = model.contains("large_rock") || model.contains("small_rock");
+        let xform = if is_tripo_rock {
+            Transform::from_xyz(x, y, 3.0)
+                .with_rotation(Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2))
+                .with_scale(Vec3::new(sz, sxy, sxy))
+        } else {
+            Transform::from_xyz(x, y, 3.0).with_scale(Vec3::new(sxy, sxy, sz))
+        };
         let mut entity = commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x, y, 3.0).with_scale(Vec3::new(sxy, sxy, sz)),
+            xform,
             components::TileEntity,
             components::ForegroundDecoration,
         ));
