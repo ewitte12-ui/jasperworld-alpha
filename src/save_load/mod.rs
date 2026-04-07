@@ -11,8 +11,7 @@ impl Plugin for SaveLoadPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (systems::save_game, systems::load_game)
-                .run_if(in_state(AppState::Playing)),
+            (systems::save_game, systems::load_game).run_if(in_state(AppState::Playing)),
         );
     }
 }

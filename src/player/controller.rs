@@ -73,40 +73,78 @@ pub fn setup_player_physics(
     // The facing system in input.rs composes this same tilt with direction changes.
     let base_rotation = Quat::from_rotation_y((-45.0_f32).to_radians());
 
-    commands.spawn((
-        // Parent entity: physics + game logic. Scale stays 1.0 so the
-        // collider dimensions are in world units as specified.
-        Player,
-        FacingDirection::default(),
-        Health::new(100.0),
-        Transform::from_xyz(-261.0, -120.0, 5.0),
-        Visibility::default(),
-        RigidBody::Dynamic,
-        Collider::rectangle(physics_config.player_width - 2.0, physics_config.player_height),
-        Friction::ZERO,
-        LockedAxes::ROTATION_LOCKED,
-        CollisionLayers::new(
-            GameLayer::Player,
-            [GameLayer::Default, GameLayer::Ground, GameLayer::Platform],
-        ),
-        TnuaAvian2dSensorShape(Collider::rectangle(14.0, 0.0)),
-        TnuaController::<PlayerControlScheme>::default(),
-        TnuaConfig::<PlayerControlScheme>(config_handle),
-        PlayerAnimState::Idle,
-        // Signals that skeletal animation setup is pending. Removed once
-        // setup_player_animation discovers the AnimationPlayer descendant.
-        PlayerModelPending,
-    )).with_children(|parent| {
-        // Child entity: visual model with scale, offset, and rotation.
-        // Rotation is updated by `animate_player_procedural` for direction + animation.
-        parent.spawn((
-            SceneRoot(asset_server.load("models/jasper.glb#Scene0")),
-            Transform {
-                translation: Vec3::new(0.0, model_y_offset, 0.0),
-                rotation: base_rotation,
-                scale: Vec3::splat(model_scale),
-            },
-            PlayerModelVisual,
-        ));
-    });
+    commands
+        .spawn((
+            // Parent entity: physics + game logic. Scale stays 1.0 so the
+            // collider dimensions are in world units as specified.
+            Player,
+            FacingDirection::default(),
+            Health::new(100.0),
+            Transform::from_xyz(-261.0, -120.0, 5.0),
+            Visibility::default(),
+            RigidBody::Dynamic,
+            Collider::rectangle(
+                physics_config.player_width - 2.0,
+                physics_config.player_height,
+            ),
+            Friction::ZERO,
+            LockedAxes::ROTATION_LOCKED,
+            CollisionLayers::new(
+                GameLayer::Player,
+                [GameLayer::Default, GameLayer::Ground, GameLayer::Platform],
+            ),
+            TnuaAvian2dSensorShape(Collider::rectangle(14.0, 0.0)),
+            TnuaController::<PlayerControlScheme>::default(),
+            TnuaConfig::<PlayerControlScheme>(config_handle),
+            PlayerAnimState::Idle,
+            // Signals that skeletal animation setup is pending. Removed once
+            // setup_player_animation discovers the AnimationPlayer descendant.
+            PlayerModelPending,
+        ))
+        .with_children(|parent| {
+            // Child entity: visual model with scale, offset, and rotation.
+            // Rotation is updated by `animate_player_procedural` for direction + animation.
+            parent.spawn((
+                SceneRoot(asset_server.load("models/jasper.glb#Scene0")),
+                Transform {
+                    translation: Vec3::new(0.0, model_y_offset, 0.0),
+                    rotation: base_rotation,
+                    scale: Vec3::splat(model_scale),
+                },
+                PlayerModelVisual,
+            ));
+        });
+}
+
+/// Tag to prevent re-processing Jasper's materials every frame.
+#[derive(Component)]
+pub struct PlayerMaterialNeutralized;
+
+/// Adds a subtle emissive to Jasper's PBR materials so his base colors
+/// remain readable under strongly tinted underground lighting (Cave/Subway).
+/// Runs once per mesh entity via the `PlayerMaterialNeutralized` guard.
+pub fn neutralize_player_material(
+    mut commands: Commands,
+    player_query: Query<&Children, With<Player>>,
+    children_query: Query<&Children>,
+    mat_query: Query<&MeshMaterial3d<StandardMaterial>, Without<PlayerMaterialNeutralized>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let Ok(top_children) = player_query.single() else {
+        return;
+    };
+
+    // Walk the full descendant hierarchy (SceneRoot → Armature → mesh entities).
+    let mut stack: Vec<Entity> = top_children.iter().collect();
+    while let Some(entity) = stack.pop() {
+        if let Ok(mat_handle) = mat_query.get(entity) {
+            if let Some(mat) = materials.get_mut(&mat_handle.0) {
+                mat.emissive = LinearRgba::new(0.25, 0.25, 0.25, 1.0);
+                commands.entity(entity).insert(PlayerMaterialNeutralized);
+            }
+        }
+        if let Ok(children) = children_query.get(entity) {
+            stack.extend(children.iter());
+        }
+    }
 }

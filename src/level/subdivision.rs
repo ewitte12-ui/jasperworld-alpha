@@ -1,6 +1,6 @@
-use bevy::prelude::*;
-use crate::tilemap::tilemap::TileType::{self, Empty as E, Platform as P, Solid as S};
 use super::level_data::{LayerData, LevelData, LevelId};
+use crate::tilemap::tilemap::TileType::{self, Empty as E, Platform as P, Solid as S};
+use bevy::prelude::*;
 
 pub fn subdivision_level() -> LevelData {
     LevelData {
@@ -31,28 +31,28 @@ fn subdivision_layer_0() -> LayerData {
             row
         };
         vec![
-            solid(), // row 0
-            solid(), // row 1
-            solid(), // row 2
-            empty(), // row 3
-            empty(), // row 4
-            empty(), // row 5
+            solid(),                                                           // row 0
+            solid(),                                                           // row 1
+            solid(),                                                           // row 2
+            empty(),                                                           // row 3
+            empty(),                                                           // row 4
+            empty(),                                                           // row 5
             plat(&[(5, 9), (20, 25), (38, 43), (56, 61), (72, 77), (85, 89)]), // row 6
-            empty(), // row 7
-            empty(), // row 8
-            empty(), // row 9
-            plat(&[(12, 17), (28, 33), (45, 50), (63, 68), (76, 81)]), // row 10
-            empty(), // row 11
-            empty(), // row 12
-            empty(), // row 13
-            plat(&[(30, 34), (65, 69)]), // row 14
-            empty(), // row 15
-            empty(), // row 16
-            empty(), // row 17
-            empty(), // row 18
-            empty(), // row 19
-            empty(), // row 20
-            empty(), // row 21
+            empty(),                                                           // row 7
+            empty(),                                                           // row 8
+            empty(),                                                           // row 9
+            plat(&[(12, 17), (28, 33), (45, 50), (63, 68), (76, 81)]),         // row 10
+            empty(),                                                           // row 11
+            empty(),                                                           // row 12
+            empty(),                                                           // row 13
+            plat(&[(30, 34), (65, 69)]),                                       // row 14
+            empty(),                                                           // row 15
+            empty(),                                                           // row 16
+            empty(),                                                           // row 17
+            empty(),                                                           // row 18
+            empty(),                                                           // row 19
+            empty(),                                                           // row 20
+            empty(),                                                           // row 21
         ]
     };
 
@@ -82,24 +82,24 @@ fn subdivision_layer_1() -> LayerData {
             row
         };
         vec![
-            solid(),                                // row 0  — floor
-            solid(),                                // row 1  — floor
-            cave(&[]),                              // row 2
-            cave(&[]),                              // row 3
-            cave(&[]),                              // row 4
-            cave(&[(4, 8), (20, 24)]),              // row 5  — low platforms
-            cave(&[]),                              // row 6
-            cave(&[]),                              // row 7
-            cave(&[]),                              // row 8
-            cave(&[(10, 14), (25, 29)]),            // row 9  — mid platforms
-            cave(&[]),                              // row 10
-            cave(&[]),                              // row 11
-            cave(&[(15, 19)]),                      // row 12 — high platform
-            cave(&[]),                              // row 13
-            cave(&[]),                              // row 14
-            cave(&[]),                              // row 15
-            solid(),                                // row 16 — ceiling
-            solid(),                                // row 17 — ceiling
+            solid(),                     // row 0  — floor
+            solid(),                     // row 1  — floor
+            cave(&[]),                   // row 2
+            cave(&[]),                   // row 3
+            cave(&[]),                   // row 4
+            cave(&[(4, 8), (20, 24)]),   // row 5  — low platforms
+            cave(&[]),                   // row 6
+            cave(&[]),                   // row 7
+            cave(&[]),                   // row 8
+            cave(&[(10, 14), (25, 29)]), // row 9  — mid platforms
+            cave(&[]),                   // row 10
+            cave(&[]),                   // row 11
+            cave(&[(15, 19)]),           // row 12 — high platform
+            cave(&[]),                   // row 13
+            cave(&[]),                   // row 14
+            cave(&[]),                   // row 15
+            solid(),                     // row 16 — ceiling
+            solid(),                     // row 17 — ceiling
         ]
     };
 
@@ -130,28 +130,28 @@ fn subdivision_layer_2() -> LayerData {
             row
         };
         vec![
-            solid(), // row 0
-            solid(), // row 1
-            solid(), // row 2
-            empty(), // row 3
-            empty(), // row 4
-            empty(), // row 5
-            plat(&[(8, 12), (30, 34), (60, 64), (86, 90)]), // row 6
-            empty(), // row 7
-            empty(), // row 8
-            empty(), // row 9
+            solid(),                                                   // row 0
+            solid(),                                                   // row 1
+            solid(),                                                   // row 2
+            empty(),                                                   // row 3
+            empty(),                                                   // row 4
+            empty(),                                                   // row 5
+            plat(&[(8, 12), (30, 34), (60, 64), (86, 90)]),            // row 6
+            empty(),                                                   // row 7
+            empty(),                                                   // row 8
+            empty(),                                                   // row 9
             plat(&[(18, 22), (24, 29), (50, 54), (66, 71), (80, 84)]), // row 10
-            empty(), // row 11
-            empty(), // row 12
-            empty(), // row 13
-            plat(&[(26, 30), (68, 72)]), // row 14
-            empty(), // row 15
-            empty(), // row 16
-            empty(), // row 17
-            empty(), // row 18
-            empty(), // row 19
-            empty(), // row 20
-            empty(), // row 21
+            empty(),                                                   // row 11
+            empty(),                                                   // row 12
+            empty(),                                                   // row 13
+            plat(&[(26, 30), (68, 72)]),                               // row 14
+            empty(),                                                   // row 15
+            empty(),                                                   // row 16
+            empty(),                                                   // row 17
+            empty(),                                                   // row 18
+            empty(),                                                   // row 19
+            empty(),                                                   // row 20
+            empty(),                                                   // row 21
         ]
     };
 

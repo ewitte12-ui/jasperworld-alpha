@@ -25,5 +25,3 @@ pub struct Decoration;
 /// foreground visual elements independently from background decorations.
 #[derive(Component)]
 pub struct ForegroundDecoration;
-
-

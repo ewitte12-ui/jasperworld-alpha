@@ -55,16 +55,14 @@ pub fn spawn_doors_for_level(
     // Door to underground — at ground level.
     commands.spawn((
         SceneRoot(asset_server.load("models/door-rotate.glb#Scene0")),
-        Transform::from_xyz(x_underground, ground_top, 1.0)
-            .with_scale(Vec3::new(60.0, 54.0, 7.0)),
+        Transform::from_xyz(x_underground, ground_top, 1.0).with_scale(Vec3::new(60.0, 54.0, 7.0)),
         TransitionDoor { target_layer: 1 },
     ));
 
     // Door to upper layer — on the highest platform (row 14 for Forest/Subdivision, row 30 for City).
     commands.spawn((
         SceneRoot(asset_server.load("models/door-rotate.glb#Scene0")),
-        Transform::from_xyz(x_upper, upper_y, 1.0)
-            .with_scale(Vec3::new(60.0, 54.0, 7.0)),
+        Transform::from_xyz(x_upper, upper_y, 1.0).with_scale(Vec3::new(60.0, 54.0, 7.0)),
         TransitionDoor { target_layer: 2 },
     ));
 }

@@ -47,8 +47,8 @@
 //   All Y positions are derived from GROUND_Y and TILE_SIZE_WORLD below.
 
 use bevy::camera::ScalingMode;
-use bevy::prelude::*;
 use bevy::prelude::ClearColorConfig;
+use bevy::prelude::*;
 
 use crate::rendering::camera::GameplayCamera;
 use crate::states::AppState;
@@ -92,9 +92,15 @@ impl Plugin for TitleBackgroundPlugin {
     fn build(&self, app: &mut App) {
         app
             // Deactivate gameplay camera so only 1 camera is active during TitleScreen.
-            .add_systems(OnEnter(AppState::TitleScreen), (disable_gameplay_camera, spawn_title_scene))
+            .add_systems(
+                OnEnter(AppState::TitleScreen),
+                (disable_gameplay_camera, spawn_title_scene),
+            )
             // Re-activate gameplay camera before any other state can render.
-            .add_systems(OnExit(AppState::TitleScreen), (enable_gameplay_camera, despawn_title_scene));
+            .add_systems(
+                OnExit(AppState::TitleScreen),
+                (enable_gameplay_camera, despawn_title_scene),
+            );
     }
 }
 
@@ -264,7 +270,11 @@ fn spawn_title_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
     for (x, model) in &framing {
         // Center-anchored Trellis models need +scale/2 to ground their base.
         let center_anchored = model.contains("tree_oak") || model.contains("tree_fat");
-        let y = if center_anchored { -44.0 + 18.0 * 0.5 } else { -44.0 };
+        let y = if center_anchored {
+            -44.0 + 18.0 * 0.5
+        } else {
+            -44.0
+        };
         commands.spawn((
             SceneRoot(asset_server.load(*model)),
             Transform {

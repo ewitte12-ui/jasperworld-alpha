@@ -60,7 +60,9 @@ pub fn check_level_exit(
     }
 
     let player_pos = {
-        let Ok((pt, _)) = player_query.single() else { return };
+        let Ok((pt, _)) = player_query.single() else {
+            return;
+        };
         pt.translation.truncate()
     };
 
@@ -71,8 +73,7 @@ pub fn check_level_exit(
             // TEMP LOG — remove after validation
             info!(
                 "[TRANSITION] level_exit TRIGGER: player={player_pos}, exit={exit_pos}, delta={delta}, half_extents={}, level_idx={}",
-                level_exit.half_extents,
-                game_progress.current_level_index,
+                level_exit.half_extents, game_progress.current_level_index,
             );
 
             // Lock immediately — all further overlap checks are rejected.
@@ -88,7 +89,8 @@ pub fn check_level_exit(
             // Despawn all gameplay entities from the old level.
             // Gate entities are already despawned by check_gate (all stars
             // collected is required before the exit is reachable).
-            for entity in tile_entities.iter()
+            for entity in tile_entities
+                .iter()
                 .chain(decoration_entities.iter())
                 .chain(enemy_entities.iter())
                 .chain(collectible_entities.iter())
@@ -106,7 +108,9 @@ pub fn check_level_exit(
                 game_progress.transition_in_progress = false;
                 game_progress.transition_cooldown = 0;
                 // TEMP LOG — remove after validation
-                info!("[TRANSITION] level_exit COMPLETE: game_complete=true, returning to MainMenu");
+                info!(
+                    "[TRANSITION] level_exit COMPLETE: game_complete=true, returning to MainMenu"
+                );
                 next_state.set(AppState::MainMenu);
                 return;
             }

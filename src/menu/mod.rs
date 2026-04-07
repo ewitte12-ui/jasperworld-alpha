@@ -4,11 +4,12 @@ use bevy::window::{PresentMode, WindowMode};
 use crate::resources::control_bindings::keycode_display_name;
 use crate::resources::graphics_settings::RESOLUTIONS;
 use crate::resources::{
-    AudioSettings, ControlBindings, GameAction, GraphicsSettings, PendingLoadSlot,
-    PendingSaveSlot, RebindingState, SaveSlots, load_save_slots, write_menu_save,
-    read_menu_save, GameSaveData,
+    AudioSettings, ControlBindings, GameAction, GameSaveData, GraphicsSettings, PendingLoadSlot,
+    PendingSaveSlot, RebindingState, SaveSlots, load_save_slots, read_menu_save, write_menu_save,
 };
-use crate::states::{AppState, SaveLoadMode, SaveLoadReturnState, SettingsReturnState, SettingsTab};
+use crate::states::{
+    AppState, SaveLoadMode, SaveLoadReturnState, SettingsReturnState, SettingsTab,
+};
 use crate::ui::components::*;
 use crate::ui::helpers::*;
 use crate::ui::styles::*;
@@ -38,7 +39,10 @@ impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         // Title screen
         app.add_systems(OnEnter(AppState::TitleScreen), setup_title_screen)
-            .add_systems(OnExit(AppState::TitleScreen), despawn_with::<TitleScreenRoot>)
+            .add_systems(
+                OnExit(AppState::TitleScreen),
+                despawn_with::<TitleScreenRoot>,
+            )
             .add_systems(
                 Update,
                 handle_title_input.run_if(in_state(AppState::TitleScreen)),
@@ -86,7 +90,10 @@ impl Plugin for MenuPlugin {
         // Save/load menu
         app.add_systems(Startup, load_save_slots)
             .add_systems(OnEnter(AppState::SaveLoadMenu), setup_save_load_menu)
-            .add_systems(OnExit(AppState::SaveLoadMenu), despawn_with::<SaveLoadMenuRoot>)
+            .add_systems(
+                OnExit(AppState::SaveLoadMenu),
+                despawn_with::<SaveLoadMenuRoot>,
+            )
             .add_systems(
                 Update,
                 (
@@ -472,17 +479,19 @@ fn spawn_controls_content(parent: &mut ChildSpawnerCommands, bindings: &ControlB
                             BackgroundColor(COLOR_BUTTON_NORMAL),
                             MenuButtonAction::RebindAction(action),
                         ))
-                        .with_children(|btn: &mut ChildSpawnerCommands| {
-                            btn.spawn((
-                                Text::new(keycode_display_name(key)),
-                                TextFont {
-                                    font_size: FONT_SIZE_BODY,
-                                    ..default()
-                                },
-                                TextColor(COLOR_TEXT),
-                                KeyBindingDisplay(action),
-                            ));
-                        });
+                        .with_children(
+                            |btn: &mut ChildSpawnerCommands| {
+                                btn.spawn((
+                                    Text::new(keycode_display_name(key)),
+                                    TextFont {
+                                        font_size: FONT_SIZE_BODY,
+                                        ..default()
+                                    },
+                                    TextColor(COLOR_TEXT),
+                                    KeyBindingDisplay(action),
+                                ));
+                            },
+                        );
                     });
             }
         });
@@ -913,10 +922,7 @@ pub fn capture_rebind_key(
 
 // ── Graphics Settings Application ────────────────────────────────────────────
 
-pub fn apply_graphics_settings(
-    graphics: Res<GraphicsSettings>,
-    mut windows: Query<&mut Window>,
-) {
+pub fn apply_graphics_settings(graphics: Res<GraphicsSettings>, mut windows: Query<&mut Window>) {
     if !graphics.is_changed() {
         return;
     }
@@ -965,8 +971,12 @@ fn settings_path() -> Option<PathBuf> {
 
 pub fn load_settings(mut graphics: ResMut<GraphicsSettings>, mut audio: ResMut<AudioSettings>) {
     let Some(path) = settings_path() else { return };
-    let Ok(data) = fs::read_to_string(&path) else { return };
-    let Ok(settings) = serde_json::from_str::<SettingsFile>(&data) else { return };
+    let Ok(data) = fs::read_to_string(&path) else {
+        return;
+    };
+    let Ok(settings) = serde_json::from_str::<SettingsFile>(&data) else {
+        return;
+    };
     *graphics = settings.graphics;
     *audio = settings.audio;
 }
@@ -977,7 +987,9 @@ pub fn save_settings(graphics: Res<GraphicsSettings>, audio: Res<AudioSettings>)
         graphics: graphics.clone(),
         audio: audio.clone(),
     };
-    let Ok(json) = serde_json::to_string_pretty(&settings) else { return };
+    let Ok(json) = serde_json::to_string_pretty(&settings) else {
+        return;
+    };
     if let Some(parent) = path.parent() {
         let _ = fs::create_dir_all(parent);
     }

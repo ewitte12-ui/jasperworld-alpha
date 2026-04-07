@@ -4,9 +4,9 @@ pub mod systems;
 use bevy::prelude::*;
 
 use systems::{
-    animate_player_procedural, animate_sprites, debug_animation_state,
-    drive_player_animation, finalize_player_animation, pin_player_root_bone,
-    setup_player_animation, update_enemy_anim_state, update_player_anim_state,
+    animate_player_procedural, animate_sprites, debug_animation_state, drive_player_animation,
+    finalize_player_animation, pin_player_root_bone, setup_player_animation,
+    update_enemy_anim_state, update_player_anim_state,
 };
 
 pub struct AnimationPlugin;

@@ -2,8 +2,6 @@
 pub mod debug;
 
 pub mod animation;
-pub mod title;
-pub mod window_geometry;
 pub mod audio;
 pub mod collectibles;
 pub mod combat;
@@ -21,5 +19,7 @@ pub mod resources;
 pub mod save_load;
 pub mod states;
 pub mod tilemap;
+pub mod title;
 pub mod ui;
 pub mod vfx;
+pub mod window_geometry;

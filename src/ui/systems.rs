@@ -101,7 +101,10 @@ pub fn update_star_counter(
     let Ok(mut text) = text_query.single_mut() else {
         return;
     };
-    **text = format!("Stars {}/{}", progress.stars_collected, progress.stars_total);
+    **text = format!(
+        "Stars {}/{}",
+        progress.stars_collected, progress.stars_total
+    );
 }
 
 /// Updates the level name display when the level changes.
