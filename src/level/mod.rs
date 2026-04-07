@@ -671,21 +671,21 @@ pub fn spawn_level_decorations(
             // Ground-level city props (z=+3, in front of tile plane)
             let ox = -864.0_f32;
             let col_x_f = |col: f32| ox + col * 18.0 + 9.0;
-            // Taxis — 3 parked cars across the level, rotated 90° around Y so the
-            // side profile (lengthwise) is visible from the camera instead of the front.
-            // Trellis model native dims: X=0.470, Y=0.351, Z=1.000 (center-anchored).
-            // Scale (8, 45, 45): after 90° Y rotation, local X→world -Z, local Z→world X.
-            //   Visible length (world X) = 1.0 × 45  = 45 units (~2.5 tiles).
-            //   Visible height (world Y) = 0.351 × 45 = 15.8 units (~0.9 tiles).
-            //   Depth (world Z) = 0.470 × 8 = 3.8 units.
-            // Y = -138.0: ground(-146) + half_height(0.351*45/2 ≈ 7.9) ≈ -138.
+            // Taxis — 3 parked cars across the level. No Y rotation needed because the
+            // new model's longest axis is already X, so the side profile is naturally
+            // visible from the camera (which looks down -Z onto the XY plane).
+            // Trellis model native dims: X=1.000, Y=0.4821, Z=0.4734 (center-anchored).
+            // Uniform scale 90:
+            //   Visible length (world X) = 1.0    × 90 = 90 units (~5.0 tiles).
+            //   Visible height (world Y) = 0.4821 × 90 = 43.4 units (~2.4 tiles).
+            //   Depth (world Z)          = 0.4734 × 90 = 42.6 units.
+            // Y = -124.3: ground(-146) + half_height(0.4821*90/2 ≈ 21.7) ≈ -124.
             let taxi_positions = [col_x_f(15.0), col_x_f(50.0), col_x_f(80.0)];
             for tx in taxi_positions {
                 commands.spawn((
                     SceneRoot(asset_server.load("models/city/taxi.glb#Scene0")),
-                    Transform::from_xyz(tx, -138.0, 1.0)
-                        .with_rotation(Quat::from_rotation_y(std::f32::consts::FRAC_PI_2))
-                        .with_scale(Vec3::new(8.0, 45.0, 45.0)),
+                    Transform::from_xyz(tx, -124.3, 1.0)
+                        .with_scale(Vec3::splat(90.0)),
                     components::Decoration,
                     components::ForegroundDecoration,
                 ));
@@ -944,19 +944,19 @@ pub fn spawn_solar_panel_canopy(
 pub fn tile_models_for_layer(level_id: LevelId, layer_index: usize) -> (&'static str, &'static str) {
     match (level_id, layer_index) {
         (LevelId::Forest, 1)      => ("models/cave/cliff_blockCave_stone.glb", "models/cave/cliff_blockCave_rock.glb"),
-        (LevelId::Subdivision, 1) => ("models/cement-platform.glb", "models/cement-platform.glb"),
+        (LevelId::Subdivision, 1) => ("models/redbricks.glb", "models/redbricks.glb"),
         (LevelId::City, 1)        => ("models/cement-platform.glb", "models/cement-platform.glb"),
-        (LevelId::Subdivision, _) => ("models/cement-platform.glb", "models/cement-platform.glb"),
+        (LevelId::Subdivision, _) => ("models/redbricks.glb", "models/redbricks.glb"),
         (LevelId::City, _)        => ("models/cement-platform.glb", "models/cement-platform.glb"),
         _                         => ("models/grass-block.glb", "models/grass-block.glb"),
     }
 }
 
 /// Returns an optional tint color for tiles in a given level.
-/// Subdivision uses a red/brick tint; others use no tint.
+/// Currently no levels use a tint (Subdivision formerly used a brick tint
+/// but now uses the redbricks.glb model which has its own texture).
 pub fn tile_tint_for_layer(level_id: LevelId) -> Option<Color> {
     match level_id {
-        LevelId::Subdivision => Some(Color::srgb(0.75, 0.22, 0.18)),
         _ => None,
     }
 }

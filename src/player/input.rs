@@ -26,12 +26,11 @@ pub fn player_input(
         (
             &mut TnuaController<PlayerControlScheme>,
             &mut FacingDirection,
-            &mut Transform,
         ),
         With<Player>,
     >,
 ) {
-    let Ok((mut controller, mut facing, mut transform)) = query.single_mut() else {
+    let Ok((mut controller, mut facing)) = query.single_mut() else {
         return;
     };
 
@@ -53,16 +52,13 @@ pub fn player_input(
         }
     }
 
-    // ── Facing direction & sprite flip ───────────────────────────────────────
+    // ── Facing direction ──────────────────────────────────────────────────────
+    // Only update direction on input; the visual rotation is applied by
+    // `animate_player_procedural` which runs separately on the child entity.
     if move_x < 0.0 {
         *facing = FacingDirection::Left;
     } else if move_x > 0.0 {
         *facing = FacingDirection::Right;
-    }
-    // Sprite naturally faces RIGHT in the sheet, so flip for left-facing.
-    match *facing {
-        FacingDirection::Right => transform.scale.x = transform.scale.x.abs(),
-        FacingDirection::Left => transform.scale.x = -transform.scale.x.abs(),
     }
 
     // ── Feed Tnua basis (walk) ────────────────────────────────────────────────

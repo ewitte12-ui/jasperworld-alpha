@@ -53,3 +53,50 @@ pub enum EnemyAnimState {
     Idle,
     Walking,
 }
+
+/// Marker on the child entity that holds the player's visual 3D model
+/// (SceneRoot). Used by facing-direction and procedural animation code
+/// to transform the model independently of the physics parent entity.
+#[derive(Component)]
+pub struct PlayerModelVisual;
+
+/// Marker on the player entity at spawn. Removed once the AnimationPlayer
+/// descendant is found and the animation graph is wired up. While this
+/// marker is present, `setup_player_animation` polls each frame.
+#[derive(Component)]
+pub struct PlayerModelPending;
+
+/// Holds animation clip handles while they're loading asynchronously.
+/// Present on the player entity between finding the AnimationPlayer
+/// and confirming all clips are loaded. Removed once the graph is built.
+#[derive(Component)]
+pub struct PlayerClipsPending {
+    pub anim_entity: Entity,
+    pub clip_idle: Handle<AnimationClip>,
+    pub clip_walk: Handle<AnimationClip>,
+    pub clip_jump: Handle<AnimationClip>,
+    pub clip_hurt: Handle<AnimationClip>,
+}
+
+/// Stores the animation graph wiring for the player's skeletal animation.
+/// Placed on the player (physics parent) entity once the GLB's
+/// AnimationPlayer descendant is discovered and configured.
+///
+/// WHAT BREAKS if indices are wrong: the wrong animation clip plays for
+/// a given PlayerAnimState, causing visual mismatch with gameplay.
+#[derive(Component)]
+pub struct PlayerAnimGraph {
+    /// The descendant entity that owns the AnimationPlayer component.
+    pub anim_entity: Entity,
+    /// Graph node index for the idle animation (Animation(0) in jasper.glb).
+    pub idle: AnimationNodeIndex,
+    /// Graph node index for the walk animation (Animation(1) in jasper.glb).
+    pub walk: AnimationNodeIndex,
+    /// Graph node index for the jump animation (Animation(2) in jasper.glb).
+    pub jump: AnimationNodeIndex,
+    /// Graph node index for the hurt animation (Animation(3) in jasper.glb).
+    pub hurt: AnimationNodeIndex,
+    /// The currently playing animation state — used to avoid restarting
+    /// the same animation every frame.
+    pub current: PlayerAnimState,
+}

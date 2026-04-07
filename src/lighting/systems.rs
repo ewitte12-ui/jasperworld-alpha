@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::level::level_data::{CurrentLevel, LevelId};
-use crate::rendering::camera::PrimaryDirectionalLight;
+use crate::rendering::camera::{FillDirectionalLight, PrimaryDirectionalLight};
 
 use super::config::LightingTheme;
 
@@ -15,6 +15,7 @@ use super::config::LightingTheme;
 pub fn update_lighting(
     current_level: Res<CurrentLevel>,
     mut dir_light_query: Query<&mut DirectionalLight, With<PrimaryDirectionalLight>>,
+    mut fill_light_query: Query<&mut DirectionalLight, (With<FillDirectionalLight>, Without<PrimaryDirectionalLight>)>,
     mut ambient: ResMut<GlobalAmbientLight>,
 ) {
     if !current_level.is_changed() {
@@ -32,6 +33,12 @@ pub fn update_lighting(
     if let Ok(mut dir_light) = dir_light_query.single_mut() {
         dir_light.color = theme.directional_color;
         dir_light.illuminance = theme.directional_illuminance;
+    }
+
+    // Update fill light
+    if let Ok(mut fill) = fill_light_query.single_mut() {
+        fill.color = theme.fill_color;
+        fill.illuminance = theme.fill_illuminance;
     }
 
     // Update global ambient light
