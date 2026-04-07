@@ -108,7 +108,7 @@ pub fn update_parallax(
 ///             the guardrail and also places near trees behind the attenuation plane
 ///             (-38), giving them a slight darkness that reinforces depth hierarchy.
 ///   z =  -60  Clouds — behind near trees, high-altitude distant sky (factor 0.80)
-///   z =  -70  Distant mountains (stone peaks with snow caps, factor 0.85).
+///   z =  -70  Distant mountains (Tripo mountain1/mountain2 models, factor 0.85).
 ///             WHY z=-70: mountains must render BEHIND near trees (z=-50) so the
 ///             forest frames the mountains rather than mountains occluding trees.
 ///   z =  -80  Dark background trees — mid parallax (darker conifers, factor 0.70).
@@ -134,47 +134,36 @@ pub fn spawn_shared_background(
         "[SHARED_BG] spawn_shared_background called for {:?}",
         level_id
     );
-    // ── Snowy mountains (z = -70) — Forest only ───────────────────────────────
-    // Subdivision has houses, City has skyscrapers; only Forest gets mountains.
+    // ── Mountains (z = -70) — Forest only ────────────────────────────────────
+    // 11 hand-placed mountains with varied scale for uniqueness.
+    // mountain1 (X=1.0, Y=0.723, Z=1.0) — 8 tall peaks.
+    // mountain2 (X=0.909, Y=0.398, Z=1.0) — 3 wider/lower variety.
+    // Both center-anchored; Y offset = -170 + native_h * scale * 0.5 (base at -170).
     if level_id == crate::level::level_data::LevelId::Forest {
-        let mountain_scales = [178.0_f32, 160.0, 197.0, 167.0, 175.0, 185.0, 156.0, 192.0];
-        let mountain_data: Vec<(f32, f32, f32)> = (-1500..=1600)
-            .step_by(160)
-            .enumerate()
-            .map(|(i, x)| {
-                (
-                    x as f32,
-                    -170.0_f32,
-                    mountain_scales[i % mountain_scales.len()],
-                )
-            })
-            .collect();
-        for &(mx, my, mscale) in &mountain_data {
+        // (x_pos, model_path, native_h, scale)
+        let mountains: &[(f32, &str, f32, f32)] = &[
+            (-1400.0, "models/mountain1.glb", 0.723, 330.0),
+            (-1100.0, "models/mountain1.glb", 0.723, 278.0),
+            (-800.0,  "models/mountain2.glb", 0.398, 360.0),
+            (-550.0,  "models/mountain1.glb", 0.723, 390.0),
+            (-250.0,  "models/mountain1.glb", 0.723, 263.0),
+            (0.0,     "models/mountain2.glb", 0.398, 315.0),
+            (300.0,   "models/mountain1.glb", 0.723, 368.0),
+            (600.0,   "models/mountain1.glb", 0.723, 293.0),
+            (900.0,   "models/mountain2.glb", 0.398, 345.0),
+            (1200.0,  "models/mountain1.glb", 0.723, 405.0),
+            (1500.0,  "models/mountain1.glb", 0.723, 300.0),
+        ];
+        for &(mx, model, native_h, scale) in mountains {
+            // Center-anchored: shift up by half scaled height so base sits at -176.
+            // Base lowered 6 units below ground (-170 → -176) to avoid floating appearance.
+            let y = -176.0 + native_h * scale * 0.5;
             commands.spawn((
-                SceneRoot(asset_server.load("models/stone-mountain.glb#Scene0")),
-                Transform::from_xyz(mx, my, -70.0).with_scale(Vec3::new(mscale, mscale, 20.0)),
+                SceneRoot(asset_server.load(format!("{}#Scene0", model))),
+                Transform::from_xyz(mx, y, -70.0)
+                    .with_scale(Vec3::new(scale, scale, 20.0)),
                 // WHY 0.85: mountains at z=-70 are very distant. High factor = tracks camera
                 // closely = reads as far away. 0.85 sits between clouds (0.80) and sky (0.95).
-                ParallaxLayer { factor: 0.85 },
-                Decoration,
-            ));
-
-            let cap_w = mscale * 0.38;
-            let cap_h = mscale * 0.20;
-            let cap_y = my + mscale * 0.70;
-            let snow_mesh = meshes.add(Mesh::from(Rectangle::new(cap_w, cap_h)));
-            let snow_mat = materials.add(StandardMaterial {
-                base_color: Color::srgb(0.93, 0.95, 1.00),
-                alpha_mode: AlphaMode::Opaque,
-                unlit: true,
-                ..default()
-            });
-            commands.spawn((
-                Mesh3d(snow_mesh),
-                MeshMaterial3d(snow_mat),
-                Transform::from_xyz(mx, cap_y, -69.9),
-                // WHY 0.85: snow cap must match mountain body factor exactly so they
-                // scroll as a unit and the cap never drifts off the mountain peak.
                 ParallaxLayer { factor: 0.85 },
                 Decoration,
             ));
@@ -337,11 +326,15 @@ pub fn spawn_nature_background(commands: &mut Commands, asset_server: &AssetServ
     let dark_tree_models = [
         "models/tree_cone_dark.glb",
         "models/tree_tall_dark.glb",
-        "models/tree_cone_dark.glb",
+        "models/tree_pine.glb",
+        "models/tree_default.glb",
+        "models/tree_fat.glb",
+        "models/tree_oak.glb",
     ];
-    let dark_tree_scales = [52.0_f32, 44.0, 58.0, 46.0, 54.0, 48.0, 56.0, 43.0];
-    // Step 100 units → ~31 trees, evenly spaced with no overlap.
-    for (i, x) in (-1500..=1600i32).step_by(100).enumerate() {
+    let dark_tree_scales = [52.0_f32, 44.0, 58.0, 46.0, 54.0, 48.0, 56.0, 43.0,
+                            50.0, 60.0, 42.0, 55.0, 47.0, 57.0, 45.0, 53.0];
+    // Step 63 units → 50 trees, dense dark canopy at z=-80.
+    for (i, x) in (-1500..=1600i32).step_by(63).enumerate() {
         let model = dark_tree_models[i % dark_tree_models.len()];
         let scale = dark_tree_scales[i % dark_tree_scales.len()];
         commands.spawn((
@@ -530,10 +523,24 @@ pub fn spawn_city_background(commands: &mut Commands, asset_server: &AssetServer
     for (i, x) in (-1500..=1600i32).step_by(280).enumerate() {
         let model = skyscraper_models[i % skyscraper_models.len()];
         let s = skyscraper_scales[i % skyscraper_scales.len()];
-        info!("[CITY_BG] near[{}] model={} x={} scale={}", i, model, x, s);
+        // Tripo replacement models are center-anchored with native height 1.0.
+        // Multiply scale by the old Kenney model's native height to match visual size,
+        // and shift Y up by half scaled height for center-anchoring (base sits at ground).
+        // - skyscraper-a: native dims X=0.508, Y=1.0, Z=0.482; old Kenney H=2.88
+        // - skyscraper-b: native dims X=0.319, Y=1.0, Z=0.322; old Kenney H=4.48
+        let (s, y_base) = if model.contains("skyscraper-a") {
+            let s = s * 2.88; // old Kenney skyscraper-a native H=2.88
+            (s, -146.0 + s * 0.5)
+        } else if model.contains("skyscraper-b") {
+            let s = s * 4.48; // old Kenney skyscraper-b native H=4.48
+            (s, -146.0 + s * 0.5)
+        } else {
+            (s, -146.0)
+        };
+        info!("[CITY_BG] near[{}] model={} x={} scale={} y_base={}", i, model, x, s, y_base);
         commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32, -146.0, -50.0)
+            Transform::from_xyz(x as f32, y_base, -50.0)
                 .with_rotation(near_rotation)
                 .with_scale(Vec3::new(s, s, s * 0.3)),
             // WHY 0.45: near skyscrapers at z=-50 are the closest background layer.

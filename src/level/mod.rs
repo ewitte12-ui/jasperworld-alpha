@@ -982,12 +982,14 @@ pub fn spawn_level_decorations(
             }
 
             // Construction cones — scattered urban clutter.
-            // Scale 134: native H=0.094 → 0.094*134/18 = 0.7 Jasper units tall.
+            // New model: X=0.703, Y=1.0, Z=0.679, center-anchored (Y: -0.5→0.5).
+            // Target height = 0.7 Jasper units = 0.7*18 = 12.6 world units → scale = 12.6/1.0 = 12.6.
+            // Y position: base at -141, center-anchored → Y = -141 + (1.0*12.6)/2 = -134.7.
             let cone_positions = [col_x_f(10.0), col_x_f(45.0), col_x_f(70.0)];
             for cx in cone_positions {
                 commands.spawn((
                     SceneRoot(asset_server.load("models/city/construction-cone.glb#Scene0")),
-                    Transform::from_xyz(cx, -141.0, -15.0).with_scale(Vec3::new(134.0, 134.0, 42.0)),
+                    Transform::from_xyz(cx, -134.7, -15.0).with_scale(Vec3::splat(12.6)),
                     components::Decoration,
                     components::ForegroundDecoration,
                 ));
