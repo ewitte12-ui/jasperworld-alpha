@@ -162,17 +162,3 @@ pub fn render_dialogue_box(
         }
     }
 }
-
-/// Spawns a friendly NPC near the player start in the Forest layer.
-/// y = ground_top + TILE_SIZE = -146 + 18 = -128 (one tile above, settles visually).
-pub fn spawn_test_npc(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn((
-        SceneRoot(asset_server.load("models/character-oobi.glb#Scene0")),
-        Transform::from_xyz(-200.0, -128.0, 1.0).with_scale(Vec3::splat(22.0)),
-        NpcDialogue::new(vec![
-            "Hello there, little raccoon!",
-            "Collect all the stars to open the gate.",
-            "Good luck on your journey!",
-        ]),
-    ));
-}

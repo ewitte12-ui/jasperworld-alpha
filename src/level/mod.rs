@@ -25,7 +25,7 @@ use crate::rendering::parallax::{
     spawn_subdivision_background,
 };
 use crate::states::NewGameRequested;
-use crate::tilemap::spawn::{spawn_tilemap, spawn_tilemap_tinted};
+use crate::tilemap::spawn::spawn_tilemap;
 use crate::tilemap::tilemap::TILE_SIZE;
 use city::city_level;
 use doors::TransitionDoor;
@@ -131,7 +131,7 @@ pub fn spawn_entities_for_level(
     }
 }
 
-/// Inner logic of spawn_forest_entities, callable as a free function (no Bevy system params).
+/// Inner logic for spawning Forest level entities, callable as a free function (no Bevy system params).
 fn spawn_forest_inner(
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,
@@ -170,8 +170,6 @@ fn spawn_forest_inner(
     for pos in star_positions {
         spawn_collectible(
             commands,
-            meshes,
-            materials,
             asset_server,
             pos,
             CollectibleType::Star,
@@ -213,8 +211,6 @@ fn spawn_forest_inner(
     for pos in apple_positions {
         spawn_collectible(
             commands,
-            meshes,
-            materials,
             asset_server,
             pos,
             CollectibleType::HealthFood,
@@ -335,8 +331,6 @@ fn spawn_subdivision_inner(
     for pos in star_positions {
         spawn_collectible(
             commands,
-            meshes,
-            materials,
             asset_server,
             pos,
             CollectibleType::Star,
@@ -357,8 +351,6 @@ fn spawn_subdivision_inner(
     for pos in apple_positions {
         spawn_collectible(
             commands,
-            meshes,
-            materials,
             asset_server,
             pos,
             CollectibleType::HealthFood,
@@ -477,8 +469,6 @@ fn spawn_city_inner(
     for pos in &star_positions {
         spawn_collectible(
             commands,
-            meshes,
-            materials,
             asset_server,
             *pos,
             CollectibleType::Star,
@@ -497,8 +487,6 @@ fn spawn_city_inner(
     for pos in &apple_positions {
         spawn_collectible(
             commands,
-            meshes,
-            materials,
             asset_server,
             *pos,
             CollectibleType::HealthFood,
@@ -915,19 +903,6 @@ pub fn spawn_solar_panel_canopy(
     ));
 }
 
-/// Canonical level spawn entry point — shared by handle_new_game, apply_debug_start,
-/// and any future code that needs to load a level from scratch.
-///
-/// Performs, in order:
-///   1. Build LevelData for the requested level
-///   2. Update CurrentLevel resource (id + layer)
-///   3. Spawn tilemap for the requested layer
-///   4. Spawn all gameplay entities (stars, enemies, gate, exit)
-///   5. Spawn transition doors
-///   6. Spawn background and decorations
-///   7. Insert LevelData as a resource
-///
-/// Returns the spawn point for the loaded layer so the caller can teleport
 /// Returns (solid_model, platform_model) paths for a given level + layer.
 /// Layer 1 sublevels use unique themed tile models; all others use surface defaults.
 pub fn tile_models_for_layer(
@@ -944,15 +919,20 @@ pub fn tile_models_for_layer(
     }
 }
 
-/// Returns an optional tint color for tiles in a given level.
-/// Currently no levels use a tint (Subdivision formerly used a brick tint
-/// but now uses the redbricks.glb model which has its own texture).
-pub fn tile_tint_for_layer(level_id: LevelId) -> Option<Color> {
-    match level_id {
-        _ => None,
-    }
-}
 
+/// Canonical level spawn entry point — shared by handle_new_game, apply_debug_start,
+/// and any future code that needs to load a level from scratch.
+///
+/// Performs, in order:
+///   1. Build LevelData for the requested level
+///   2. Update CurrentLevel resource (id + layer)
+///   3. Spawn tilemap for the requested layer
+///   4. Spawn all gameplay entities (stars, enemies, gate, exit)
+///   5. Spawn transition doors
+///   6. Spawn background and decorations
+///   7. Insert LevelData as a resource
+///
+/// Returns the spawn point for the loaded layer so the caller can teleport
 /// the player — each call site has a different query type for the player,
 /// so teleportation is the caller's responsibility.
 ///
@@ -1018,28 +998,15 @@ pub fn spawn_level_full(
                 let (solid_model, platform_model) =
                     tile_models_for_layer(level_id, clamped);
 
-                if let Some(tint) = tile_tint_for_layer(level_id) {
-                    spawn_tilemap_tinted(
-                        commands,
-                        asset_server,
-                        solid_model,
-                        platform_model,
-                        &tiles,
-                        origin,
-                        0.0,
-                        tint,
-                    );
-                } else {
-                    spawn_tilemap(
-                        commands,
-                        asset_server,
-                        solid_model,
-                        platform_model,
-                        &tiles,
-                        origin,
-                        0.0,
-                    );
-                }
+                spawn_tilemap(
+                    commands,
+                    asset_server,
+                    solid_model,
+                    platform_model,
+                    &tiles,
+                    origin,
+                    0.0,
+                );
 
                 // Tilemap is already spawned above from converted LevelData.
                 // Mark true so the hardcoded path does not re-spawn tiles.
@@ -1114,28 +1081,15 @@ pub fn spawn_level_full(
     // Hardcoded fallback: spawn tilemap + entities + doors only when the JSON
     // path did not already handle them.
     if !json_entities_spawned {
-        if let Some(tint) = tile_tint_for_layer(level_id) {
-            spawn_tilemap_tinted(
-                commands,
-                asset_server,
-                solid_model,
-                platform_model,
-                &tiles,
-                origin,
-                0.0,
-                tint,
-            );
-        } else {
-            spawn_tilemap(
-                commands,
-                asset_server,
-                solid_model,
-                platform_model,
-                &tiles,
-                origin,
-                0.0,
-            );
-        }
+        spawn_tilemap(
+            commands,
+            asset_server,
+            solid_model,
+            platform_model,
+            &tiles,
+            origin,
+            0.0,
+        );
         spawn_entities_for_level(
             commands,
             meshes,

@@ -205,34 +205,3 @@ pub fn spawn_enemy(
 
     entity.id()
 }
-
-/// Spawns initial Forest enemies at startup (visible during menu screens).
-/// Positions use Forest origin_x = -864.0.
-pub fn spawn_enemies(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
-) {
-    // Forest enemies: col_x(col) = -864 + col*18 + 9
-    // Y = ground_top = -146.0 (spawner adds COLLIDER_H/2 = 10 → center at -136).
-    let enemies = [
-        (EnemyType::Dog, Vec2::new(81.0, -146.0), 90.0_f32, 150.0),
-        (EnemyType::Snake, Vec2::new(477.0, -146.0), 54.0_f32, 50.0),
-        (EnemyType::Possum, Vec2::new(621.0, -146.0), 54.0_f32, 50.0),
-    ];
-
-    for (enemy_type, position, patrol_range, hp) in enemies {
-        spawn_enemy(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-            &asset_server,
-            enemy_type,
-            position,
-            patrol_range,
-            hp,
-            None,
-        );
-    }
-}

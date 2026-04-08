@@ -10,7 +10,6 @@ pub struct DialoguePlugin;
 impl Plugin for DialoguePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(DialogueState::default())
-            // spawn_test_npc removed — character-oobi.glb is not forest-appropriate
             .add_systems(
                 Update,
                 (

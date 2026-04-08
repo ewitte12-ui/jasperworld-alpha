@@ -5,7 +5,7 @@ use crate::level::components::TileEntity;
 use crate::level::level_data::{CurrentLevel, LevelData, LevelId};
 use crate::player::components::Player;
 use crate::rendering::camera::GameplayCamera;
-use crate::tilemap::spawn::{spawn_tilemap, spawn_tilemap_tinted};
+use crate::tilemap::spawn::spawn_tilemap;
 use crate::tilemap::tilemap::TILE_SIZE;
 
 /// Half of the orthographic viewport height (FixedVertical 320 / 2).
@@ -95,11 +95,6 @@ pub fn switch_layer(
 
     current_level.layer_index = target;
 
-    // TEMP LOG — remove after validation
-    info!(
-        "[TRANSITION] switch_layer START: locked, advancing to layer_idx={}",
-        current_level.layer_index,
-    );
     let layer = &level_data.layers[current_level.layer_index];
 
     // Despawn all existing tile entities.
@@ -119,32 +114,15 @@ pub fn switch_layer(
         layer.origin_x + TILE_SIZE * 0.5,
         layer.origin_y + TILE_SIZE * 0.5,
     );
-    let tile_tint = match current_level.level_id {
-        Some(lid) => crate::level::tile_tint_for_layer(lid),
-        None => None,
-    };
-    if let Some(tint) = tile_tint {
-        spawn_tilemap_tinted(
-            &mut commands,
-            &asset_server,
-            solid_model,
-            platform_model,
-            &layer.tiles,
-            origin,
-            0.0,
-            tint,
-        );
-    } else {
-        spawn_tilemap(
-            &mut commands,
-            &asset_server,
-            solid_model,
-            platform_model,
-            &layer.tiles,
-            origin,
-            0.0,
-        );
-    }
+    spawn_tilemap(
+        &mut commands,
+        &asset_server,
+        solid_model,
+        platform_model,
+        &layer.tiles,
+        origin,
+        0.0,
+    );
 
     // Solar panel canopy on Subdivision Rooftop layer only.
     if current_level.level_id == Some(LevelId::Subdivision) && current_level.layer_index == 2 {

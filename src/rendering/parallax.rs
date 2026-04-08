@@ -434,8 +434,9 @@ pub fn spawn_city_background(commands: &mut Commands, asset_server: &AssetServer
     // Uniform XY scaling preserves model's natural proportions (skyscrapers are narrow).
     // depth_scale_factor on Z prevents 3D depth from showing as width under camera tilt.
     //
-    // native_h_mult compensates for differences between the model's native height and
-    // the old Kenney reference height. center_anchored models get +scale*0.5 Y shift.
+    // native_h_mult is a per-model scale normalizer: models that are taller or shorter
+    // than the standard game-unit height use this multiplier so the base `scales` values
+    // remain consistent across models. center_anchored models get +scale*0.5 Y shift.
     // Scale sizing: scale 114 × 2.88 = 328 (fills ~17 tiles). scale 88 × 4.08 = 359.
     let nb = &cfg.near_buildings;
     let near_rotation = Quat::from_rotation_y(nb.rotation_y);
@@ -444,7 +445,7 @@ pub fn spawn_city_background(commands: &mut Commands, asset_server: &AssetServer
     for (i, x) in (nb.x_start..=nb.x_end).step_by(nb.step).enumerate() {
         let entry = &nb.models[i % nb.models.len()];
         let base_s = nb.scales[i % nb.scales.len()];
-        // Apply native_h_mult so Tripo models visually match the old Kenney scale reference.
+        // Apply native_h_mult to normalize this model's height to the standard game-unit scale.
         let s = base_s * entry.native_h_mult;
         let y_base = if entry.center_anchored {
             nb.y + s * 0.5
