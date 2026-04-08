@@ -1,3 +1,7 @@
+[workspace]
+members = [".", "tools/ldtk_compiler"]
+resolver = "2"
+
 [package]
 name = "jaspersworld"
 version = "0.1.0"

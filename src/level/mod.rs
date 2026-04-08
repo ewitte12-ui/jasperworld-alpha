@@ -1,4 +1,5 @@
 pub mod city;
+pub mod compiled_data;
 pub mod components;
 pub mod doors;
 pub mod forest;
@@ -1349,12 +1350,133 @@ pub fn spawn_level_full(
     layer_index: usize,
     skip_enemies: bool,
 ) -> Vec2 {
-    let level_data = match level_id {
-        LevelId::Forest => forest_level(),
-        LevelId::Subdivision => subdivision_level(),
-        LevelId::City => city_level(),
+    // ── Try compiled JSON first; fall back to hardcoded data on any error ────
+    //
+    // The JSON path provides both the tile grid (LevelData) and entity
+    // positions (stars, enemies, gate, exit, doors).  The hardcoded path
+    // provides the same information via the static *_level() functions.
+    //
+    // Everything AFTER this block (decorations, sublevel setup, resource
+    // insertion) is shared and uses the `level_data` / `layer` locals set here.
+    let level_id_str = match level_id {
+        LevelId::Forest => "Forest",
+        LevelId::Subdivision => "Subdivision",
+        LevelId::City => "City",
     };
 
+    // `json_entities_spawned` tracks whether the JSON path handled entity
+    // spawning so the fallback does not double-spawn.
+    let mut json_entities_spawned = false;
+
+    // Attempt to load compiled JSON.  `try_load_compiled_levels` returns None
+    // on any file / parse / version error and logs a warning internally.
+    let level_data =
+        if let Some(compiled_root) =
+            compiled_data::try_load_compiled_levels("assets/levels/compiled_levels.json")
+        {
+            if let Some(compiled_level) = compiled_root
+                .levels
+                .iter()
+                .find(|l| l.id == level_id_str)
+            {
+                info!(
+                    "[compiled_data] using JSON data for level {level_id_str}"
+                );
+
+                // Convert JSON → LevelData for the tile grid.
+                let data =
+                    compiled_data::compiled_to_level_data(compiled_level, level_id);
+
+                // Clamp layer_index before we borrow.
+                let clamped = layer_index.min(data.layers.len().saturating_sub(1));
+                let layer = &data.layers[clamped];
+                let origin = Vec2::new(
+                    layer.origin_x + TILE_SIZE * 0.5,
+                    layer.origin_y + TILE_SIZE * 0.5,
+                );
+                let tiles = layer.tiles.clone();
+                let (solid_model, platform_model) =
+                    tile_models_for_layer(level_id, clamped);
+
+                if let Some(tint) = tile_tint_for_layer(level_id) {
+                    spawn_tilemap_tinted(
+                        commands,
+                        asset_server,
+                        solid_model,
+                        platform_model,
+                        &tiles,
+                        origin,
+                        0.0,
+                        tint,
+                    );
+                } else {
+                    spawn_tilemap(
+                        commands,
+                        asset_server,
+                        solid_model,
+                        platform_model,
+                        &tiles,
+                        origin,
+                        0.0,
+                    );
+                }
+
+                // Tilemap is already spawned above from converted LevelData.
+                // Mark true so the hardcoded path does not re-spawn tiles.
+                json_entities_spawned = true;
+
+                // Spawn entities from JSON data for this layer.
+                // Bounds-check against the raw JSON layers (should match converted
+                // data, but guard against divergence to prevent panics).
+                if let Some(compiled_layer) = compiled_level.layers.get(clamped) {
+                    compiled_data::spawn_entities_from_compiled(
+                        commands,
+                        meshes,
+                        materials,
+                        asset_server,
+                        progress,
+                        compiled_layer,
+                        level_id,
+                        skip_enemies,
+                    );
+
+                    // JSON doors: only spawn from hardcoded path when the compiled
+                    // layer has no door entries (so JSON-driven levels with explicit
+                    // door positions win; levels without override fall back).
+                    if compiled_layer.doors.is_empty() {
+                        doors::spawn_doors_for_level(commands, asset_server, level_id);
+                    }
+                } else {
+                    warn!("[compiled_data] layer index {clamped} out of range in JSON; spawning hardcoded entities only");
+                    // Tiles are from JSON but entities fall back to hardcoded.
+                    spawn_entities_for_level(
+                        commands, meshes, materials, asset_server, progress,
+                        level_id, skip_enemies,
+                    );
+                    doors::spawn_doors_for_level(commands, asset_server, level_id);
+                }
+                data
+            } else {
+                // JSON loaded but this level is not present — use hardcoded.
+                warn!(
+                    "[compiled_data] level {level_id_str} not found in JSON; using hardcoded data"
+                );
+                match level_id {
+                    LevelId::Forest => forest_level(),
+                    LevelId::Subdivision => subdivision_level(),
+                    LevelId::City => city_level(),
+                }
+            }
+        } else {
+            // No JSON available — use hardcoded data (normal during development).
+            match level_id {
+                LevelId::Forest => forest_level(),
+                LevelId::Subdivision => subdivision_level(),
+                LevelId::City => city_level(),
+            }
+        };
+
+    // Clamp layer_index against the actual (possibly hardcoded) data.
     let layer_index = layer_index.min(level_data.layers.len().saturating_sub(1));
     let layer = &level_data.layers[layer_index];
     let origin = Vec2::new(
@@ -1369,38 +1491,42 @@ pub fn spawn_level_full(
     current_level.level_id = Some(level_id);
     current_level.layer_index = layer_index;
 
-    if let Some(tint) = tile_tint_for_layer(level_id) {
-        spawn_tilemap_tinted(
+    // Hardcoded fallback: spawn tilemap + entities + doors only when the JSON
+    // path did not already handle them.
+    if !json_entities_spawned {
+        if let Some(tint) = tile_tint_for_layer(level_id) {
+            spawn_tilemap_tinted(
+                commands,
+                asset_server,
+                solid_model,
+                platform_model,
+                &tiles,
+                origin,
+                0.0,
+                tint,
+            );
+        } else {
+            spawn_tilemap(
+                commands,
+                asset_server,
+                solid_model,
+                platform_model,
+                &tiles,
+                origin,
+                0.0,
+            );
+        }
+        spawn_entities_for_level(
             commands,
+            meshes,
+            materials,
             asset_server,
-            solid_model,
-            platform_model,
-            &tiles,
-            origin,
-            0.0,
-            tint,
+            progress,
+            level_id,
+            skip_enemies,
         );
-    } else {
-        spawn_tilemap(
-            commands,
-            asset_server,
-            solid_model,
-            platform_model,
-            &tiles,
-            origin,
-            0.0,
-        );
+        doors::spawn_doors_for_level(commands, asset_server, level_id);
     }
-    spawn_entities_for_level(
-        commands,
-        meshes,
-        materials,
-        asset_server,
-        progress,
-        level_id,
-        skip_enemies,
-    );
-    doors::spawn_doors_for_level(commands, asset_server, level_id);
     spawn_level_decorations(commands, meshes, materials, asset_server, level_id);
 
     // Solar panel canopy on Subdivision Rooftop layer only.
