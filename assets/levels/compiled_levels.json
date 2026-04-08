@@ -2293,7 +2293,449 @@
           ],
           "gate_col": 91,
           "exit_next_level": "Subdivision",
-          "stars_required": 10
+          "stars_required": 10,
+          "props": [
+            {
+              "model_id": "models/small_rock.glb",
+              "x": -801.0,
+              "y": -142.8,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 13.0,
+              "scale_z": 13.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/grass_large.glb",
+              "x": -765.0,
+              "y": -146.0,
+              "z": -15.0,
+              "scale_x": 38.0,
+              "scale_y": 38.0,
+              "scale_z": 12.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/plant_bush.glb",
+              "x": -693.0,
+              "y": -146.0,
+              "z": -15.0,
+              "scale_x": 49.0,
+              "scale_y": 49.0,
+              "scale_z": 27.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/large_rock.glb",
+              "x": -675.0,
+              "y": -134.0,
+              "z": -15.0,
+              "scale_x": 9.0,
+              "scale_y": 28.0,
+              "scale_z": 28.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/plant_bushLarge.glb",
+              "x": -585.0,
+              "y": -146.0,
+              "z": -15.0,
+              "scale_x": 79.0,
+              "scale_y": 79.0,
+              "scale_z": 43.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/flower_redA.glb",
+              "x": -531.0,
+              "y": -146.0,
+              "z": -15.0,
+              "scale_x": 66.0,
+              "scale_y": 66.0,
+              "scale_z": 17.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/yellow_flower.glb",
+              "x": -459.0,
+              "y": -136.0,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 20.0,
+              "scale_z": 20.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/large_rock.glb",
+              "x": -315.0,
+              "y": -134.0,
+              "z": -15.0,
+              "scale_x": 9.0,
+              "scale_y": 28.0,
+              "scale_z": 28.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/small_rock.glb",
+              "x": -225.0,
+              "y": -142.8,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 13.0,
+              "scale_z": 13.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/plant_bushLarge.glb",
+              "x": -81.0,
+              "y": -146.0,
+              "z": -15.0,
+              "scale_x": 79.0,
+              "scale_y": 79.0,
+              "scale_z": 43.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/large_rock.glb",
+              "x": 135.0,
+              "y": -134.0,
+              "z": -15.0,
+              "scale_x": 9.0,
+              "scale_y": 28.0,
+              "scale_z": 28.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/yellow_flower.glb",
+              "x": 189.0,
+              "y": -136.0,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 20.0,
+              "scale_z": 20.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/small_rock.glb",
+              "x": 675.0,
+              "y": -142.8,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 13.0,
+              "scale_z": 13.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/yellow_flower.glb",
+              "x": -765.0,
+              "y": -64.0,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 20.0,
+              "scale_z": 20.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/small_rock.glb",
+              "x": -711.0,
+              "y": -70.8,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 13.0,
+              "scale_z": 13.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/small_rock.glb",
+              "x": -441.0,
+              "y": -70.8,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 13.0,
+              "scale_z": 13.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/plant_bush.glb",
+              "x": -423.0,
+              "y": -74.0,
+              "z": -15.0,
+              "scale_x": 49.0,
+              "scale_y": 49.0,
+              "scale_z": 27.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/flower_redA.glb",
+              "x": -405.0,
+              "y": -74.0,
+              "z": -15.0,
+              "scale_x": 66.0,
+              "scale_y": 66.0,
+              "scale_z": 17.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/grass_large.glb",
+              "x": -207.0,
+              "y": -74.0,
+              "z": -15.0,
+              "scale_x": 38.0,
+              "scale_y": 38.0,
+              "scale_z": 12.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/plant_bush.glb",
+              "x": -189.0,
+              "y": -74.0,
+              "z": -15.0,
+              "scale_x": 49.0,
+              "scale_y": 49.0,
+              "scale_z": 27.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/flower_redA.glb",
+              "x": 171.0,
+              "y": -74.0,
+              "z": -15.0,
+              "scale_x": 66.0,
+              "scale_y": 66.0,
+              "scale_z": 17.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/small_rock.glb",
+              "x": 657.0,
+              "y": -70.8,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 13.0,
+              "scale_z": 13.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/small_rock.glb",
+              "x": -603.0,
+              "y": 1.2,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 13.0,
+              "scale_z": 13.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/grass_large.glb",
+              "x": -567.0,
+              "y": -2.0,
+              "z": -15.0,
+              "scale_x": 38.0,
+              "scale_y": 38.0,
+              "scale_z": 12.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/flower_redA.glb",
+              "x": -549.0,
+              "y": -2.0,
+              "z": -15.0,
+              "scale_x": 66.0,
+              "scale_y": 66.0,
+              "scale_z": 17.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/small_rock.glb",
+              "x": -45.0,
+              "y": 1.2,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 13.0,
+              "scale_z": 13.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/yellow_flower.glb",
+              "x": -27.0,
+              "y": 8.0,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 20.0,
+              "scale_z": 20.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/grass_large.glb",
+              "x": 513.0,
+              "y": -2.0,
+              "z": -15.0,
+              "scale_x": 38.0,
+              "scale_y": 38.0,
+              "scale_z": 12.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/small_rock.glb",
+              "x": 549.0,
+              "y": 1.2,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 13.0,
+              "scale_z": 13.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/plant_bushLarge.glb",
+              "x": 585.0,
+              "y": -2.0,
+              "z": -15.0,
+              "scale_x": 79.0,
+              "scale_y": 79.0,
+              "scale_z": 43.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/plant_bushLarge.glb",
+              "x": 27.0,
+              "y": 70.0,
+              "z": -15.0,
+              "scale_x": 79.0,
+              "scale_y": 79.0,
+              "scale_z": 43.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/small_rock.glb",
+              "x": 81.0,
+              "y": 73.2,
+              "z": -15.0,
+              "scale_x": 5.0,
+              "scale_y": 13.0,
+              "scale_z": 13.0,
+              "rotation_y": -1.5708,
+              "foreground": true
+            },
+            {
+              "model_id": "models/plant_bush.glb",
+              "x": 369.0,
+              "y": 70.0,
+              "z": -15.0,
+              "scale_x": 49.0,
+              "scale_y": 49.0,
+              "scale_z": 27.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/flower_redA.glb",
+              "x": 387.0,
+              "y": 70.0,
+              "z": -15.0,
+              "scale_x": 66.0,
+              "scale_y": 66.0,
+              "scale_z": 17.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/grass_large.glb",
+              "x": 405.0,
+              "y": 70.0,
+              "z": -15.0,
+              "scale_x": 38.0,
+              "scale_y": 38.0,
+              "scale_z": 12.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/plant_bush.glb",
+              "x": 423.0,
+              "y": 70.0,
+              "z": -15.0,
+              "scale_x": 49.0,
+              "scale_y": 49.0,
+              "scale_z": 27.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/tree_oak.glb",
+              "x": -525.0,
+              "y": -98.5,
+              "z": 10.0,
+              "scale_x": 95.0,
+              "scale_y": 95.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/tree_fat.glb",
+              "x": -440.0,
+              "y": -106.0,
+              "z": 10.0,
+              "scale_x": 80.0,
+              "scale_y": 80.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/tree_pine.glb",
+              "x": 240.0,
+              "y": -101.0,
+              "z": 10.0,
+              "scale_x": 90.0,
+              "scale_y": 90.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/tree_oak.glb",
+              "x": 330.0,
+              "y": -103.5,
+              "z": 10.0,
+              "scale_x": 85.0,
+              "scale_y": 85.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            }
+          ]
         },
         {
           "id": 1,
@@ -2925,7 +3367,132 @@
           "doors": [],
           "gate_col": null,
           "exit_next_level": null,
-          "stars_required": null
+          "stars_required": null,
+          "props": [
+            {
+              "model_id": "models/cave/cliff_cave_stone.glb",
+              "x": 5117.0,
+              "y": 5270.0,
+              "z": 3.0,
+              "scale_x": 12.0,
+              "scale_y": 12.0,
+              "scale_z": 4.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/cave/cliff_cave_rock.glb",
+              "x": 5279.0,
+              "y": 5270.0,
+              "z": 3.0,
+              "scale_x": 10.0,
+              "scale_y": 10.0,
+              "scale_z": 3.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/cave/cliff_cave_stone.glb",
+              "x": 5459.0,
+              "y": 5270.0,
+              "z": 3.0,
+              "scale_x": 14.0,
+              "scale_y": 14.0,
+              "scale_z": 5.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/mushroom_red.glb",
+              "x": 5081.0,
+              "y": 5036.0,
+              "z": 3.0,
+              "scale_x": 30.0,
+              "scale_y": 30.0,
+              "scale_z": 12.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/mushroom_tan.glb",
+              "x": 5333.0,
+              "y": 5036.0,
+              "z": 3.0,
+              "scale_x": 25.0,
+              "scale_y": 25.0,
+              "scale_z": 10.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/mushrooms.glb",
+              "x": 5477.0,
+              "y": 5036.0,
+              "z": 3.0,
+              "scale_x": 28.0,
+              "scale_y": 28.0,
+              "scale_z": 11.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/large_rock.glb",
+              "x": 5189.0,
+              "y": 5048.0,
+              "z": 3.0,
+              "scale_x": 9.0,
+              "scale_y": 28.0,
+              "scale_z": 28.0,
+              "rotation_y": -1.5708,
+              "foreground": false
+            },
+            {
+              "model_id": "models/small_rock.glb",
+              "x": 5387.0,
+              "y": 5039.2,
+              "z": 3.0,
+              "scale_x": 5.0,
+              "scale_y": 13.0,
+              "scale_z": 13.0,
+              "rotation_y": -1.5708,
+              "foreground": false
+            }
+          ],
+          "lights": [
+            {
+              "x": 5153.0,
+              "y": 5144.0,
+              "z": 3.0,
+              "color": [
+                1.0,
+                0.6,
+                0.2
+              ],
+              "intensity": 200000.0
+            },
+            {
+              "x": 5405.0,
+              "y": 5144.0,
+              "z": 3.0,
+              "color": [
+                1.0,
+                0.6,
+                0.2
+              ],
+              "intensity": 200000.0
+            },
+            {
+              "x": 5279.0,
+              "y": 5072.0,
+              "z": 3.0,
+              "color": [
+                1.0,
+                0.6,
+                0.2
+              ],
+              "intensity": 150000.0
+            }
+          ]
         },
         {
           "id": 2,
@@ -7397,7 +7964,53 @@
           ],
           "gate_col": 91,
           "exit_next_level": "City",
-          "stars_required": 10
+          "stars_required": 10,
+          "props": [
+            {
+              "model_id": "models/suburban/tree-suburban-large.glb",
+              "x": -450.0,
+              "y": -146.0,
+              "z": 10.0,
+              "scale_x": 180.0,
+              "scale_y": 180.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/suburban/tree-suburban-small.glb",
+              "x": -420.0,
+              "y": -146.0,
+              "z": 10.0,
+              "scale_x": 140.0,
+              "scale_y": 140.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/suburban/tree-suburban-large.glb",
+              "x": 270.0,
+              "y": -146.0,
+              "z": 10.0,
+              "scale_x": 170.0,
+              "scale_y": 170.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/suburban/tree-suburban-small.glb",
+              "x": 295.0,
+              "y": -146.0,
+              "z": 10.0,
+              "scale_x": 150.0,
+              "scale_y": 150.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            }
+          ]
         },
         {
           "id": 1,
@@ -8029,7 +8642,121 @@
           "doors": [],
           "gate_col": null,
           "exit_next_level": null,
-          "stars_required": null
+          "stars_required": null,
+          "props": [
+            {
+              "model_id": "models/sewer/column-large.glb",
+              "x": 5153.0,
+              "y": 5036.0,
+              "z": 3.0,
+              "scale_x": 18.0,
+              "scale_y": 18.0,
+              "scale_z": 6.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/sewer/column-large.glb",
+              "x": 5441.0,
+              "y": 5036.0,
+              "z": 3.0,
+              "scale_x": 18.0,
+              "scale_y": 18.0,
+              "scale_z": 6.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/sewer/stone-wall-column.glb",
+              "x": 5297.0,
+              "y": 5036.0,
+              "z": 3.0,
+              "scale_x": 18.0,
+              "scale_y": 18.0,
+              "scale_z": 6.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/sewer/iron-fence.glb",
+              "x": 5063.0,
+              "y": 5036.0,
+              "z": 3.0,
+              "scale_x": 20.0,
+              "scale_y": 20.0,
+              "scale_z": 5.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/sewer/iron-fence.glb",
+              "x": 5513.0,
+              "y": 5036.0,
+              "z": 3.0,
+              "scale_x": 20.0,
+              "scale_y": 20.0,
+              "scale_z": 5.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/sewer/brick-wall.glb",
+              "x": 5189.0,
+              "y": 5270.0,
+              "z": 3.0,
+              "scale_x": 16.0,
+              "scale_y": 16.0,
+              "scale_z": 4.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/sewer/brick-wall.glb",
+              "x": 5405.0,
+              "y": 5270.0,
+              "z": 3.0,
+              "scale_x": 16.0,
+              "scale_y": 16.0,
+              "scale_z": 4.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            }
+          ],
+          "lights": [
+            {
+              "x": 5153.0,
+              "y": 5144.0,
+              "z": 3.0,
+              "color": [
+                0.5,
+                0.8,
+                0.4
+              ],
+              "intensity": 150000.0
+            },
+            {
+              "x": 5297.0,
+              "y": 5072.0,
+              "z": 3.0,
+              "color": [
+                0.6,
+                0.8,
+                0.5
+              ],
+              "intensity": 120000.0
+            },
+            {
+              "x": 5441.0,
+              "y": 5144.0,
+              "z": 3.0,
+              "color": [
+                0.5,
+                0.8,
+                0.4
+              ],
+              "intensity": 150000.0
+            }
+          ]
         },
         {
           "id": 2,
@@ -14686,7 +15413,240 @@
           ],
           "gate_col": 91,
           "exit_next_level": "City",
-          "stars_required": 10
+          "stars_required": 10,
+          "props": [
+            {
+              "model_id": "models/city/taxi.glb",
+              "x": -585.0,
+              "y": -124.3,
+              "z": -15.0,
+              "scale_x": 90.0,
+              "scale_y": 90.0,
+              "scale_z": 90.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/taxi.glb",
+              "x": 45.0,
+              "y": -124.3,
+              "z": -15.0,
+              "scale_x": 90.0,
+              "scale_y": 90.0,
+              "scale_z": 90.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/taxi.glb",
+              "x": 585.0,
+              "y": -124.3,
+              "z": -15.0,
+              "scale_x": 90.0,
+              "scale_y": 90.0,
+              "scale_z": 90.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/light-curved.glb",
+              "x": -1200.0,
+              "y": -141.0,
+              "z": -15.0,
+              "scale_x": 70.0,
+              "scale_y": 70.0,
+              "scale_z": 16.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/light-curved.glb",
+              "x": -950.0,
+              "y": -141.0,
+              "z": -15.0,
+              "scale_x": 70.0,
+              "scale_y": 70.0,
+              "scale_z": 16.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/light-curved.glb",
+              "x": -700.0,
+              "y": -141.0,
+              "z": -15.0,
+              "scale_x": 70.0,
+              "scale_y": 70.0,
+              "scale_z": 16.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/light-curved.glb",
+              "x": -450.0,
+              "y": -141.0,
+              "z": -15.0,
+              "scale_x": 70.0,
+              "scale_y": 70.0,
+              "scale_z": 16.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/light-curved.glb",
+              "x": -200.0,
+              "y": -141.0,
+              "z": -15.0,
+              "scale_x": 70.0,
+              "scale_y": 70.0,
+              "scale_z": 16.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/light-curved.glb",
+              "x": 50.0,
+              "y": -141.0,
+              "z": -15.0,
+              "scale_x": 70.0,
+              "scale_y": 70.0,
+              "scale_z": 16.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/light-curved.glb",
+              "x": 300.0,
+              "y": -141.0,
+              "z": -15.0,
+              "scale_x": 70.0,
+              "scale_y": 70.0,
+              "scale_z": 16.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/light-curved.glb",
+              "x": 550.0,
+              "y": -141.0,
+              "z": -15.0,
+              "scale_x": 70.0,
+              "scale_y": 70.0,
+              "scale_z": 16.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/light-curved.glb",
+              "x": 800.0,
+              "y": -141.0,
+              "z": -15.0,
+              "scale_x": 70.0,
+              "scale_y": 70.0,
+              "scale_z": 16.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/light-curved.glb",
+              "x": 1050.0,
+              "y": -141.0,
+              "z": -15.0,
+              "scale_x": 70.0,
+              "scale_y": 70.0,
+              "scale_z": 16.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/construction-cone.glb",
+              "x": -675.0,
+              "y": -134.7,
+              "z": -15.0,
+              "scale_x": 12.6,
+              "scale_y": 12.6,
+              "scale_z": 12.6,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/construction-cone.glb",
+              "x": -45.0,
+              "y": -134.7,
+              "z": -15.0,
+              "scale_x": 12.6,
+              "scale_y": 12.6,
+              "scale_z": 12.6,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/city/construction-cone.glb",
+              "x": 405.0,
+              "y": -134.7,
+              "z": -15.0,
+              "scale_x": 12.6,
+              "scale_y": 12.6,
+              "scale_z": 12.6,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/tree_fat.glb",
+              "x": -500.0,
+              "y": -106.0,
+              "z": 10.0,
+              "scale_x": 80.0,
+              "scale_y": 80.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/tree_oak.glb",
+              "x": 230.0,
+              "y": -108.5,
+              "z": 10.0,
+              "scale_x": 75.0,
+              "scale_y": 75.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/tree_default.glb",
+              "x": 340.0,
+              "y": -111.0,
+              "z": 10.0,
+              "scale_x": 70.0,
+              "scale_y": 70.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/tree_fat.glb",
+              "x": -700.0,
+              "y": -108.5,
+              "z": 10.0,
+              "scale_x": 75.0,
+              "scale_y": 75.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/tree_oak.glb",
+              "x": 550.0,
+              "y": -111.0,
+              "z": 10.0,
+              "scale_x": 70.0,
+              "scale_y": 70.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            }
+          ]
         },
         {
           "id": 1,
@@ -15318,7 +16278,121 @@
           "doors": [],
           "gate_col": null,
           "exit_next_level": null,
-          "stars_required": null
+          "stars_required": null,
+          "props": [
+            {
+              "model_id": "models/sewer/column-large.glb",
+              "x": 5153.0,
+              "y": 5036.0,
+              "z": 3.0,
+              "scale_x": 18.0,
+              "scale_y": 18.0,
+              "scale_z": 6.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/sewer/column-large.glb",
+              "x": 5297.0,
+              "y": 5036.0,
+              "z": 3.0,
+              "scale_x": 18.0,
+              "scale_y": 18.0,
+              "scale_z": 6.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/sewer/column-large.glb",
+              "x": 5441.0,
+              "y": 5036.0,
+              "z": 3.0,
+              "scale_x": 18.0,
+              "scale_y": 18.0,
+              "scale_z": 6.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/sewer/brick-wall.glb",
+              "x": 5117.0,
+              "y": 5270.0,
+              "z": 3.0,
+              "scale_x": 16.0,
+              "scale_y": 16.0,
+              "scale_z": 4.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/sewer/brick-wall.glb",
+              "x": 5297.0,
+              "y": 5270.0,
+              "z": 3.0,
+              "scale_x": 16.0,
+              "scale_y": 16.0,
+              "scale_z": 4.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/sewer/brick-wall.glb",
+              "x": 5477.0,
+              "y": 5270.0,
+              "z": 3.0,
+              "scale_x": 16.0,
+              "scale_y": 16.0,
+              "scale_z": 4.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            }
+          ],
+          "lights": [
+            {
+              "x": 5099.0,
+              "y": 5234.0,
+              "z": 3.0,
+              "color": [
+                0.9,
+                0.9,
+                1.0
+              ],
+              "intensity": 120000.0
+            },
+            {
+              "x": 5225.0,
+              "y": 5234.0,
+              "z": 3.0,
+              "color": [
+                0.9,
+                0.9,
+                1.0
+              ],
+              "intensity": 120000.0
+            },
+            {
+              "x": 5369.0,
+              "y": 5234.0,
+              "z": 3.0,
+              "color": [
+                0.9,
+                0.9,
+                1.0
+              ],
+              "intensity": 120000.0
+            },
+            {
+              "x": 5495.0,
+              "y": 5234.0,
+              "z": 3.0,
+              "color": [
+                0.9,
+                0.9,
+                1.0
+              ],
+              "intensity": 120000.0
+            }
+          ]
         },
         {
           "id": 2,

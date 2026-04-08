@@ -52,6 +52,11 @@ pub struct CompiledLayer {
     /// correctly — backwards compatibility with pre-Prop compiled outputs.
     #[serde(default)]
     pub props: Vec<CompiledProp>,
+    /// Point lights for this layer (sublevel lighting).
+    /// Uses `#[serde(default)]` so JSON without this field still parses correctly
+    /// — backwards compatibility with pre-light compiled outputs.
+    #[serde(default)]
+    pub lights: Vec<CompiledLight>,
     pub gate_col: Option<i32>,
     pub exit_next_level: Option<String>,
     pub stars_required: Option<i32>,
@@ -80,9 +85,36 @@ pub struct CompiledProp {
     pub x: f32,
     pub y: f32,
     pub z: f32,
-    pub scale_xy: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
     pub scale_z: f32,
     pub rotation_y: f32,
+    /// If true, entity gets ForegroundDecoration marker (z > 0 or visible gameplay props).
+    #[serde(default)]
+    pub foreground: bool,
+}
+
+/// A point light entry stored in the layer JSON.
+/// Uses serde defaults for radius and range so existing JSON without those
+/// fields continues to parse — backwards-compatible with pre-light outputs.
+#[derive(Deserialize)]
+pub struct CompiledLight {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub color: [f32; 3],
+    pub intensity: f32,
+    #[serde(default = "default_light_radius")]
+    pub radius: f32,
+    #[serde(default = "default_light_range")]
+    pub range: f32,
+}
+
+fn default_light_radius() -> f32 {
+    0.5
+}
+fn default_light_range() -> f32 {
+    200.0
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -277,13 +309,16 @@ pub fn spawn_entities_from_compiled(
     for prop in &layer.props {
         // rotation_y is stored in radians as authored in LDtk.
         let rotation = Quat::from_rotation_y(prop.rotation_y);
-        commands.spawn((
+        let mut entity = commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", prop.model_id))),
             Transform::from_xyz(prop.x, prop.y, prop.z)
                 .with_rotation(rotation)
-                .with_scale(Vec3::new(prop.scale_xy, prop.scale_xy, prop.scale_z)),
+                .with_scale(Vec3::new(prop.scale_x, prop.scale_y, prop.scale_z)),
             super::components::Decoration,
         ));
+        if prop.foreground {
+            entity.insert(super::components::ForegroundDecoration);
+        }
     }
 
     // ── Level gate ───────────────────────────────────────────────────────────

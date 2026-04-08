@@ -100,6 +100,16 @@ pub fn validate(root: &LdtkRoot) -> Result<(), Vec<String>> {
                         // Must have: model_id (the asset path to load)
                         validate_entity_field(entity, "model_id", &level.identifier, &mut errors);
                     }
+                    "Light" => {
+                        // Must have: intensity and color (both required for a useful light)
+                        validate_entity_field(
+                            entity,
+                            "intensity",
+                            &level.identifier,
+                            &mut errors,
+                        );
+                        validate_entity_field(entity, "color", &level.identifier, &mut errors);
+                    }
                     // These entities need no special fields beyond position
                     "Star" | "HealthFood" | "Spawn" | "Gate" | "Exit" => {}
                     other => {

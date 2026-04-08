@@ -3,6 +3,9 @@ use bevy::prelude::*;
 
 use crate::level::components::Decoration;
 use crate::rendering::camera::GameplayCamera;
+use crate::rendering::parallax_config::{
+    load_config, CityBgConfig, ForestBgConfig, SubdivisionBgConfig,
+};
 
 /// Drives horizontal parallax scrolling.
 /// `factor` = fraction of camera movement applied to this layer each frame.
@@ -134,34 +137,22 @@ pub fn spawn_shared_background(
         "[SHARED_BG] spawn_shared_background called for {:?}",
         level_id
     );
+
     // ── Mountains (z = -70) — Forest only ────────────────────────────────────
-    // 11 hand-placed mountains with varied scale for uniqueness.
     // mountain1 (X=1.0, Y=0.723, Z=1.0) — 8 tall peaks.
     // mountain2 (X=0.909, Y=0.398, Z=1.0) — 3 wider/lower variety.
-    // Both center-anchored; Y offset = -170 + native_h * scale * 0.5 (base at -170).
+    // Both center-anchored; Y offset = -176 + native_h * scale * 0.5 (base at -176).
+    // Base lowered 6 units below ground (-170 → -176) to avoid floating appearance.
     if level_id == crate::level::level_data::LevelId::Forest {
-        // (x_pos, model_path, native_h, scale)
-        let mountains: &[(f32, &str, f32, f32)] = &[
-            (-1400.0, "models/mountain1.glb", 0.723, 330.0),
-            (-1100.0, "models/mountain1.glb", 0.723, 278.0),
-            (-800.0,  "models/mountain2.glb", 0.398, 360.0),
-            (-550.0,  "models/mountain1.glb", 0.723, 390.0),
-            (-250.0,  "models/mountain1.glb", 0.723, 263.0),
-            (0.0,     "models/mountain2.glb", 0.398, 315.0),
-            (300.0,   "models/mountain1.glb", 0.723, 368.0),
-            (600.0,   "models/mountain1.glb", 0.723, 293.0),
-            (900.0,   "models/mountain2.glb", 0.398, 345.0),
-            (1200.0,  "models/mountain1.glb", 0.723, 405.0),
-            (1500.0,  "models/mountain1.glb", 0.723, 300.0),
-        ];
-        for &(mx, model, native_h, scale) in mountains {
+        let cfg: ForestBgConfig = load_config("assets/configs/forest_bg.json")
+            .expect("[SHARED_BG] failed to load assets/configs/forest_bg.json");
+        for m in &cfg.mountains {
             // Center-anchored: shift up by half scaled height so base sits at -176.
-            // Base lowered 6 units below ground (-170 → -176) to avoid floating appearance.
-            let y = -176.0 + native_h * scale * 0.5;
+            let y = -176.0 + m.native_h * m.scale * 0.5;
             commands.spawn((
-                SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-                Transform::from_xyz(mx, y, -70.0)
-                    .with_scale(Vec3::new(scale, scale, 20.0)),
+                SceneRoot(asset_server.load(format!("{}#Scene0", m.model))),
+                Transform::from_xyz(m.x, y, -70.0)
+                    .with_scale(Vec3::new(m.scale, m.scale, 20.0)),
                 // WHY 0.85: mountains at z=-70 are very distant. High factor = tracks camera
                 // closely = reads as far away. 0.85 sits between clouds (0.80) and sky (0.95).
                 ParallaxLayer { factor: 0.85 },
@@ -193,66 +184,33 @@ pub fn spawn_shared_background(
         Decoration,
     ));
 
-    // ── Attenuation plane(s) ────────────────────────────────────────────────
+    // ── Attenuation plane(s) — loaded from per-level JSON config ─────────────
     // Forest: single plane at z=-38 (18% dark) covers all background equally.
-    // Subdivision: two planes — light (12%) for near houses, heavy (35%) for far
+    // Subdivision: two planes — light (12%) for near houses, heavy (50%) for far
     //   houses — so the far row reads as visibly more distant.
-    if matches!(
-        level_id,
-        crate::level::level_data::LevelId::Subdivision | crate::level::level_data::LevelId::City
-    ) {
-        let is_city = matches!(level_id, crate::level::level_data::LevelId::City);
-        // Near attenuation (z=-38): light overlay for near buildings at z=-50.
-        // WHY City factor=0.92: this overlay doubles as the star-field/sky-tint for
-        // the night scene. At 0.92 it stays nearly anchored with the camera so the
-        // night sky reads as stationary — consistent with the sky backdrop (0.95).
-        // Subdivision keeps 0.38 (original near-attenuation parallax behavior).
-        let near_attn_factor = if is_city { 0.92 } else { 0.38 };
-        let near_attn_mesh = meshes.add(Mesh::from(Rectangle::new(5000.0, 1600.0)));
-        let near_attn_mat = materials.add(StandardMaterial {
-            base_color: Color::srgba(0.0, 0.0, 0.0, 0.12),
-            alpha_mode: AlphaMode::Blend,
-            unlit: true,
-            double_sided: true,
-            cull_mode: None,
-            ..default()
-        });
-        commands.spawn((
-            Mesh3d(near_attn_mesh),
-            MeshMaterial3d(near_attn_mat),
-            Transform::from_xyz(0.0, -50.0, -38.0),
-            ParallaxLayer { factor: near_attn_factor },
-            Decoration,
-        ));
-        // Far attenuation (z=-75): heavier overlay for far houses at z=-80.
-        // City uses near-black so it doesn't wash the night sky grey;
-        // Subdivision keeps the grey-blue for overcast depth.
-        let far_color = if is_city {
-            Color::srgba(0.03, 0.03, 0.06, 0.50)
-        } else {
-            Color::srgba(0.45, 0.50, 0.58, 0.50)
-        };
-        let far_attn_mesh = meshes.add(Mesh::from(Rectangle::new(5000.0, 1600.0)));
-        let far_attn_mat = materials.add(StandardMaterial {
-            base_color: far_color,
-            alpha_mode: AlphaMode::Blend,
-            unlit: true,
-            double_sided: true,
-            cull_mode: None,
-            ..default()
-        });
-        commands.spawn((
-            Mesh3d(far_attn_mesh),
-            MeshMaterial3d(far_attn_mat),
-            Transform::from_xyz(0.0, -50.0, -75.0),
-            ParallaxLayer { factor: 0.48 },
-            Decoration,
-        ));
-    } else {
-        // Forest: single shared attenuation at z=-38 (18% dark)
+    // City: two planes — near at z=-38 (night sky tint), far at z=-75 (deep shadow).
+    let attn_entries: Vec<crate::rendering::parallax_config::AttenuationEntry> = match level_id {
+        crate::level::level_data::LevelId::Forest => {
+            let cfg: ForestBgConfig = load_config("assets/configs/forest_bg.json")
+                .expect("[SHARED_BG] failed to load assets/configs/forest_bg.json");
+            cfg.attenuation
+        }
+        crate::level::level_data::LevelId::Subdivision => {
+            let cfg: SubdivisionBgConfig = load_config("assets/configs/subdivision_bg.json")
+                .expect("[SHARED_BG] failed to load assets/configs/subdivision_bg.json");
+            cfg.attenuation
+        }
+        crate::level::level_data::LevelId::City => {
+            let cfg: CityBgConfig = load_config("assets/configs/city_bg.json")
+                .expect("[SHARED_BG] failed to load assets/configs/city_bg.json");
+            cfg.attenuation
+        }
+    };
+    for entry in &attn_entries {
+        let [r, g, b, a] = entry.color;
         let attn_mesh = meshes.add(Mesh::from(Rectangle::new(5000.0, 1600.0)));
         let attn_mat = materials.add(StandardMaterial {
-            base_color: Color::srgba(0.0, 0.0, 0.0, 0.18),
+            base_color: Color::srgba(r, g, b, a),
             alpha_mode: AlphaMode::Blend,
             unlit: true,
             double_sided: true,
@@ -262,44 +220,30 @@ pub fn spawn_shared_background(
         commands.spawn((
             Mesh3d(attn_mesh),
             MeshMaterial3d(attn_mat),
-            Transform::from_xyz(0.0, -50.0, -38.0),
-            ParallaxLayer { factor: 0.38 },
+            Transform::from_xyz(0.0, -50.0, entry.z),
+            ParallaxLayer { factor: entry.factor },
             Decoration,
         ));
     }
 
-    // ── Clouds (z = -60) ──────────────────────────────────────────────────────
-    // Span x = -1500..+1600 to match mountain coverage.
+    // ── Clouds — loaded from forest_bg.json or subdivision_bg.json ───────────
     // City: clear night sky — no clouds.
+    // Each CloudEntry carries its own z and factor so cloud depth can vary per entry.
     if level_id == crate::level::level_data::LevelId::City {
         return;
     }
-    let cloud_configs: &[(&str, f32, f32, f32)] = &[
-        ("clouds/cloud1.png", -1480.0, 100.0, 0.50),
-        ("clouds/cloud3.png", -1300.0, 130.0, 0.60),
-        ("clouds/cloud5.png", -1100.0, 90.0, 0.42),
-        ("clouds/cloud2.png", -950.0, 60.0, 0.52),
-        ("clouds/cloud7.png", -780.0, 115.0, 0.38),
-        ("clouds/cloud4.png", -630.0, 145.0, 0.55),
-        ("clouds/cloud6.png", -480.0, 120.0, 0.45),
-        ("clouds/cloud8.png", -320.0, 80.0, 0.48),
-        ("clouds/cloud2.png", -160.0, 110.0, 0.52),
-        ("clouds/cloud5.png", -20.0, 135.0, 0.44),
-        ("clouds/cloud1.png", 140.0, 95.0, 0.50),
-        ("clouds/cloud3.png", 300.0, 120.0, 0.58),
-        ("clouds/cloud7.png", 460.0, 105.0, 0.40),
-        ("clouds/cloud4.png", 620.0, 130.0, 0.54),
-        ("clouds/cloud6.png", 780.0, 85.0, 0.46),
-        ("clouds/cloud8.png", 940.0, 115.0, 0.50),
-        ("clouds/cloud1.png", 1100.0, 100.0, 0.48),
-        ("clouds/cloud3.png", 1260.0, 125.0, 0.56),
-        ("clouds/cloud5.png", 1420.0, 88.0, 0.44),
-        ("clouds/cloud2.png", 1580.0, 115.0, 0.50),
-    ];
-    for &(tex, cx, cy, scale) in cloud_configs {
-        let cloud_mesh = meshes.add(Mesh::from(Rectangle::new(120.0 * scale, 60.0 * scale)));
+    // Both Forest and Subdivision share the same cloud list from forest_bg.json.
+    // WHY forest_bg.json for both: clouds are sky-layer elements present in any
+    // non-city level; subdivision has no separate cloud list in its JSON.
+    let cfg: ForestBgConfig = load_config("assets/configs/forest_bg.json")
+        .expect("[SHARED_BG] failed to load assets/configs/forest_bg.json");
+    for cloud in &cfg.clouds {
+        let cloud_mesh = meshes.add(Mesh::from(Rectangle::new(
+            120.0 * cloud.scale,
+            60.0 * cloud.scale,
+        )));
         let cloud_mat = materials.add(StandardMaterial {
-            base_color_texture: Some(asset_server.load(tex)),
+            base_color_texture: Some(asset_server.load(cloud.texture.clone())),
             alpha_mode: AlphaMode::Blend,
             unlit: true,
             double_sided: true,
@@ -309,11 +253,11 @@ pub fn spawn_shared_background(
         commands.spawn((
             Mesh3d(cloud_mesh),
             MeshMaterial3d(cloud_mat),
-            Transform::from_xyz(cx, cy, -60.0),
+            Transform::from_xyz(cloud.x, cloud.y, cloud.z),
             // WHY 0.80: clouds at z=-60 are distant background. High factor = tracks
             // camera = reads as far. 0.80 sits between mountains (0.85) and the mid
             // background trees (0.70), giving a natural depth ordering.
-            ParallaxLayer { factor: 0.80 },
+            ParallaxLayer { factor: cloud.factor },
             Decoration,
         ));
     }
@@ -321,169 +265,155 @@ pub fn spawn_shared_background(
 
 /// Spawns the forest/nature background tree layers (dark mid + bright front).
 /// Each entity is marked `Decoration` so it gets despawned on level transitions.
-/// Spans x = -1500..+1600 to cover every level's starting camera position.
+/// Layer bounds and model lists are driven by `assets/configs/forest_bg.json`.
 pub fn spawn_nature_background(commands: &mut Commands, asset_server: &AssetServer) {
-    let dark_tree_models = [
-        "models/tree_cone_dark.glb",
-        "models/tree_tall_dark.glb",
-        "models/tree_pine.glb",
-        "models/tree_default.glb",
-        "models/tree_fat.glb",
-        "models/tree_oak.glb",
-    ];
-    let dark_tree_scales = [52.0_f32, 44.0, 58.0, 46.0, 54.0, 48.0, 56.0, 43.0,
-                            50.0, 60.0, 42.0, 55.0, 47.0, 57.0, 45.0, 53.0];
-    // Step 63 units → 50 trees, dense dark canopy at z=-80.
-    for (i, x) in (-1500..=1600i32).step_by(63).enumerate() {
-        let model = dark_tree_models[i % dark_tree_models.len()];
-        let scale = dark_tree_scales[i % dark_tree_scales.len()];
+    let cfg: ForestBgConfig = load_config("assets/configs/forest_bg.json")
+        .expect("[NATURE_BG] failed to load assets/configs/forest_bg.json");
+
+    // ── Far trees (dark mid-distance canopy, z=-80) ───────────────────────────
+    // Dense step (63 units) → ~50 trees. All are non-center-anchored in the config
+    // so base sits directly at y with no extra offset.
+    let ft = &cfg.far_trees;
+    for (i, x) in (ft.x_start..=ft.x_end).step_by(ft.step).enumerate() {
+        let model = &ft.models[i % ft.models.len()];
+        let scale = ft.scales[i % ft.scales.len()];
+        let y = if ft.center_anchored {
+            ft.y + scale * 0.5
+        } else {
+            ft.y
+        };
         commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32, -160.0, -80.0).with_scale(Vec3::new(scale, scale, 12.0)),
+            Transform::from_xyz(x as f32 + ft.x_offset, y, ft.z)
+                .with_scale(Vec3::new(scale, scale, ft.scale_z)),
             // WHY 0.70: dark background trees at z=-80 are the mid-distance layer.
             // High factor = tracks camera = reads as far. 0.70 sits between near
             // trees (0.45) and clouds (0.80), giving a natural three-layer depth stack.
-            ParallaxLayer { factor: 0.70 },
+            ParallaxLayer { factor: ft.factor },
             Decoration,
             ParallaxBackground,
         ));
     }
 
-    let tree_models = [
-        "models/tree_oak.glb",
-        "models/tree_pine.glb",
-        "models/tree_default.glb",
-        "models/tree_fat.glb",
-    ];
-    let tree_scales = [93.0_f32, 82.0, 103.0, 89.0, 98.0, 84.0, 101.0, 91.0];
-    // Step 163 units → ~20 trees, evenly spaced with no overlap.
-    for (i, x) in (-1500..=1600i32).step_by(163).enumerate() {
-        let model = tree_models[i % tree_models.len()];
-        let scale = tree_scales[i % tree_scales.len()];
-        // Center-anchored Trellis models need +scale/2 to ground their base.
-        let y_base = -160.0;
-        let center_anchored = model.contains("tree_oak")
-            || model.contains("tree_pine")
-            || model.contains("tree_fat")
-            || model.contains("tree_default");
-        let y = if center_anchored {
-            y_base + scale * 0.5
+    // ── Near trees (bright canopy framing, z=-50) ─────────────────────────────
+    // Sparser step (163 units) → ~20 trees, evenly spaced with no overlap.
+    // center_anchored=true: Trellis models need +scale/2 to ground their base.
+    let nt = &cfg.near_trees;
+    for (i, x) in (nt.x_start..=nt.x_end).step_by(nt.step).enumerate() {
+        let model = &nt.models[i % nt.models.len()];
+        let scale = nt.scales[i % nt.scales.len()];
+        let y = if nt.center_anchored {
+            nt.y + scale * 0.5
         } else {
-            y_base
+            nt.y
         };
         commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32, y, -50.0).with_scale(Vec3::new(scale, scale, 6.0)),
+            Transform::from_xyz(x as f32 + nt.x_offset, y, nt.z)
+                .with_scale(Vec3::new(scale, scale, nt.scale_z)),
             // WHY 0.45: near trees at z=-50 are the closest background layer.
             // Lower factor = less camera tracking = reads as nearer to player.
             // 0.45 gives clear separation from dark mid trees (0.70) and sky (0.95).
-            ParallaxLayer { factor: 0.45 },
+            ParallaxLayer { factor: nt.factor },
             Decoration,
             ParallaxBackground,
         ));
     }
 }
 
-/// Spawns subdivision/neighborhood background layers — houses, suburban trees, fences.
+/// Spawns subdivision/neighborhood background layers — houses, suburban trees.
 /// Each entity is marked `Decoration` so it gets despawned on level transitions.
-/// Spans x = -1500..+1600 to cover every level's starting camera position.
+/// All positioning data is loaded from `assets/configs/subdivision_bg.json`.
 pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &AssetServer) {
-    // Near houses (z=-50, factor 0.45): Tripo house models with own textures.
-    // Mixed anchoring: a-d center-anchored (Y min < 0), e-k bottom-anchored (Y min = 0).
-    // WHY native_h * scale * 0.5: center-anchored models sit with origin at their midpoint,
-    // so we shift up by half their world-space height to align their base with Y=-160.
-    // WHY scales 300-400: doubled from 150-200 for larger visual presence.
-    // WHY PI rotation: Tripo models face -Z by default; rotate 180° around Y so
-    // the front face points towards the camera (which looks down -Z).
-    let house_models = [
-        ("models/suburban/house_a.glb", 0.660_f32, true),
-        ("models/suburban/house_b.glb", 0.797, true),
-        ("models/suburban/house_c.glb", 0.585, true),
-        ("models/suburban/house_d.glb", 0.477, true),
-        ("models/suburban/house_e.glb", 0.549, false),
-        ("models/suburban/house_f.glb", 0.876, false),
-        ("models/suburban/house_g.glb", 1.000, false),
-        ("models/suburban/house_h.glb", 0.552, false),
-        ("models/suburban/house_i.glb", 1.000, false),
-        ("models/suburban/house_j.glb", 0.611, false),
-        ("models/suburban/house_k.glb", 0.639, false),
-    ];
-    let house_scales = [308.0_f32, 282.0, 334.0, 326.0, 299.0, 273.0, 290.0, 343.0, 317.0, 264.0, 331.0];
-    let face_camera = Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2);
-    // Step 450 units — lets sky/clouds show between houses so the level breathes.
-    for (i, x) in (-1500..=1600i32).step_by(450).enumerate() {
-        let (model, native_h, center_anchored) = house_models[i % house_models.len()];
-        let scale = house_scales[i % house_scales.len()];
-        let y = if center_anchored {
-            -146.0 + native_h * scale * 0.5
+    let cfg: SubdivisionBgConfig = load_config("assets/configs/subdivision_bg.json")
+        .expect("[SUBDIV_BG] failed to load assets/configs/subdivision_bg.json");
+
+    // ── Near houses (z=-50, factor 0.45) ─────────────────────────────────────
+    // Tripo house models with own textures. Mixed anchoring: a-d center-anchored
+    // (Y min < 0), e-k bottom-anchored (Y min = 0).
+    // WHY native_h * scale * 0.5: center-anchored models sit with origin at their
+    // midpoint, so we shift up by half their world-space height to align the base.
+    // WHY depth_scale on X: after -90° Y rotation, local X → world Z (depth).
+    // Flattening X prevents 3D depth from reading as width under the camera tilt.
+    let nh = &cfg.near_houses;
+    let near_rotation = Quat::from_rotation_y(nh.rotation_y);
+    for (i, x) in (nh.x_start..=nh.x_end).step_by(nh.step).enumerate() {
+        let entry = &nh.models[i % nh.models.len()];
+        let scale = nh.scales[i % nh.scales.len()];
+        let y = if entry.center_anchored {
+            nh.y + entry.native_h * scale * 0.5
         } else {
-            -146.0
+            nh.y
         };
-        commands.spawn((
-            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32, y, -50.0)
-                .with_rotation(face_camera)
+        let mut entity = commands.spawn((
+            SceneRoot(asset_server.load(format!("{}#Scene0", entry.path))),
+            Transform::from_xyz(x as f32 + nh.x_offset, y, nh.z)
+                .with_rotation(near_rotation)
                 // After -90° Y rotation: local Z→world X (visible width),
                 // local X→world Z (depth). Flatten X (depth), keep Z (width) full.
-                .with_scale(Vec3::new(scale * 0.35, scale, scale)),
-            ParallaxLayer { factor: 0.45 },
+                .with_scale(Vec3::new(scale * nh.depth_scale, scale, scale)),
+            ParallaxLayer { factor: nh.factor },
             Decoration,
             ParallaxBackground,
         ));
+        if let Some([r, g, b]) = nh.tint {
+            entity.insert(SceneTint::Multiply(Color::srgb(r, g, b)));
+        }
     }
 
-    // Far houses (z=-80, factor 0.70): smaller distant row using subset of house models.
-    // WHY scales 170-220: doubled from 85-110 for larger visual presence.
-    let far_house_models = [
-        ("models/suburban/house_e.glb", 0.549_f32, false),
-        ("models/suburban/house_g.glb", 1.000, false),
-        ("models/suburban/house_b.glb", 0.797, true),
-        ("models/suburban/house_i.glb", 1.000, false),
-        ("models/suburban/house_k.glb", 0.639, false),
-        ("models/suburban/house_a.glb", 0.660, true),
-    ];
-    let far_house_scales = [167.0_f32, 150.0, 185.0, 158.0, 176.0, 155.0, 194.0, 162.0];
-    // Step 350 units — sparser than near layer for depth separation.
+    // ── Far houses (z=-80, factor 0.70) ──────────────────────────────────────
+    // Smaller distant row using a subset of house models.
     // Muted tint simulates aerial perspective (atmospheric fog on distant objects).
-    for (i, x) in (-1150..=1600i32).step_by(350).enumerate() {
-        // First far house shifted left so it's half off-screen at level edge.
-        // Subsequent houses start at -1150 with normal 350-unit spacing.
-        let final_x = if i == 0 { -1580.0 } else { x as f32 };
-        let (model, native_h, center_anchored) = far_house_models[i % far_house_models.len()];
-        let scale = far_house_scales[i % far_house_scales.len()];
-        let y = if center_anchored {
-            -160.0 + native_h * scale * 0.5
+    // first_x_override: first far house shifted left so it's half off-screen at
+    // the level edge; subsequent houses use normal step spacing from x_start.
+    let fh = &cfg.far_houses;
+    let far_rotation = Quat::from_rotation_y(fh.rotation_y);
+    for (i, x) in (fh.x_start..=fh.x_end).step_by(fh.step).enumerate() {
+        let final_x = if i == 0 {
+            fh.first_x_override.unwrap_or(x) as f32
         } else {
-            -160.0
+            x as f32
+        };
+        let entry = &fh.models[i % fh.models.len()];
+        let scale = fh.scales[i % fh.scales.len()];
+        let y = if entry.center_anchored {
+            fh.y + entry.native_h * scale * 0.5
+        } else {
+            fh.y
+        };
+        let mut entity = commands.spawn((
+            SceneRoot(asset_server.load(format!("{}#Scene0", entry.path))),
+            Transform::from_xyz(final_x + fh.x_offset, y, fh.z)
+                .with_rotation(far_rotation)
+                .with_scale(Vec3::new(scale * fh.depth_scale, scale, scale)),
+            ParallaxLayer { factor: fh.factor },
+            Decoration,
+            ParallaxBackground,
+        ));
+        if let Some([r, g, b]) = fh.tint {
+            entity.insert(SceneTint::Multiply(Color::srgb(r, g, b)));
+        }
+    }
+
+    // ── Suburban trees (z=-50, factor 0.45) ──────────────────────────────────
+    // Interspersed between houses. x_offset=60.0 staggers trees to avoid aligning
+    // with house spawn positions at the same x step multiples.
+    let tr = &cfg.trees;
+    for (i, x) in (tr.x_start..=tr.x_end).step_by(tr.step).enumerate() {
+        let model = &tr.models[i % tr.models.len()];
+        let scale = tr.scales[i % tr.scales.len()];
+        let y = if tr.center_anchored {
+            tr.y + scale * 0.5
+        } else {
+            tr.y
         };
         commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(final_x, y, -80.0)
-                .with_rotation(face_camera)
-                .with_scale(Vec3::new(scale * 0.30, scale, scale)),
-            SceneTint::Multiply(Color::srgb(0.3, 0.4, 0.5)),
-            ParallaxLayer { factor: 0.70 },
-            Decoration,
-            ParallaxBackground,
-        ));
-    }
-
-    // Suburban trees interspersed between houses (z=-50, factor 0.45)
-    let tree_models = [
-        "models/suburban/tree-suburban-large.glb",
-        "models/suburban/tree-suburban-small.glb",
-    ];
-    let tree_scales = [160.0_f32, 120.0, 180.0, 110.0, 150.0, 130.0, 170.0, 140.0];
-    for (i, x) in (-1500..=1600i32).step_by(180).enumerate() {
-        let model = tree_models[i % tree_models.len()];
-        let scale = tree_scales[i % tree_scales.len()];
-        commands.spawn((
-            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32 + 60.0, -160.0, -50.0)
-                .with_scale(Vec3::new(scale, scale, 8.0)),
+            Transform::from_xyz(x as f32 + tr.x_offset, y, tr.z)
+                .with_scale(Vec3::new(scale, scale, tr.scale_z)),
             // WHY 0.45: suburban trees at z=-50 are in the near background layer.
             // Matches near houses (0.45) so the entire z=-50 layer scrolls uniformly.
-            ParallaxLayer { factor: 0.45 },
+            ParallaxLayer { factor: tr.factor },
             Decoration,
             ParallaxBackground,
         ));
@@ -492,112 +422,78 @@ pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &Asse
 
 /// Spawns city background layers — tall skyscrapers (near) and commercial buildings (far).
 /// Each entity is marked `Decoration` so it gets despawned on level transitions.
-/// Spans x = -1500..+1600 to cover every level's starting camera position.
+/// All positioning data is loaded from `assets/configs/city_bg.json`.
 pub fn spawn_city_background(commands: &mut Commands, asset_server: &AssetServer) {
     info!("[CITY_BG] spawn_city_background called");
 
-    // Near skyscrapers (z=-50, factor 0.38): tall, sparse — player can see through to far layer.
-    // Uniform XY scaling preserves model's natural proportions (skyscrapers are narrow by design).
-    // Flat Z (8.0) prevents 3D depth from showing as width under the -28° camera tilt.
+    let cfg: CityBgConfig = load_config("assets/configs/city_bg.json")
+        .expect("[CITY_BG] failed to load assets/configs/city_bg.json");
+
+    // ── Near skyscrapers (z=-50) ──────────────────────────────────────────────
+    // Tall, sparse — player can see through to far layer.
+    // Uniform XY scaling preserves model's natural proportions (skyscrapers are narrow).
+    // depth_scale_factor on Z prevents 3D depth from showing as width under camera tilt.
     //
-    // Scale sizing: camera at ground (min_y=34) sees y=-200 to y=162.
-    // Building base at ground_top (-146). Max visible height = 162-(-146) = 308 units ≈ 17 tiles.
-    // Min required height = 10 Jasper units = 180 world units.
-    // Scales assume Kenney skyscraper models are ~4 units tall:
-    //   scale 50 × 4 = 200 units (11 tiles), scale 77 × 4 = 308 units (17 tiles, fills screen).
-    let skyscraper_models = [
-        "models/city/building-skyscraper-a.glb",
-        "models/city/building-skyscraper-b.glb",
-        "models/city/building-skyscraper-c.glb",
-        "models/city/building-skyscraper-d.glb",
-        "models/city/building-skyscraper-e.glb",
-    ];
-    let skyscraper_scales = [114.0_f32, 96.0, 135.0, 88.0, 126.0, 105.0];
-    // Step 280 units → 12 buildings, sparse enough to see far layer through gaps.
-    // Slight Y rotation (~10°) reveals a sliver of the left face for 3D depth.
-    // 30% darker via SceneTint::Multiply so they read as mid-ground, not foreground.
-    let near_rotation = Quat::from_rotation_y(0.175);
-    let near_tint = Color::srgb(0.7, 0.7, 0.7);
-    let near_count = (-1500..=1600i32).step_by(280).count();
-    info!(
-        "[CITY_BG] spawning {} near skyscrapers at z=-50",
-        near_count
-    );
-    for (i, x) in (-1500..=1600i32).step_by(280).enumerate() {
-        let model = skyscraper_models[i % skyscraper_models.len()];
-        let s = skyscraper_scales[i % skyscraper_scales.len()];
-        // Tripo replacement models are center-anchored with native height 1.0.
-        // Multiply scale by the old Kenney model's native height to match visual size,
-        // and shift Y up by half scaled height for center-anchoring (base sits at ground).
-        // - skyscraper-a: native dims X=0.508, Y=1.0, Z=0.482; old Kenney H=2.88
-        // - skyscraper-b: native dims X=0.319, Y=1.0, Z=0.322; old Kenney H=4.48
-        // - skyscraper-c: native dims X=0.320, Y=1.0, Z=0.327; old Kenney H=4.08
-        let (s, y_base) = if model.contains("skyscraper-a") {
-            let s = s * 2.88; // old Kenney skyscraper-a native H=2.88
-            (s, -146.0 + s * 0.5)
-        } else if model.contains("skyscraper-b") {
-            let s = s * 4.48; // old Kenney skyscraper-b native H=4.48
-            (s, -146.0 + s * 0.5)
-        } else if model.contains("skyscraper-c") {
-            let s = s * 4.08; // old Kenney skyscraper-c native H=4.08
-            (s, -146.0 + s * 0.5)
+    // native_h_mult compensates for differences between the model's native height and
+    // the old Kenney reference height. center_anchored models get +scale*0.5 Y shift.
+    // Scale sizing: scale 114 × 2.88 = 328 (fills ~17 tiles). scale 88 × 4.08 = 359.
+    let nb = &cfg.near_buildings;
+    let near_rotation = Quat::from_rotation_y(nb.rotation_y);
+    let near_count = (nb.x_start..=nb.x_end).step_by(nb.step).count();
+    info!("[CITY_BG] spawning {} near skyscrapers at z={}", near_count, nb.z);
+    for (i, x) in (nb.x_start..=nb.x_end).step_by(nb.step).enumerate() {
+        let entry = &nb.models[i % nb.models.len()];
+        let base_s = nb.scales[i % nb.scales.len()];
+        // Apply native_h_mult so Tripo models visually match the old Kenney scale reference.
+        let s = base_s * entry.native_h_mult;
+        let y_base = if entry.center_anchored {
+            nb.y + s * 0.5
         } else {
-            (s, -146.0)
+            nb.y
         };
-        info!("[CITY_BG] near[{}] model={} x={} scale={} y_base={}", i, model, x, s, y_base);
-        commands.spawn((
-            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32, y_base, -50.0)
+        info!("[CITY_BG] near[{}] model={} x={} scale={} y_base={}", i, entry.path, x, s, y_base);
+        let mut entity = commands.spawn((
+            SceneRoot(asset_server.load(format!("{}#Scene0", entry.path))),
+            Transform::from_xyz(x as f32, y_base, nb.z)
                 .with_rotation(near_rotation)
-                .with_scale(Vec3::new(s, s, s * 0.3)),
+                .with_scale(Vec3::new(s, s, s * nb.depth_scale_factor)),
             // WHY 0.45: near skyscrapers at z=-50 are the closest background layer.
             // Lower factor = more camera tracking = feels "near". 0.45 gives clear
             // separation from the far buildings (0.70) and sky (0.95).
-            ParallaxLayer { factor: 0.45 },
+            ParallaxLayer { factor: nb.factor },
             Decoration,
             ParallaxBackground,
-            SceneTint::Multiply(near_tint),
         ));
+        if let Some([r, g, b]) = nb.tint {
+            entity.insert(SceneTint::Multiply(Color::srgb(r, g, b)));
+        }
     }
 
-    // Far commercial buildings (z=-80, factor 0.48): shorter, denser.
-    // Uniform XY scaling preserves model proportions. Flat Z (6.0).
-    // Scales assume commercial models are ~2.5 units tall:
-    //   scale 72 × 2.5 = 180 units (10 tiles, minimum), scale 100 × 2.5 = 250 units.
-    // Tinted darker via SceneTint::Multiply to convey distance at night.
-    let far_building_models = [
-        "models/city/building-a.glb",
-        "models/city/building-b.glb",
-        "models/city/building-c.glb",
-        "models/city/building-d.glb",
-        "models/city/building-e.glb",
-        "models/city/building-f.glb",
-        "models/city/low-detail-building-a.glb",
-        "models/city/low-detail-building-b.glb",
-        "models/city/low-detail-building-c.glb",
-    ];
-    let far_scales = [
-        119.0_f32, 140.0, 109.0, 133.0, 115.0, 129.0, 112.0, 123.0, 118.0,
-    ];
-    // Darker tint for night-time depth — buildings appear as silhouettes.
-    let night_tint = Color::srgb(0.4, 0.45, 0.55);
-    let far_count = (-1500..=1600i32).step_by(160).count();
-    info!("[CITY_BG] spawning {} far buildings at z=-80", far_count);
-    for (i, x) in (-1500..=1600i32).step_by(160).enumerate() {
-        let model = far_building_models[i % far_building_models.len()];
-        let s = far_scales[i % far_scales.len()];
-        commands.spawn((
+    // ── Far commercial buildings (z=-80) ─────────────────────────────────────
+    // Shorter, denser. y_stretch stretches buildings vertically. scale_z is a fixed
+    // flat depth value to prevent 3D depth showing as width.
+    // Darker tint conveys distance at night — buildings appear as silhouettes.
+    let fb = &cfg.far_buildings;
+    let far_count = (fb.x_start..=fb.x_end).step_by(fb.step).count();
+    info!("[CITY_BG] spawning {} far buildings at z={}", far_count, fb.z);
+    for (i, x) in (fb.x_start..=fb.x_end).step_by(fb.step).enumerate() {
+        let model = &fb.models[i % fb.models.len()];
+        let s = fb.scales[i % fb.scales.len()];
+        let mut entity = commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32, -146.0, -80.0).with_scale(Vec3::new(s, s * 1.2, 6.0)),
+            Transform::from_xyz(x as f32, fb.y, fb.z)
+                .with_scale(Vec3::new(s, s * fb.y_stretch, fb.scale_z)),
             // WHY 0.70: far commercial buildings at z=-80 are distant background.
             // Higher factor = more anchored to camera = reads as farther away.
             // 0.70 sits between near skyscrapers (0.45) and the sky (0.95), giving
             // a natural three-layer depth stack for the City night scene.
-            ParallaxLayer { factor: 0.70 },
+            ParallaxLayer { factor: fb.factor },
             Decoration,
             ParallaxBackground,
-            SceneTint::Multiply(night_tint),
         ));
+        if let Some([r, g, b]) = fb.tint {
+            entity.insert(SceneTint::Multiply(Color::srgb(r, g, b)));
+        }
     }
 }
 
