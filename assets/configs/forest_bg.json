@@ -1,0 +1,76 @@
+{
+  "mountains": [
+    {"model": "models/mountain1.glb", "x": -1400.0, "native_h": 0.723, "scale": 330.0},
+    {"model": "models/mountain1.glb", "x": -1100.0, "native_h": 0.723, "scale": 278.0},
+    {"model": "models/mountain2.glb", "x": -800.0,  "native_h": 0.398, "scale": 360.0},
+    {"model": "models/mountain1.glb", "x": -550.0,  "native_h": 0.723, "scale": 390.0},
+    {"model": "models/mountain1.glb", "x": -250.0,  "native_h": 0.723, "scale": 263.0},
+    {"model": "models/mountain2.glb", "x":    0.0,  "native_h": 0.398, "scale": 315.0},
+    {"model": "models/mountain1.glb", "x":  300.0,  "native_h": 0.723, "scale": 368.0},
+    {"model": "models/mountain1.glb", "x":  600.0,  "native_h": 0.723, "scale": 293.0},
+    {"model": "models/mountain2.glb", "x":  900.0,  "native_h": 0.398, "scale": 345.0},
+    {"model": "models/mountain1.glb", "x": 1200.0,  "native_h": 0.723, "scale": 405.0},
+    {"model": "models/mountain1.glb", "x": 1500.0,  "native_h": 0.723, "scale": 300.0}
+  ],
+  "far_trees": {
+    "x_start": -1500,
+    "x_end": 1600,
+    "step": 63,
+    "y": -160.0,
+    "z": -80.0,
+    "factor": 0.70,
+    "models": [
+      "models/tree_cone_dark.glb",
+      "models/tree_tall_dark.glb",
+      "models/tree_pine.glb",
+      "models/tree_default.glb",
+      "models/tree_fat.glb",
+      "models/tree_oak.glb"
+    ],
+    "scales": [52.0, 44.0, 58.0, 46.0, 54.0, 48.0, 56.0, 43.0, 50.0, 60.0, 42.0, 55.0, 47.0, 57.0, 45.0, 53.0],
+    "scale_z": 12.0,
+    "center_anchored": false
+  },
+  "near_trees": {
+    "x_start": -1500,
+    "x_end": 1600,
+    "step": 163,
+    "y": -160.0,
+    "z": -50.0,
+    "factor": 0.45,
+    "models": [
+      "models/tree_oak.glb",
+      "models/tree_pine.glb",
+      "models/tree_default.glb",
+      "models/tree_fat.glb"
+    ],
+    "scales": [93.0, 82.0, 103.0, 89.0, 98.0, 84.0, 101.0, 91.0],
+    "scale_z": 6.0,
+    "center_anchored": true
+  },
+  "clouds": [
+    {"texture": "clouds/cloud1.png", "x": -1480.0, "y": 100.0, "scale": 0.50},
+    {"texture": "clouds/cloud3.png", "x": -1300.0, "y": 130.0, "scale": 0.60},
+    {"texture": "clouds/cloud5.png", "x": -1100.0, "y":  90.0, "scale": 0.42},
+    {"texture": "clouds/cloud2.png", "x":  -950.0, "y":  60.0, "scale": 0.52},
+    {"texture": "clouds/cloud7.png", "x":  -780.0, "y": 115.0, "scale": 0.38},
+    {"texture": "clouds/cloud4.png", "x":  -630.0, "y": 145.0, "scale": 0.55},
+    {"texture": "clouds/cloud6.png", "x":  -480.0, "y": 120.0, "scale": 0.45},
+    {"texture": "clouds/cloud8.png", "x":  -320.0, "y":  80.0, "scale": 0.48},
+    {"texture": "clouds/cloud2.png", "x":  -160.0, "y": 110.0, "scale": 0.52},
+    {"texture": "clouds/cloud5.png", "x":   -20.0, "y": 135.0, "scale": 0.44},
+    {"texture": "clouds/cloud1.png", "x":   140.0, "y":  95.0, "scale": 0.50},
+    {"texture": "clouds/cloud3.png", "x":   300.0, "y": 120.0, "scale": 0.58},
+    {"texture": "clouds/cloud7.png", "x":   460.0, "y": 105.0, "scale": 0.40},
+    {"texture": "clouds/cloud4.png", "x":   620.0, "y": 130.0, "scale": 0.54},
+    {"texture": "clouds/cloud6.png", "x":   780.0, "y":  85.0, "scale": 0.46},
+    {"texture": "clouds/cloud8.png", "x":   940.0, "y": 115.0, "scale": 0.50},
+    {"texture": "clouds/cloud1.png", "x":  1100.0, "y": 100.0, "scale": 0.48},
+    {"texture": "clouds/cloud3.png", "x":  1260.0, "y": 125.0, "scale": 0.56},
+    {"texture": "clouds/cloud5.png", "x":  1420.0, "y":  88.0, "scale": 0.44},
+    {"texture": "clouds/cloud2.png", "x":  1580.0, "y": 115.0, "scale": 0.50}
+  ],
+  "attenuation": [
+    {"z": -38.0, "factor": 0.38, "color": [0.0, 0.0, 0.0, 0.18]}
+  ]
+}

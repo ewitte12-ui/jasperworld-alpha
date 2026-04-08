@@ -47,6 +47,11 @@ pub struct CompiledLayer {
     pub stars: Vec<[f32; 3]>,
     pub health_foods: Vec<[f32; 3]>,
     pub doors: Vec<CompiledDoor>,
+    /// Decorative prop entities placed visually in LDtk.
+    /// Uses `#[serde(default)]` so compiled JSON without this field still parses
+    /// correctly — backwards compatibility with pre-Prop compiled outputs.
+    #[serde(default)]
+    pub props: Vec<CompiledProp>,
     pub gate_col: Option<i32>,
     pub exit_next_level: Option<String>,
     pub stars_required: Option<i32>,
@@ -67,6 +72,17 @@ pub struct CompiledDoor {
     pub target_layer: i32,
     pub x: f32,
     pub y: f32,
+}
+
+#[derive(Deserialize)]
+pub struct CompiledProp {
+    pub model_id: String,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub scale_xy: f32,
+    pub scale_z: f32,
+    pub rotation_y: f32,
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -254,6 +270,19 @@ pub fn spawn_entities_from_compiled(
             TransitionDoor {
                 target_layer: door.target_layer as usize,
             },
+        ));
+    }
+
+    // ── Props (decorative models placed in LDtk) ─────────────────────────────
+    for prop in &layer.props {
+        // rotation_y is stored in radians as authored in LDtk.
+        let rotation = Quat::from_rotation_y(prop.rotation_y);
+        commands.spawn((
+            SceneRoot(asset_server.load(format!("{}#Scene0", prop.model_id))),
+            Transform::from_xyz(prop.x, prop.y, prop.z)
+                .with_rotation(rotation)
+                .with_scale(Vec3::new(prop.scale_xy, prop.scale_xy, prop.scale_z)),
+            super::components::Decoration,
         ));
     }
 

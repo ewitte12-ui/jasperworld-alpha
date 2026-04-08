@@ -1,0 +1,48 @@
+{
+  "near_buildings": {
+    "x_start": -1500,
+    "x_end": 1600,
+    "step": 280,
+    "y": -146.0,
+    "z": -50.0,
+    "factor": 0.45,
+    "tint": [0.7, 0.7, 0.7],
+    "rotation_y": 0.175,
+    "models": [
+      {"path": "models/city/building-skyscraper-a.glb", "native_h_mult": 2.88, "center_anchored": true},
+      {"path": "models/city/building-skyscraper-b.glb", "native_h_mult": 4.48, "center_anchored": true},
+      {"path": "models/city/building-skyscraper-c.glb", "native_h_mult": 4.08, "center_anchored": true},
+      {"path": "models/city/building-skyscraper-d.glb", "native_h_mult": 1.0,  "center_anchored": false},
+      {"path": "models/city/building-skyscraper-e.glb", "native_h_mult": 1.0,  "center_anchored": false}
+    ],
+    "scales": [114.0, 96.0, 135.0, 88.0, 126.0, 105.0],
+    "depth_scale_factor": 0.3
+  },
+  "far_buildings": {
+    "x_start": -1500,
+    "x_end": 1600,
+    "step": 160,
+    "y": -146.0,
+    "z": -80.0,
+    "factor": 0.70,
+    "tint": [0.4, 0.45, 0.55],
+    "models": [
+      "models/city/building-a.glb",
+      "models/city/building-b.glb",
+      "models/city/building-c.glb",
+      "models/city/building-d.glb",
+      "models/city/building-e.glb",
+      "models/city/building-f.glb",
+      "models/city/low-detail-building-a.glb",
+      "models/city/low-detail-building-b.glb",
+      "models/city/low-detail-building-c.glb"
+    ],
+    "scales": [119.0, 140.0, 109.0, 133.0, 115.0, 129.0, 112.0, 123.0, 118.0],
+    "y_stretch": 1.2,
+    "scale_z": 6.0
+  },
+  "attenuation": [
+    {"z": -38.0, "factor": 0.92, "color": [0.0, 0.0, 0.0, 0.12]},
+    {"z": -75.0, "factor": 0.48, "color": [0.03, 0.03, 0.06, 0.50]}
+  ]
+}

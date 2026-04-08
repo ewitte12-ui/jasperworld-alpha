@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::converter::{ConvertedDoor, ConvertedEnemy, ConvertedLayer, ConvertedLevel};
+use crate::converter::{ConvertedDoor, ConvertedEnemy, ConvertedLayer, ConvertedLevel, ConvertedProp};
 
 // ---------------------------------------------------------------------------
 // Output schema types — serialization contract for the compiled JSON
@@ -49,6 +49,8 @@ pub struct OutputLayer {
     /// HealthFood collectible positions `[x, y, z]` in world coordinates.
     pub health_foods: Vec<[f32; 3]>,
     pub doors: Vec<OutputDoor>,
+    /// Decorative prop entities placed visually in LDtk.
+    pub props: Vec<OutputProp>,
     /// Column index of the Gate entity, or `null` if no Gate is present.
     pub gate_col: Option<i32>,
     /// Identifier of the next level to transition to via the Exit, or `null`.
@@ -73,6 +75,25 @@ pub struct OutputEnemy {
     /// Per-instance movement speed override; omitted from JSON when absent.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub speed_override: Option<f32>,
+}
+
+/// Compiled prop entity (decorative model placed via LDtk).
+#[derive(Debug, Serialize)]
+pub struct OutputProp {
+    /// Asset path for the GLB model, e.g. "models/small_rock.glb".
+    pub model_id: String,
+    /// World-space X centre (tile centre).
+    pub x: f32,
+    /// World-space Y centre (tile centre).
+    pub y: f32,
+    /// Z depth in world space.
+    pub z: f32,
+    /// Uniform XY scale.
+    pub scale_xy: f32,
+    /// Z (depth) scale.
+    pub scale_z: f32,
+    /// Y-axis rotation in radians.
+    pub rotation_y: f32,
 }
 
 /// Compiled door entity.
@@ -130,6 +151,7 @@ impl OutputLayer {
             stars: layer.stars,
             health_foods: layer.health_foods,
             doors: layer.doors.into_iter().map(OutputDoor::from_converted).collect(),
+            props: layer.props.into_iter().map(OutputProp::from_converted).collect(),
             gate_col: layer.gate_col,
             exit_next_level: layer.exit_next_level,
             stars_required: layer.stars_required,
@@ -156,6 +178,20 @@ impl OutputDoor {
             target_layer: door.target_layer,
             x: door.x,
             y: door.y,
+        }
+    }
+}
+
+impl OutputProp {
+    fn from_converted(prop: ConvertedProp) -> Self {
+        Self {
+            model_id: prop.model_id,
+            x: prop.x,
+            y: prop.y,
+            z: prop.z,
+            scale_xy: prop.scale_xy,
+            scale_z: prop.scale_z,
+            rotation_y: prop.rotation_y,
         }
     }
 }
@@ -202,6 +238,7 @@ mod tests {
                     x: 50.0,
                     y: 10.0,
                 }],
+                props: vec![],
                 gate_col: Some(7),
                 exit_next_level: Some("Level_1".to_string()),
                 stars_required: Some(3),
