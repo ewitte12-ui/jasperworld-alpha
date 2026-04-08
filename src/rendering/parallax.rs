@@ -410,7 +410,8 @@ pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &Asse
     ];
     let house_scales = [308.0_f32, 282.0, 334.0, 326.0, 299.0, 273.0, 290.0, 343.0, 317.0, 264.0, 331.0];
     let face_camera = Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2);
-    for (i, x) in (-1500..=1600i32).step_by(344).enumerate() {
+    // Step 450 units — lets sky/clouds show between houses so the level breathes.
+    for (i, x) in (-1500..=1600i32).step_by(450).enumerate() {
         let (model, native_h, center_anchored) = house_models[i % house_models.len()];
         let scale = house_scales[i % house_scales.len()];
         let y = if center_anchored {
@@ -442,7 +443,9 @@ pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &Asse
         ("models/suburban/house_a.glb", 0.660, true),
     ];
     let far_house_scales = [167.0_f32, 150.0, 185.0, 158.0, 176.0, 155.0, 194.0, 162.0];
-    for (i, x) in (-1500..=1600i32).step_by(207).enumerate() {
+    // Step 350 units — sparser than near layer for depth separation.
+    // Muted tint simulates aerial perspective (atmospheric fog on distant objects).
+    for (i, x) in (-1500..=1600i32).step_by(350).enumerate() {
         let (model, native_h, center_anchored) = far_house_models[i % far_house_models.len()];
         let scale = far_house_scales[i % far_house_scales.len()];
         let y = if center_anchored {
@@ -455,6 +458,7 @@ pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &Asse
             Transform::from_xyz(x as f32, y, -80.0)
                 .with_rotation(face_camera)
                 .with_scale(Vec3::new(scale * 0.30, scale, scale)),
+            SceneTint::Multiply(Color::srgb(0.3, 0.4, 0.5)),
             ParallaxLayer { factor: 0.70 },
             Decoration,
             ParallaxBackground,
