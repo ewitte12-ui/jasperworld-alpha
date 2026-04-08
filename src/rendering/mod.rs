@@ -1,6 +1,7 @@
 pub mod atlas;
 pub mod camera;
 pub mod parallax;
+pub mod parallax_config;
 pub mod quad;
 use bevy::prelude::*;
 

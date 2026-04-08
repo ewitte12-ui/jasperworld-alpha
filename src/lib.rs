@@ -3,6 +3,7 @@ pub mod debug;
 
 pub mod animation;
 pub mod audio;
+pub mod constants;
 pub mod collectibles;
 pub mod combat;
 pub mod dialogue;

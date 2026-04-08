@@ -45,6 +45,8 @@ pub struct ConvertedLayer {
     /// HealthFood collectible positions `[x, y, z]` in world coordinates (z = 1.0).
     pub health_foods: Vec<[f32; 3]>,
     pub doors: Vec<ConvertedDoor>,
+    /// Decorative prop entities placed visually in LDtk.
+    pub props: Vec<ConvertedProp>,
     /// Column index of the Gate entity, if present.
     pub gate_col: Option<i32>,
     /// Identifier of the next level to load, extracted from the Exit entity.
@@ -67,6 +69,24 @@ pub struct ConvertedEnemy {
     pub health: f32,
     /// Optional per-instance movement speed override.
     pub speed_override: Option<f32>,
+}
+
+/// A converted prop entity (decorative model placed via LDtk).
+pub struct ConvertedProp {
+    /// Asset path for the GLB model, e.g. "models/small_rock.glb".
+    pub model_id: String,
+    /// World-space X centre (tile centre, not surface).
+    pub x: f32,
+    /// World-space Y centre (tile centre, not surface).
+    pub y: f32,
+    /// Z depth in world space; negative values push the prop behind the action plane.
+    pub z: f32,
+    /// Uniform XY scale applied to the model.
+    pub scale_xy: f32,
+    /// Z (depth) scale applied to the model.
+    pub scale_z: f32,
+    /// Y-axis rotation in radians.
+    pub rotation_y: f32,
 }
 
 /// A converted door entity that links the current layer to another.
@@ -130,6 +150,7 @@ fn convert_level(level: &crate::ldtk_schema::LdtkLevel) -> ConvertedLevel {
     let mut stars: Vec<[f32; 3]> = vec![];
     let mut health_foods: Vec<[f32; 3]> = vec![];
     let mut doors: Vec<ConvertedDoor> = vec![];
+    let mut props: Vec<ConvertedProp> = vec![];
     let mut gate_col: Option<i32> = None;
     let mut exit_next_level: Option<String> = None;
     let mut stars_required: Option<i32> = None;
@@ -204,6 +225,34 @@ fn convert_level(level: &crate::ldtk_schema::LdtkLevel) -> ConvertedLevel {
                         y: wy,
                     });
                 }
+                "Prop" => {
+                    // Props can be anywhere — use tile centre (not ground_top).
+                    let (wx, wy) =
+                        px_to_world(entity.px, c_hei_for_entities, origin_x, origin_y);
+                    // Required field — default to empty string so the converter
+                    // still emits output even for partially-valid data.
+                    let model_id = get_field_str(entity, "model_id")
+                        .unwrap_or_else(|| String::new());
+                    // Optional visual tuning fields with documented gameplay-safe defaults.
+                    // scale_xy = 1.0 means no scaling (natural model size).
+                    let scale_xy = get_field_f32(entity, "scale_xy").unwrap_or(1.0);
+                    // scale_z = 1.0 means no depth scaling.
+                    let scale_z = get_field_f32(entity, "scale_z").unwrap_or(1.0);
+                    // z_depth = -15.0 places props behind the action plane but
+                    // in front of the parallax background.
+                    let z = get_field_f32(entity, "z_depth").unwrap_or(-15.0);
+                    // rotation_y = 0.0 means facing the camera (no rotation).
+                    let rotation_y = get_field_f32(entity, "rotation_y").unwrap_or(0.0);
+                    props.push(ConvertedProp {
+                        model_id,
+                        x: wx,
+                        y: wy,
+                        z,
+                        scale_xy,
+                        scale_z,
+                        rotation_y,
+                    });
+                }
                 "Gate" => {
                     // gate_col is the column index of the gate tile, not the world position.
                     gate_col = get_field_i32(entity, "gate_col");
@@ -231,6 +280,7 @@ fn convert_level(level: &crate::ldtk_schema::LdtkLevel) -> ConvertedLevel {
         stars,
         health_foods,
         doors,
+        props,
         gate_col,
         exit_next_level,
         stars_required,

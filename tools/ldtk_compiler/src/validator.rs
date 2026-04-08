@@ -96,6 +96,10 @@ pub fn validate(root: &LdtkRoot) -> Result<(), Vec<String>> {
                             &mut errors,
                         );
                     }
+                    "Prop" => {
+                        // Must have: model_id (the asset path to load)
+                        validate_entity_field(entity, "model_id", &level.identifier, &mut errors);
+                    }
                     // These entities need no special fields beyond position
                     "Star" | "HealthFood" | "Spawn" | "Gate" | "Exit" => {}
                     other => {
