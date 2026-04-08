@@ -445,7 +445,10 @@ pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &Asse
     let far_house_scales = [167.0_f32, 150.0, 185.0, 158.0, 176.0, 155.0, 194.0, 162.0];
     // Step 350 units — sparser than near layer for depth separation.
     // Muted tint simulates aerial perspective (atmospheric fog on distant objects).
-    for (i, x) in (-1500..=1600i32).step_by(350).enumerate() {
+    for (i, x) in (-1150..=1600i32).step_by(350).enumerate() {
+        // First far house shifted left so it's half off-screen at level edge.
+        // Subsequent houses start at -1150 with normal 350-unit spacing.
+        let final_x = if i == 0 { -1580.0 } else { x as f32 };
         let (model, native_h, center_anchored) = far_house_models[i % far_house_models.len()];
         let scale = far_house_scales[i % far_house_scales.len()];
         let y = if center_anchored {
@@ -455,7 +458,7 @@ pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &Asse
         };
         commands.spawn((
             SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32, y, -80.0)
+            Transform::from_xyz(final_x, y, -80.0)
                 .with_rotation(face_camera)
                 .with_scale(Vec3::new(scale * 0.30, scale, scale)),
             SceneTint::Multiply(Color::srgb(0.3, 0.4, 0.5)),

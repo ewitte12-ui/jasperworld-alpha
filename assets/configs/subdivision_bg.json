@@ -27,6 +27,7 @@
   },
   "far_houses": {
     "x_start": -1500,
+    "first_x_override": -1580,
     "x_end": 1600,
     "step": 350,
     "y": -160.0,
