@@ -47,6 +47,8 @@ pub struct ConvertedLayer {
     pub doors: Vec<ConvertedDoor>,
     /// Decorative prop entities placed visually in LDtk.
     pub props: Vec<ConvertedProp>,
+    /// Point-light entities placed visually in LDtk.
+    pub lights: Vec<ConvertedLight>,
     /// Column index of the Gate entity, if present.
     pub gate_col: Option<i32>,
     /// Identifier of the next level to load, extracted from the Exit entity.
@@ -81,12 +83,34 @@ pub struct ConvertedProp {
     pub y: f32,
     /// Z depth in world space; negative values push the prop behind the action plane.
     pub z: f32,
-    /// Uniform XY scale applied to the model.
-    pub scale_xy: f32,
+    /// X scale applied to the model (1.0 = natural width).
+    pub scale_x: f32,
+    /// Y scale applied to the model (1.0 = natural height).
+    pub scale_y: f32,
     /// Z (depth) scale applied to the model.
     pub scale_z: f32,
     /// Y-axis rotation in radians.
     pub rotation_y: f32,
+    /// When true, this prop renders in front of the player (foreground layer).
+    pub foreground: bool,
+}
+
+/// A converted point-light or spot-light entity placed via LDtk.
+pub struct ConvertedLight {
+    /// World-space X centre (tile centre).
+    pub x: f32,
+    /// World-space Y centre (tile centre).
+    pub y: f32,
+    /// Z depth in world space.
+    pub z: f32,
+    /// Linear RGB colour, each component in [0.0, 1.0].
+    pub color: [f32; 3],
+    /// Light intensity in lumens (or engine-relative units).
+    pub intensity: f32,
+    /// Radius of the light source sphere; omitted when not set.
+    pub radius: Option<f32>,
+    /// Maximum range in world units beyond which the light has no effect; omitted when not set.
+    pub range: Option<f32>,
 }
 
 /// A converted door entity that links the current layer to another.
@@ -151,6 +175,7 @@ fn convert_level(level: &crate::ldtk_schema::LdtkLevel) -> ConvertedLevel {
     let mut health_foods: Vec<[f32; 3]> = vec![];
     let mut doors: Vec<ConvertedDoor> = vec![];
     let mut props: Vec<ConvertedProp> = vec![];
+    let mut lights: Vec<ConvertedLight> = vec![];
     let mut gate_col: Option<i32> = None;
     let mut exit_next_level: Option<String> = None;
     let mut stars_required: Option<i32> = None;
@@ -234,8 +259,10 @@ fn convert_level(level: &crate::ldtk_schema::LdtkLevel) -> ConvertedLevel {
                     let model_id = get_field_str(entity, "model_id")
                         .unwrap_or_else(|| String::new());
                     // Optional visual tuning fields with documented gameplay-safe defaults.
-                    // scale_xy = 1.0 means no scaling (natural model size).
-                    let scale_xy = get_field_f32(entity, "scale_xy").unwrap_or(1.0);
+                    // scale_x = 1.0 means no X scaling (natural model width).
+                    let scale_x = get_field_f32(entity, "scale_x").unwrap_or(1.0);
+                    // scale_y = 1.0 means no Y scaling (natural model height).
+                    let scale_y = get_field_f32(entity, "scale_y").unwrap_or(1.0);
                     // scale_z = 1.0 means no depth scaling.
                     let scale_z = get_field_f32(entity, "scale_z").unwrap_or(1.0);
                     // z_depth = -15.0 places props behind the action plane but
@@ -243,14 +270,43 @@ fn convert_level(level: &crate::ldtk_schema::LdtkLevel) -> ConvertedLevel {
                     let z = get_field_f32(entity, "z_depth").unwrap_or(-15.0);
                     // rotation_y = 0.0 means facing the camera (no rotation).
                     let rotation_y = get_field_f32(entity, "rotation_y").unwrap_or(0.0);
+                    // foreground = false means the prop renders behind the player.
+                    // When true, the prop renders in front of the player.
+                    let foreground = get_field_bool(entity, "foreground").unwrap_or(false);
                     props.push(ConvertedProp {
                         model_id,
                         x: wx,
                         y: wy,
                         z,
-                        scale_xy,
+                        scale_x,
+                        scale_y,
                         scale_z,
                         rotation_y,
+                        foreground,
+                    });
+                }
+                "Light" => {
+                    // Lights use tile centre position, same as Props.
+                    let (wx, wy) =
+                        px_to_world(entity.px, c_hei_for_entities, origin_x, origin_y);
+                    // z_depth = 3.0 places lights in front of the action plane by default.
+                    let z = get_field_f32(entity, "z_depth").unwrap_or(3.0);
+                    // intensity defaults to 100000.0 (engine-relative lumens).
+                    let intensity = get_field_f32(entity, "intensity").unwrap_or(100000.0);
+                    // color is a hex string e.g. "#FFFFFF"; default to white.
+                    let color_hex = get_field_str(entity, "color")
+                        .unwrap_or_else(|| "#FFFFFF".to_string());
+                    let color = parse_hex_color(&color_hex);
+                    let radius = get_field_f32(entity, "radius");
+                    let range = get_field_f32(entity, "range");
+                    lights.push(ConvertedLight {
+                        x: wx,
+                        y: wy,
+                        z,
+                        color,
+                        intensity,
+                        radius,
+                        range,
                     });
                 }
                 "Gate" => {
@@ -281,6 +337,7 @@ fn convert_level(level: &crate::ldtk_schema::LdtkLevel) -> ConvertedLevel {
         health_foods,
         doors,
         props,
+        lights,
         gate_col,
         exit_next_level,
         stars_required,
@@ -429,6 +486,33 @@ fn get_field_i32(entity: &LdtkEntityInstance, name: &str) -> Option<i32> {
         .and_then(|f| f.value.as_ref())
         .and_then(|v| v.as_i64())
         .map(|n| n as i32)
+}
+
+/// Returns the bool value of a named custom field from an entity, or `None`
+/// when the field is absent, null, or not a JSON boolean.
+fn get_field_bool(entity: &LdtkEntityInstance, name: &str) -> Option<bool> {
+    entity
+        .field_instances
+        .iter()
+        .find(|f| f.identifier == name)
+        .and_then(|f| f.value.as_ref())
+        .and_then(|v| v.as_bool())
+}
+
+/// Parses a CSS hex color string (e.g. `"#FF8040"` or `"FF8040"`) into a
+/// linear `[r, g, b]` array with each component in `[0.0, 1.0]`.
+///
+/// Returns `[1.0, 1.0, 1.0]` (white) when the string is malformed or too short.
+fn parse_hex_color(hex: &str) -> [f32; 3] {
+    let hex = hex.trim_start_matches('#');
+    if hex.len() >= 6 {
+        let r = u8::from_str_radix(&hex[0..2], 16).unwrap_or(255) as f32 / 255.0;
+        let g = u8::from_str_radix(&hex[2..4], 16).unwrap_or(255) as f32 / 255.0;
+        let b = u8::from_str_radix(&hex[4..6], 16).unwrap_or(255) as f32 / 255.0;
+        [r, g, b]
+    } else {
+        [1.0, 1.0, 1.0]
+    }
 }
 
 // ---------------------------------------------------------------------------

@@ -9,6 +9,9 @@ pub struct ForestBgConfig {
     pub near_trees: TreeLayerConfig,
     pub clouds: Vec<CloudEntry>,
     pub attenuation: Vec<AttenuationEntry>,
+    /// Optional sky overlay — Forest has none; field exists for structural parity.
+    #[serde(default)]
+    pub overlay: Option<OverlayEntry>,
 }
 
 #[derive(Deserialize)]
@@ -34,6 +37,9 @@ pub struct TreeLayerConfig {
     /// Center-anchored models need +scale/2 added to Y so their base sits at `y`.
     #[serde(default)]
     pub center_anchored: bool,
+    /// Per-instance X offset added after the loop position (e.g. 60.0 staggers trees).
+    #[serde(default)]
+    pub x_offset: f32,
 }
 
 #[derive(Deserialize)]
@@ -42,6 +48,10 @@ pub struct CloudEntry {
     pub x: f32,
     pub y: f32,
     pub scale: f32,
+    /// World-space Z position of the cloud quad.
+    pub z: f32,
+    /// ParallaxLayer factor for this cloud entry.
+    pub factor: f32,
 }
 
 #[derive(Deserialize)]
@@ -54,6 +64,25 @@ pub struct AttenuationEntry {
     pub color: [f32; 4],
 }
 
+// ── Overlay ───────────────────────────────────────────────────────────────────
+
+/// A full-screen sky overlay rectangle spawned just in front of the sky backdrop.
+/// Used by Subdivision (overcast grey-blue) and City (night dark navy).
+/// RGBA color components are 0.0–1.0.
+#[derive(Deserialize)]
+pub struct OverlayEntry {
+    /// World-space Z for the overlay quad (e.g. -99.0, just in front of sky at -100).
+    pub z: f32,
+    /// ParallaxLayer factor — should match the sky backdrop (e.g. 0.20).
+    pub factor: f32,
+    /// RGBA color, each component 0.0–1.0.
+    pub color: [f32; 4],
+    /// World-space width of the overlay rectangle in game units.
+    pub width: f32,
+    /// World-space height of the overlay rectangle in game units.
+    pub height: f32,
+}
+
 // ── Subdivision ───────────────────────────────────────────────────────────────
 
 #[derive(Deserialize)]
@@ -62,6 +91,10 @@ pub struct SubdivisionBgConfig {
     pub far_houses: HouseLayerConfig,
     pub trees: TreeLayerConfig,
     pub attenuation: Vec<AttenuationEntry>,
+    /// Optional sky overlay quad (overcast effect).
+    /// Uses `#[serde(default)]` so existing JSON without this field still parses.
+    #[serde(default)]
+    pub overlay: Option<OverlayEntry>,
 }
 
 #[derive(Deserialize)]
@@ -85,6 +118,10 @@ pub struct HouseLayerConfig {
     /// Per-instance X offset added after the loop position (e.g. 60.0 staggers trees).
     #[serde(default)]
     pub x_offset: f32,
+    /// If Some, overrides the X position for the first spawned instance (i == 0).
+    /// Used to shift the first far-house half off-screen at the level edge.
+    #[serde(default)]
+    pub first_x_override: Option<i32>,
 }
 
 #[derive(Deserialize)]
@@ -104,6 +141,10 @@ pub struct CityBgConfig {
     pub near_buildings: CityBuildingLayer,
     pub far_buildings: CityFarBuildingLayer,
     pub attenuation: Vec<AttenuationEntry>,
+    /// Optional sky overlay quad (night atmosphere effect).
+    /// Uses `#[serde(default)]` so existing JSON without this field still parses.
+    #[serde(default)]
+    pub overlay: Option<OverlayEntry>,
 }
 
 #[derive(Deserialize)]

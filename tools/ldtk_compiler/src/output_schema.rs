@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::converter::{ConvertedDoor, ConvertedEnemy, ConvertedLayer, ConvertedLevel, ConvertedProp};
+use crate::converter::{ConvertedDoor, ConvertedEnemy, ConvertedLayer, ConvertedLevel, ConvertedLight, ConvertedProp};
 
 // ---------------------------------------------------------------------------
 // Output schema types — serialization contract for the compiled JSON
@@ -51,6 +51,8 @@ pub struct OutputLayer {
     pub doors: Vec<OutputDoor>,
     /// Decorative prop entities placed visually in LDtk.
     pub props: Vec<OutputProp>,
+    /// Point-light entities placed visually in LDtk.
+    pub lights: Vec<OutputLight>,
     /// Column index of the Gate entity, or `null` if no Gate is present.
     pub gate_col: Option<i32>,
     /// Identifier of the next level to transition to via the Exit, or `null`.
@@ -88,12 +90,40 @@ pub struct OutputProp {
     pub y: f32,
     /// Z depth in world space.
     pub z: f32,
-    /// Uniform XY scale.
-    pub scale_xy: f32,
+    /// X scale (1.0 = natural model width).
+    pub scale_x: f32,
+    /// Y scale (1.0 = natural model height).
+    pub scale_y: f32,
     /// Z (depth) scale.
     pub scale_z: f32,
     /// Y-axis rotation in radians.
     pub rotation_y: f32,
+    /// When true, this prop renders in front of the player (foreground layer).
+    ///
+    /// Omitted from JSON when false to keep output compact.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub foreground: bool,
+}
+
+/// Compiled point-light entity placed via LDtk.
+#[derive(Debug, Clone, Serialize)]
+pub struct OutputLight {
+    /// World-space X centre (tile centre).
+    pub x: f32,
+    /// World-space Y centre (tile centre).
+    pub y: f32,
+    /// Z depth in world space.
+    pub z: f32,
+    /// Linear RGB colour, each component in [0.0, 1.0].
+    pub color: [f32; 3],
+    /// Light intensity in lumens (or engine-relative units).
+    pub intensity: f32,
+    /// Radius of the light source sphere; omitted from JSON when not set.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub radius: Option<f32>,
+    /// Maximum range in world units; omitted from JSON when not set.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub range: Option<f32>,
 }
 
 /// Compiled door entity.
@@ -152,6 +182,7 @@ impl OutputLayer {
             health_foods: layer.health_foods,
             doors: layer.doors.into_iter().map(OutputDoor::from_converted).collect(),
             props: layer.props.into_iter().map(OutputProp::from_converted).collect(),
+            lights: layer.lights.into_iter().map(OutputLight::from_converted).collect(),
             gate_col: layer.gate_col,
             exit_next_level: layer.exit_next_level,
             stars_required: layer.stars_required,
@@ -189,9 +220,25 @@ impl OutputProp {
             x: prop.x,
             y: prop.y,
             z: prop.z,
-            scale_xy: prop.scale_xy,
+            scale_x: prop.scale_x,
+            scale_y: prop.scale_y,
             scale_z: prop.scale_z,
             rotation_y: prop.rotation_y,
+            foreground: prop.foreground,
+        }
+    }
+}
+
+impl OutputLight {
+    fn from_converted(light: ConvertedLight) -> Self {
+        Self {
+            x: light.x,
+            y: light.y,
+            z: light.z,
+            color: light.color,
+            intensity: light.intensity,
+            radius: light.radius,
+            range: light.range,
         }
     }
 }
@@ -239,6 +286,7 @@ mod tests {
                     y: 10.0,
                 }],
                 props: vec![],
+                lights: vec![],
                 gate_col: Some(7),
                 exit_next_level: Some("Level_1".to_string()),
                 stars_required: Some(3),

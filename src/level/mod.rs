@@ -633,208 +633,83 @@ pub fn spawn_level_decorations(
         LevelId::Forest => {
             // Nature tree background.
             spawn_nature_background(commands, asset_server);
-            // Ground-level Forest props (rocks, flowers, bushes).
-            let ox = -864.0_f32;
-            let col_x_f = |col: f32| ox + col * 18.0 + 9.0;
-            // (model, x, y, scale_xy, scale_z)
-            // z=-1: props sit just behind the tile surface, immediately visible.
-            // Non-uniform scale: thin Z breaks the boxy look of GLB props placed flat.
-            // Scale reference: 1J = Jasper sprite height (32 world units), halved.
-            // sxy = target_J × 32.0 / native_model_Y / 2;  sz keeps original ratio.
-            // All items placed on ground (y=-146) or valid platforms only.
-            // Bottom-anchored Y = ground_top formula: OY + (row+1)*18
-            //   Ground (row 2 top): -146.0
-            //   Row 6 platforms:    -74.0
-            //   Row 10 platforms:   -2.0
-            //   Row 14 platforms:   70.0
-            // Center-anchored rocks add half-height offset above these values.
-            let decor: &[(&str, f32, f32, f32, f32)] = &[
-                // ── y = -146 ground ─────────────────────────────────────────
-                ("models/small_rock.glb", col_x_f(3.0), -142.8, 13.0, 5.0),
-                ("models/grass_large.glb", col_x_f(7.0), -146.0, 38.0, 12.0),
-                ("models/plant_bush.glb", col_x_f(9.0), -146.0, 49.0, 27.0),
-                ("models/large_rock.glb", col_x_f(10.0), -134.0, 28.0, 9.0),
-                (
-                    "models/plant_bushLarge.glb",
-                    col_x_f(15.0),
-                    -146.0,
-                    79.0,
-                    43.0,
-                ),
-                ("models/flower_redA.glb", col_x_f(18.0), -146.0, 66.0, 17.0),
-                ("models/yellow_flower.glb", col_x_f(22.0), -136.0, 20.0, 5.0),
-                ("models/large_rock.glb", col_x_f(30.0), -134.0, 28.0, 9.0),
-                ("models/small_rock.glb", col_x_f(35.0), -142.8, 13.0, 5.0),
-                (
-                    "models/plant_bushLarge.glb",
-                    col_x_f(43.0),
-                    -146.0,
-                    79.0,
-                    43.0,
-                ),
-                ("models/large_rock.glb", col_x_f(55.0), -134.0, 28.0, 9.0),
-                ("models/yellow_flower.glb", col_x_f(58.0), -136.0, 20.0, 5.0),
-                ("models/small_rock.glb", col_x_f(85.0), -142.8, 13.0, 5.0),
-                // ── y = -74 row 6 platforms ──────────────────────────────────
-                ("models/yellow_flower.glb", col_x_f(5.0), -64.0, 20.0, 5.0),
-                ("models/small_rock.glb", col_x_f(8.0), -70.8, 13.0, 5.0),
-                ("models/small_rock.glb", col_x_f(23.0), -70.8, 13.0, 5.0),
-                ("models/plant_bush.glb", col_x_f(24.0), -74.0, 49.0, 27.0),
-                ("models/flower_redA.glb", col_x_f(25.0), -74.0, 66.0, 17.0),
-                ("models/grass_large.glb", col_x_f(36.0), -74.0, 38.0, 12.0),
-                ("models/plant_bush.glb", col_x_f(37.0), -74.0, 49.0, 27.0),
-                ("models/flower_redA.glb", col_x_f(57.0), -74.0, 66.0, 17.0),
-                ("models/small_rock.glb", col_x_f(84.0), -70.8, 13.0, 5.0),
-                // ── y = -2 row 10 platforms ──────────────────────────────────
-                ("models/small_rock.glb", col_x_f(14.0), 1.2, 13.0, 5.0),
-                ("models/grass_large.glb", col_x_f(16.0), -2.0, 38.0, 12.0),
-                ("models/flower_redA.glb", col_x_f(17.0), -2.0, 66.0, 17.0),
-                ("models/small_rock.glb", col_x_f(45.0), 1.2, 13.0, 5.0),
-                ("models/yellow_flower.glb", col_x_f(46.0), 8.0, 20.0, 5.0),
-                ("models/grass_large.glb", col_x_f(76.0), -2.0, 38.0, 12.0),
-                ("models/small_rock.glb", col_x_f(78.0), 1.2, 13.0, 5.0),
-                ("models/plant_bushLarge.glb", col_x_f(80.0), -2.0, 79.0, 43.0),
-                // ── y = 70 row 14 platforms ──────────────────────────────────
-                (
-                    "models/plant_bushLarge.glb",
-                    col_x_f(49.0),
-                    70.0,
-                    79.0,
-                    43.0,
-                ),
-                ("models/small_rock.glb", col_x_f(52.0), 73.2, 13.0, 5.0),
-                ("models/plant_bush.glb", col_x_f(68.0), 70.0, 49.0, 27.0),
-                ("models/flower_redA.glb", col_x_f(69.0), 70.0, 66.0, 17.0),
-                ("models/grass_large.glb", col_x_f(70.0), 70.0, 38.0, 12.0),
-                ("models/plant_bush.glb", col_x_f(71.0), 70.0, 49.0, 27.0),
-            ];
-            // Tripo rock models face +X by default; rotate -90° Y so front faces camera.
-            // After rotation local Z→world X, local X→world Z, so swap X/Z scales.
-            let rock_rot = Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2);
-            for &(model, x, y, sxy, sz) in decor {
-                let is_tripo = model.contains("large_rock") || model.contains("small_rock") || model.contains("yellow_flower");
-                let xform = if is_tripo {
-                    Transform::from_xyz(x, y, -15.0)
-                        .with_rotation(rock_rot)
-                        .with_scale(Vec3::new(sz, sxy, sxy))
-                } else {
-                    Transform::from_xyz(x, y, -15.0)
-                        .with_scale(Vec3::new(sxy, sxy, sz))
-                };
-                commands.spawn((
-                    SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-                    // z=-15: pushed behind Jasper's z=5 plane so the 3D volume of
-                    // these props does not protrude into Jasper's depth layer.
-                    xform,
-                    components::Decoration,
-                    components::ForegroundDecoration,
-                ));
-            }
-
-            // Foreground framing trees (z = +10) — bookend the left/right level edges.
-            // Must live here (not Startup) per jasper_background_parallax_lifecycle_guardrail:
-            // biome-specific art is level content, not engine setup.
-            // WHY left trees at -525/-440: door 1 is at x=-351 (footprint ≈ -381 to -321).
-            // oak half-width = 95*0.4 = 38; fat half-width = 80*0.46 = 36.8.
-            // -525 oak right edge ≈ -487; -440 fat left edge ≈ -477 → 10-unit gap between them.
-            // -440 fat right edge ≈ -403; door left edge = -381 → 22-unit clearance from door.
-            // WHY right trees at 240/330: pine half-width = 90*0.31 = 27.9; oak half-width = 85*0.4 = 34.
-            // pine right edge ≈ 268; oak left edge ≈ 296 → 28-unit gap between them.
-            let fg_trees: &[(&str, f32, f32, f32)] = &[
-                // center-anchored model: y raised by scale/2 to ground the base
-                ("models/tree_oak.glb", -525.0, -98.5, 95.0), // moved left; gap from fat = 10 units
-                ("models/tree_fat.glb", -440.0, -106.0, 80.0), // moved left; gap from door 1 = 22 units
-                ("models/tree_pine.glb", 240.0, -101.0, 90.0), // moved left from 270
-                ("models/tree_oak.glb", 330.0, -103.5, 85.0), // moved right from 295; gap from pine = 28 units
-            ];
-            for &(model, tx, ty, scale) in fg_trees {
-                commands.spawn((
-                    SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-                    Transform::from_xyz(tx, ty, 10.0).with_scale(Vec3::new(scale, scale, 1.0)),
-                    components::Decoration,
-                    components::ForegroundDecoration,
-                ));
-            }
+            // Ground-level Forest props and foreground trees are now data-driven:
+            // they are stored in compiled_levels.json (Forest layer 0 "props" array)
+            // and spawned by spawn_entities_from_compiled via the JSON path.
+            // See compiled_data.rs CompiledProp for the scale/rotation convention:
+            //   Tripo rocks/flowers: rotation_y=-PI/2, scale=(sz, sxy, sxy)
+            //   Kenney models: rotation_y=0, scale=(sxy, sxy, sz)
+            //   Foreground trees (z=10): scale=(s, s, 1.0), foreground=true
         }
         LevelId::Subdivision => {
             spawn_subdivision_background(commands, asset_server);
 
-            // Overcast sky overlay — grey-blue rectangle at z=-99, just in front of the
-            // blue sky backdrop at z=-100. Carries Decoration so it despawns on level exit,
-            // restoring the blue sky for other levels.
-            let overcast_mesh = meshes.add(Rectangle::new(6400.0, 1800.0));
-            let overcast_mat = materials.add(StandardMaterial {
-                base_color: Color::srgb(0.55, 0.58, 0.65),
-                unlit: true,
-                alpha_mode: AlphaMode::Opaque,
-                ..default()
-            });
-            commands.spawn((
-                Mesh3d(overcast_mesh),
-                MeshMaterial3d(overcast_mat),
-                Transform::from_xyz(0.0, 0.0, -99.0),
-                crate::rendering::parallax::ParallaxLayer { factor: 0.20 },
-                components::Decoration,
-                crate::rendering::parallax::ParallaxBackground,
-            ));
-
-            // Foreground framing — suburban trees at level edges (z=+10)
-            let fg_trees: &[(&str, f32, f32, f32)] = &[
-                (
-                    "models/suburban/tree-suburban-large.glb",
-                    -450.0,
-                    -146.0,
-                    180.0,
-                ),
-                (
-                    "models/suburban/tree-suburban-small.glb",
-                    -420.0,
-                    -146.0,
-                    140.0,
-                ),
-                (
-                    "models/suburban/tree-suburban-large.glb",
-                    270.0,
-                    -146.0,
-                    170.0,
-                ),
-                (
-                    "models/suburban/tree-suburban-small.glb",
-                    295.0,
-                    -146.0,
-                    150.0,
-                ),
-            ];
-            for &(model, tx, ty, scale) in fg_trees {
-                commands.spawn((
-                    SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-                    Transform::from_xyz(tx, ty, 10.0).with_scale(Vec3::new(scale, scale, 1.0)),
-                    components::Decoration,
-                    components::ForegroundDecoration,
-                ));
+            // Overcast sky overlay — parameters loaded from subdivision_bg.json.
+            // Carries Decoration so it despawns on level exit, restoring blue sky.
+            // WHY JSON-driven: overlay color/z/factor can be tuned without recompiling.
+            if let Some(cfg) = crate::rendering::parallax_config::load_config::<
+                crate::rendering::parallax_config::SubdivisionBgConfig,
+            >("assets/configs/subdivision_bg.json")
+            {
+                if let Some(ov) = cfg.overlay {
+                    let [r, g, b, a] = ov.color;
+                    let ov_mesh = meshes.add(Rectangle::new(ov.width, ov.height));
+                    let ov_mat = materials.add(StandardMaterial {
+                        base_color: Color::srgba(r, g, b, a),
+                        unlit: true,
+                        alpha_mode: AlphaMode::Opaque,
+                        ..default()
+                    });
+                    commands.spawn((
+                        Mesh3d(ov_mesh),
+                        MeshMaterial3d(ov_mat),
+                        Transform::from_xyz(0.0, 0.0, ov.z),
+                        crate::rendering::parallax::ParallaxLayer { factor: ov.factor },
+                        components::Decoration,
+                        crate::rendering::parallax::ParallaxBackground,
+                    ));
+                }
+            } else {
+                warn!("[SUBDIVISION_BG] could not load subdivision_bg.json — sky overlay skipped");
             }
+
+            // Foreground framing trees are now data-driven:
+            // stored in compiled_levels.json (Subdivision layer 0 "props" array)
+            // and spawned by spawn_entities_from_compiled via the JSON path.
         }
         LevelId::City => {
             info!("[CITY] spawn_level_decorations: entering City arm");
             spawn_city_background(commands, asset_server);
 
-            // Night sky overlay — dark navy rectangle at z=-99, in front of the
-            // blue sky backdrop at z=-100. Hides daytime sky for night atmosphere.
-            let night_mesh = meshes.add(Rectangle::new(6400.0, 1800.0));
-            let night_mat = materials.add(StandardMaterial {
-                base_color: Color::srgb(0.02, 0.02, 0.04),
-                unlit: true,
-                alpha_mode: AlphaMode::Opaque,
-                ..default()
-            });
-            commands.spawn((
-                Mesh3d(night_mesh),
-                MeshMaterial3d(night_mat),
-                Transform::from_xyz(0.0, 0.0, -99.0),
-                crate::rendering::parallax::ParallaxLayer { factor: 0.20 },
-                components::Decoration,
-                crate::rendering::parallax::ParallaxBackground,
-            ));
+            // Night sky overlay — parameters loaded from city_bg.json.
+            // Dark navy rectangle at z=-99, in front of the blue sky backdrop at z=-100.
+            // Hides daytime sky for night atmosphere.
+            // WHY JSON-driven: overlay color/z/factor can be tuned without recompiling.
+            if let Some(cfg) = crate::rendering::parallax_config::load_config::<
+                crate::rendering::parallax_config::CityBgConfig,
+            >("assets/configs/city_bg.json")
+            {
+                if let Some(ov) = cfg.overlay {
+                    let [r, g, b, a] = ov.color;
+                    let ov_mesh = meshes.add(Rectangle::new(ov.width, ov.height));
+                    let ov_mat = materials.add(StandardMaterial {
+                        base_color: Color::srgba(r, g, b, a),
+                        unlit: true,
+                        alpha_mode: AlphaMode::Opaque,
+                        ..default()
+                    });
+                    commands.spawn((
+                        Mesh3d(ov_mesh),
+                        MeshMaterial3d(ov_mat),
+                        Transform::from_xyz(0.0, 0.0, ov.z),
+                        crate::rendering::parallax::ParallaxLayer { factor: ov.factor },
+                        components::Decoration,
+                        crate::rendering::parallax::ParallaxBackground,
+                    ));
+                }
+            } else {
+                warn!("[CITY_BG] could not load city_bg.json — sky overlay skipped");
+            }
 
             // Decorative stars — 200 bright dots across the full night sky.
             // z=-98: just in front of the night overlay (-99) but BEHIND both
@@ -870,78 +745,10 @@ pub fn spawn_level_decorations(
 
             info!("[CITY] spawned night sky + {} decorative stars", 200);
 
-            // Ground-level city props (z=-15, behind Jasper's z=5 plane to avoid depth clipping)
-            let ox = -864.0_f32;
-            let col_x_f = |col: f32| ox + col * 18.0 + 9.0;
-            // Taxis — 3 parked cars across the level. No Y rotation needed because the
-            // new model's longest axis is already X, so the side profile is naturally
-            // visible from the camera (which looks down -Z onto the XY plane).
-            // Trellis model native dims: X=1.000, Y=0.4821, Z=0.4734 (center-anchored).
-            // Uniform scale 90:
-            //   Visible length (world X) = 1.0    × 90 = 90 units (~5.0 tiles).
-            //   Visible height (world Y) = 0.4821 × 90 = 43.4 units (~2.4 tiles).
-            //   Depth (world Z)          = 0.4734 × 90 = 42.6 units.
-            // Y = -124.3: ground(-146) + half_height(0.4821*90/2 ≈ 21.7) ≈ -124.
-            let taxi_positions = [col_x_f(15.0), col_x_f(50.0), col_x_f(80.0)];
-            for tx in taxi_positions {
-                commands.spawn((
-                    SceneRoot(asset_server.load("models/city/taxi.glb#Scene0")),
-                    Transform::from_xyz(tx, -124.3, -15.0).with_scale(Vec3::splat(90.0)),
-                    components::Decoration,
-                    components::ForegroundDecoration,
-                ));
-            }
-
-            // Street lights — every ~250 units along the ground.
-            // Scale 70: native H=0.675 → 0.675*70/18 = 2.6 Jasper units tall.
-            for x in (-1200..=1200i32).step_by(250) {
-                commands.spawn((
-                    SceneRoot(asset_server.load("models/city/light-curved.glb#Scene0")),
-                    Transform::from_xyz(x as f32, -141.0, -15.0)
-                        .with_scale(Vec3::new(70.0, 70.0, 16.0)),
-                    components::Decoration,
-                    components::ForegroundDecoration,
-                ));
-            }
-
-            // Construction cones — scattered urban clutter.
-            // New model: X=0.703, Y=1.0, Z=0.679, center-anchored (Y: -0.5→0.5).
-            // Target height = 0.7 Jasper units = 0.7*18 = 12.6 world units → scale = 12.6/1.0 = 12.6.
-            // Y position: base at -141, center-anchored → Y = -141 + (1.0*12.6)/2 = -134.7.
-            let cone_positions = [col_x_f(10.0), col_x_f(45.0), col_x_f(70.0)];
-            for cx in cone_positions {
-                commands.spawn((
-                    SceneRoot(asset_server.load("models/city/construction-cone.glb#Scene0")),
-                    Transform::from_xyz(cx, -134.7, -15.0).with_scale(Vec3::splat(12.6)),
-                    components::Decoration,
-                    components::ForegroundDecoration,
-                ));
-            }
-
-            // Foreground trees — sparse, at level edges (it's a city).
-            // WHY left fat tree at -500: door 1 is at x=-351 (footprint ≈ -381 to -321).
-            // fat half-width = 80*0.46 = 36.8; right edge ≈ -463 → 82-unit clearance from door.
-            // WHY oak/default pair at 230/340: oak half-width = 75*0.4 = 30; default half-width = 70*0.5 = 35.
-            // oak right edge ≈ 260; default left edge ≈ 305 → 45-unit gap between them.
-            let fg_trees: &[(&str, f32, f32, f32)] = &[
-                ("models/tree_fat.glb", -500.0, -106.0, 80.0), // moved left; gap from door 1 = 82 units
-                ("models/tree_oak.glb", 230.0, -108.5, 75.0),  // moved left from 270
-                ("models/tree_default.glb", 340.0, -111.0, 70.0), // moved right from 295; gap from oak = 45 units; Y adjusted from -146.0 to -111.0 (+35 = scale/2) for center-anchored Trellis model
-                ("models/tree_fat.glb", -700.0, -108.5, 75.0),    // unchanged
-                ("models/tree_oak.glb", 550.0, -111.0, 70.0),     // unchanged
-            ];
-            for &(model, tx, ty, scale) in fg_trees {
-                commands.spawn((
-                    SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-                    Transform::from_xyz(tx, ty, 10.0).with_scale(Vec3::new(scale, scale, 1.0)),
-                    components::Decoration,
-                    components::ForegroundDecoration,
-                ));
-            }
-            info!(
-                "[CITY] spawned 3 taxis, {} street lights, 3 cones, 5 trees",
-                (-1200..=1200i32).step_by(250).count()
-            );
+            // Ground-level city props (taxis, street lights, cones) and foreground
+            // trees are now data-driven: stored in compiled_levels.json (City layer 0
+            // "props" array) and spawned by spawn_entities_from_compiled via the JSON path.
+            // Scale/rotation conventions are documented in compiled_data.rs CompiledProp.
         }
     }
 }
@@ -962,163 +769,35 @@ pub fn spawn_sublevel_decorations(
     origin_x: f32,
     origin_y: f32,
 ) {
-    let col_x = |col: f32| origin_x + col * TILE_SIZE + TILE_SIZE * 0.5;
-    let row_y = |row: f32| origin_y + row * TILE_SIZE;
+    // WHY load JSON here rather than passing props/lights as parameters: the caller
+    // (systems::switch_layer) does not have JSON context, and changing that
+    // function signature would require threading compiled data through the ECS
+    // resource graph. Loading inline matches the pattern used by handle_new_game.
+    let level_id_str = match level_id {
+        LevelId::Forest => "Forest",
+        LevelId::Subdivision => "Subdivision",
+        LevelId::City => "City",
+    };
 
-    // (model_path, x, y, scale_xy, scale_z)
-    let decor: &[(&str, f32, f32, f32, f32)] = match level_id {
-        // ── Forest Cave: stalactites on ceiling, mushrooms, rocks ─────────
-        LevelId::Forest => &[
-            // Stalactites hanging from ceiling (row 16 bottom = y=288)
-            (
-                "models/cave/cliff_cave_stone.glb",
-                col_x(6.0),
-                row_y(15.0),
-                12.0,
-                4.0,
-            ),
-            (
-                "models/cave/cliff_cave_rock.glb",
-                col_x(15.0),
-                row_y(15.0),
-                10.0,
-                3.0,
-            ),
-            (
-                "models/cave/cliff_cave_stone.glb",
-                col_x(25.0),
-                row_y(15.0),
-                14.0,
-                5.0,
-            ),
-            // Mushrooms on ground (row 2 top = y=36)
-            (
-                "models/mushroom_red.glb",
-                col_x(4.0),
-                row_y(2.0),
-                30.0,
-                12.0,
-            ),
-            (
-                "models/mushroom_tan.glb",
-                col_x(18.0),
-                row_y(2.0),
-                25.0,
-                10.0,
-            ),
-            ("models/mushrooms.glb", col_x(26.0), row_y(2.0), 28.0, 11.0),
-            // Rocks on ground
-            ("models/large_rock.glb", col_x(10.0), row_y(2.0) + 12.0, 28.0, 9.0),
-            (
-                "models/small_rock.glb",
-                col_x(21.0),
-                row_y(2.0) + 3.2,
-                13.0,
-                5.0,
-            ),
-        ],
-        // ── Subdivision Sewer: columns, iron fences, wall segments ────────
-        LevelId::Subdivision => &[
-            // Columns along the floor
-            (
-                "models/sewer/column-large.glb",
-                col_x(8.0),
-                row_y(2.0),
-                18.0,
-                6.0,
-            ),
-            (
-                "models/sewer/column-large.glb",
-                col_x(24.0),
-                row_y(2.0),
-                18.0,
-                6.0,
-            ),
-            (
-                "models/sewer/stone-wall-column.glb",
-                col_x(16.0),
-                row_y(2.0),
-                18.0,
-                6.0,
-            ),
-            // Iron fences
-            (
-                "models/sewer/iron-fence.glb",
-                col_x(3.0),
-                row_y(2.0),
-                20.0,
-                5.0,
-            ),
-            (
-                "models/sewer/iron-fence.glb",
-                col_x(28.0),
-                row_y(2.0),
-                20.0,
-                5.0,
-            ),
-            // Wall decorations along ceiling
-            (
-                "models/sewer/brick-wall.glb",
-                col_x(10.0),
-                row_y(15.0),
-                16.0,
-                4.0,
-            ),
-            (
-                "models/sewer/brick-wall.glb",
-                col_x(22.0),
-                row_y(15.0),
-                16.0,
-                4.0,
-            ),
-        ],
-        // ── City Subway: structural columns and wall segments ─────────────
-        LevelId::City => &[
-            // Stone columns — subway support pillars
-            (
-                "models/sewer/column-large.glb",
-                col_x(8.0),
-                row_y(2.0),
-                18.0,
-                6.0,
-            ),
-            (
-                "models/sewer/column-large.glb",
-                col_x(16.0),
-                row_y(2.0),
-                18.0,
-                6.0,
-            ),
-            (
-                "models/sewer/column-large.glb",
-                col_x(24.0),
-                row_y(2.0),
-                18.0,
-                6.0,
-            ),
-            // Wall segments along ceiling
-            (
-                "models/sewer/brick-wall.glb",
-                col_x(6.0),
-                row_y(15.0),
-                16.0,
-                4.0,
-            ),
-            (
-                "models/sewer/brick-wall.glb",
-                col_x(16.0),
-                row_y(15.0),
-                16.0,
-                4.0,
-            ),
-            (
-                "models/sewer/brick-wall.glb",
-                col_x(26.0),
-                row_y(15.0),
-                16.0,
-                4.0,
-            ),
-        ],
+    // Load both props and lights from the same JSON layer 1 entry.
+    let (props, lights_data): (
+        Vec<compiled_data::CompiledProp>,
+        Vec<compiled_data::CompiledLight>,
+    ) = if let Some(root) =
+        compiled_data::try_load_compiled_levels("assets/levels/compiled_levels.json")
+    {
+        root.levels
+            .into_iter()
+            .find(|l| l.id == level_id_str)
+            .and_then(|level| {
+                // Layer 1 is the sublevel (index 1 in the layers Vec).
+                level.layers.into_iter().find(|l| l.id == 1)
+            })
+            .map(|layer| (layer.props, layer.lights))
+            .unwrap_or_default()
+    } else {
+        warn!("[SUBLEVEL_DECOR] could not load compiled_levels.json — no props or lights spawned");
+        (Vec::new(), Vec::new())
     };
 
     // Cave/Sewer: emissive glow (bioluminescent/atmospheric).
@@ -1130,25 +809,22 @@ pub fn spawn_sublevel_decorations(
     };
 
     info!(
-        "[SUBLEVEL_DECOR] level={:?} origin=({origin_x}, {origin_y}) decor_count={} glow={:?}",
+        "[SUBLEVEL_DECOR] level={:?} origin=({origin_x}, {origin_y}) prop_count={} glow={:?}",
         level_id,
-        decor.len(),
+        props.len(),
         glow.is_some(),
     );
-    for &(model, x, y, sxy, sz) in decor {
+    for prop in &props {
         info!(
-            "[SUBLEVEL_DECOR] spawn model={model} pos=({x}, {y}, 3.0) scale=({sxy}, {sxy}, {sz})"
+            "[SUBLEVEL_DECOR] spawn model={} pos=({}, {}, {})",
+            prop.model_id, prop.x, prop.y, prop.z
         );
-        let is_tripo_rock = model.contains("large_rock") || model.contains("small_rock");
-        let xform = if is_tripo_rock {
-            Transform::from_xyz(x, y, 3.0)
-                .with_rotation(Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2))
-                .with_scale(Vec3::new(sz, sxy, sxy))
-        } else {
-            Transform::from_xyz(x, y, 3.0).with_scale(Vec3::new(sxy, sxy, sz))
-        };
+        let rotation = Quat::from_rotation_y(prop.rotation_y);
+        let xform = Transform::from_xyz(prop.x, prop.y, prop.z)
+            .with_rotation(rotation)
+            .with_scale(Vec3::new(prop.scale_x, prop.scale_y, prop.scale_z));
         let mut entity = commands.spawn((
-            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
+            SceneRoot(asset_server.load(format!("{}#Scene0", prop.model_id))),
             xform,
             components::TileEntity,
             components::ForegroundDecoration,
@@ -1161,82 +837,26 @@ pub fn spawn_sublevel_decorations(
         }
     }
 
-    // Sublevel point lights — carry TileEntity for auto-despawn.
-    let lights: &[(f32, f32, Color, f32)] = match level_id {
-        // Cave: warm amber torches — high intensity to illuminate vertex-color models
-        LevelId::Forest => &[
-            (col_x(8.0), row_y(8.0), Color::srgb(1.0, 0.6, 0.2), 200000.0),
-            (
-                col_x(22.0),
-                row_y(8.0),
-                Color::srgb(1.0, 0.6, 0.2),
-                200000.0,
-            ),
-            (
-                col_x(15.0),
-                row_y(4.0),
-                Color::srgb(1.0, 0.6, 0.2),
-                150000.0,
-            ),
-        ],
-        // Sewer: green-tinted industrial lighting
-        LevelId::Subdivision => &[
-            (col_x(8.0), row_y(8.0), Color::srgb(0.5, 0.8, 0.4), 150000.0),
-            (
-                col_x(16.0),
-                row_y(4.0),
-                Color::srgb(0.6, 0.8, 0.5),
-                120000.0,
-            ),
-            (
-                col_x(24.0),
-                row_y(8.0),
-                Color::srgb(0.5, 0.8, 0.4),
-                150000.0,
-            ),
-        ],
-        // Subway: cool fluorescent station lighting — multiple fixtures
-        LevelId::City => &[
-            (
-                col_x(5.0),
-                row_y(13.0),
-                Color::srgb(0.9, 0.9, 1.0),
-                120000.0,
-            ),
-            (
-                col_x(12.0),
-                row_y(13.0),
-                Color::srgb(0.9, 0.9, 1.0),
-                120000.0,
-            ),
-            (
-                col_x(20.0),
-                row_y(13.0),
-                Color::srgb(0.9, 0.9, 1.0),
-                120000.0,
-            ),
-            (
-                col_x(27.0),
-                row_y(13.0),
-                Color::srgb(0.9, 0.9, 1.0),
-                120000.0,
-            ),
-        ],
-    };
-
-    info!("[SUBLEVEL_LIGHTS] spawning {} lights", lights.len());
-    for &(lx, ly, color, intensity) in lights {
-        info!("[SUBLEVEL_LIGHTS] pos=({lx}, {ly}, 10.0) intensity={intensity}");
+    // Sublevel point lights — loaded from compiled_levels.json layer 1 "lights" array.
+    // Carry TileEntity for auto-despawn on layer switch.
+    // WHY JSON-driven: positions are co-authored with the sublevel layout in LDtk;
+    // keeping them in JSON avoids recompiling Rust when light placement is tuned.
+    info!("[SUBLEVEL_LIGHTS] spawning {} lights", lights_data.len());
+    for light in &lights_data {
+        info!(
+            "[SUBLEVEL_LIGHTS] pos=({}, {}, {}) intensity={}",
+            light.x, light.y, light.z, light.intensity
+        );
         commands.spawn((
             PointLight {
-                color,
-                intensity,
-                radius: 0.5,
-                range: 200.0,
+                color: Color::srgb(light.color[0], light.color[1], light.color[2]),
+                intensity: light.intensity,
+                radius: light.radius,
+                range: light.range,
                 shadows_enabled: false,
                 ..default()
             },
-            Transform::from_xyz(lx, ly, 10.0),
+            Transform::from_xyz(light.x, light.y, light.z),
             components::TileEntity,
         ));
     }

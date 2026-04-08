@@ -26,7 +26,7 @@
     "x_offset": 0.0
   },
   "far_houses": {
-    "x_start": -1500,
+    "x_start": -1150,
     "first_x_override": -1580,
     "x_end": 1600,
     "step": 350,
@@ -60,10 +60,12 @@
     ],
     "scales": [160.0, 120.0, 180.0, 110.0, 150.0, 130.0, 170.0, 140.0],
     "scale_z": 8.0,
-    "center_anchored": false
+    "center_anchored": false,
+    "x_offset": 60.0
   },
   "attenuation": [
     {"z": -38.0, "factor": 0.38, "color": [0.0, 0.0, 0.0, 0.12]},
     {"z": -75.0, "factor": 0.48, "color": [0.45, 0.50, 0.58, 0.50]}
-  ]
+  ],
+  "overlay": {"z": -99.0, "factor": 0.20, "color": [0.55, 0.58, 0.65, 1.0], "width": 6400.0, "height": 1800.0}
 }
