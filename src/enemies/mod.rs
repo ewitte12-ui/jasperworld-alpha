@@ -11,7 +11,7 @@ pub struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
     fn build(&self, app: &mut App) {
-        // spawn_enemies removed from Startup — it duplicated LevelPlugin's spawn_forest_entities
+        // spawn_enemies removed from Startup — it duplicated LevelPlugin's spawn_forest_inner
         // and violated the TitleScreen spec (no gameplay entities during TitleScreen).
         // Forest enemies are now spawned exclusively by handle_new_game via spawn_forest_inner.
         //

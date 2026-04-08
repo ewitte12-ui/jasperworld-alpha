@@ -237,8 +237,8 @@ fn spawn_merged_run_colliders(
 /// Returns the child `Transform` (scale + rotation + offset) for a tile's GLB model.
 ///
 /// Most models are bottom-anchored and only need scale + a -TILE_SIZE/2 Y offset.
-/// The cement-platform model is center-anchored and rotated 90° around Y so its
-/// long axis runs horizontally.
+/// Center-anchored models (cement-platform, grass-block, redbricks) receive an
+/// additional Y offset to align their bottom edge with the tile bottom.
 fn child_transform_for_model(model_path: &str, is_platform: bool) -> Transform {
     // Center-anchored cube models (cement-platform, grass-block, redbricks).
     let cube_dims = if model_path.contains("cement-platform") {

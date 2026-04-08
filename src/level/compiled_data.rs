@@ -235,8 +235,6 @@ pub fn spawn_entities_from_compiled(
     for &[x, y, z] in &layer.stars {
         spawn_collectible(
             commands,
-            meshes,
-            materials,
             asset_server,
             Vec3::new(x, y, z),
             CollectibleType::Star,
@@ -253,8 +251,6 @@ pub fn spawn_entities_from_compiled(
     for &[x, y, z] in &layer.health_foods {
         spawn_collectible(
             commands,
-            meshes,
-            materials,
             asset_server,
             Vec3::new(x, y, z),
             CollectibleType::HealthFood,

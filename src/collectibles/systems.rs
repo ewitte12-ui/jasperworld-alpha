@@ -117,8 +117,6 @@ pub fn apply_emissive_to_collectibles(
 /// HealthFood → apple.glb (Kenney Food Kit, vertex colors)
 pub fn spawn_collectible(
     commands: &mut Commands,
-    meshes: &mut Assets<Mesh>,
-    materials: &mut Assets<StandardMaterial>,
     asset_server: &AssetServer,
     position: Vec3,
     collectible_type: CollectibleType,
@@ -130,7 +128,6 @@ pub fn spawn_collectible(
             spawn_health_food_3d(commands, asset_server, position, emissive)
         }
     }
-    let _ = (meshes, materials);
 }
 
 /// Spawns star_collectible.glb (gold star from Kenney Platformer Kit) for level progression.

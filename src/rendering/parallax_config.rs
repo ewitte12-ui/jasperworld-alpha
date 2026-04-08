@@ -170,9 +170,10 @@ pub struct CityBuildingLayer {
 #[derive(Deserialize)]
 pub struct CityBuildingModelEntry {
     pub path: String,
-    /// Multiplier to compensate for differences between the model's native height
-    /// and the old Kenney reference height. Applied to scale before Y-anchoring.
-    /// Set to 1.0 for models that do not need compensation.
+    /// Scale normalizer: compensates for a model's native height differing from the
+    /// standard game-unit height so that the base `scales` values remain consistent
+    /// across models. Applied to scale before Y-anchoring. Set to 1.0 when no
+    /// normalization is needed.
     pub native_h_mult: f32,
     /// If true, model origin is at its midpoint — shift Y up by scale*0.5.
     #[serde(default)]

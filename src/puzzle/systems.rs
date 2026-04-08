@@ -70,21 +70,9 @@ pub fn check_level_exit(
         let exit_pos = exit_transform.translation.truncate();
         let delta = (player_pos - exit_pos).abs();
         if delta.x < level_exit.half_extents.x && delta.y < level_exit.half_extents.y {
-            // TEMP LOG — remove after validation
-            info!(
-                "[TRANSITION] level_exit TRIGGER: player={player_pos}, exit={exit_pos}, delta={delta}, half_extents={}, level_idx={}",
-                level_exit.half_extents, game_progress.current_level_index,
-            );
-
             // Lock immediately — all further overlap checks are rejected.
             game_progress.transition_in_progress = true;
             game_progress.current_level_index += 1;
-
-            // TEMP LOG — remove after validation
-            info!(
-                "[TRANSITION] level_exit START: locked, advancing to level_idx={}",
-                game_progress.current_level_index,
-            );
 
             // Despawn all gameplay entities from the old level.
             // Gate entities are already despawned by check_gate (all stars
@@ -107,10 +95,6 @@ pub fn check_level_exit(
                 // Game is over — clear immediately; no next level to guard.
                 game_progress.transition_in_progress = false;
                 game_progress.transition_cooldown = 0;
-                // TEMP LOG — remove after validation
-                info!(
-                    "[TRANSITION] level_exit COMPLETE: game_complete=true, returning to MainMenu"
-                );
                 next_state.set(AppState::MainMenu);
                 return;
             }
@@ -173,10 +157,5 @@ pub fn tick_transition_cooldown(mut game_progress: ResMut<GameProgress>) {
     game_progress.transition_cooldown -= 1;
     if game_progress.transition_cooldown == 0 {
         game_progress.transition_in_progress = false;
-        // TEMP LOG — remove after validation
-        info!(
-            "[TRANSITION] cooldown COMPLETE: lock cleared, level_idx={}",
-            game_progress.current_level_index,
-        );
     }
 }

@@ -51,7 +51,6 @@ If a referenced guardrail is not found under `docs/`, **STOP** and ask for the c
 ---
 ### Agent Workflow
 Each phase uses 4 agents: Spec → Implementation → Test → Critic.
-### See PLAN.md for the 8-phase implementation plan.
 
 ## 🛑 STOP & TEST ENFORCEMENT (NON‑NEGOTIABLE)
 
