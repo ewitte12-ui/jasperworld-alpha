@@ -71,6 +71,7 @@ If you enjoy the game and want to support development:
 
 - [GitHub Sponsors](https://github.com/sponsors/ewitte12-ui)
 - [Ko-fi](https://ko-fi.com/ewitte12ui)
+- PayPal: ewitte@yahoo.com
 - [Itch.io](https://itch.io/profile/ericjwi) — Coming soon
 
 Your support is greatly appreciated and helps fund new features, art, and updates!
