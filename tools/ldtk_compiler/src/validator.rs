@@ -47,10 +47,10 @@ pub fn validate(root: &LdtkRoot) -> Result<(), Vec<String>> {
                 ));
             }
 
-            // 5. IntGrid CSV length must match dimensions
+            // 5. IntGrid CSV length must match dimensions (empty is OK — new/unpainted level)
             if layer.layer_type == "IntGrid" {
                 let expected = (layer.c_wid * layer.c_hei) as usize;
-                if layer.int_grid_csv.len() != expected {
+                if !layer.int_grid_csv.is_empty() && layer.int_grid_csv.len() != expected {
                     errors.push(format!(
                         "Level '{}', layer '{}': intGridCsv length {} != {}×{} = {}",
                         level.identifier,
