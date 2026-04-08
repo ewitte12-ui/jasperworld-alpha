@@ -12,15 +12,19 @@ Jasper's World is a side-scrolling platformer rendered with a 2.5D camera system
 - **Subdivision** — Rainy suburban neighborhood with houses, brick platforms, and overcast skies.
 - **City** — Nighttime urban environment with tall skyscrapers, scaffolding platforms, moonlight, and drifting dust particles.
 
+Each level has three explorable layers accessed through doors: a main surface layer, an underground sublevel (cave, sewer, or subway), and a rooftop layer.
+
 ### Features
 
 - 3D-lit 2D platformer using Bevy's Camera3d with orthographic projection
-- Three levels, each with three explorable layers (accessed through doors)
+- Three levels, each with three explorable layers
 - Parallax scrolling backgrounds with weather effects (leaves, rain, dust)
 - Enemies with patrol AI and stomp-based combat
 - Star collection and gate puzzles
 - Save/load system with multiple slots
 - Controller and keyboard support with rebindable controls
+- Custom 3D models (Tripo AI-generated) for characters, props, and backgrounds
+- Data-driven level design — positions and layouts stored in JSON, not hardcoded
 
 ## Building & Running
 
@@ -33,24 +37,40 @@ cargo test           # Run tests
 cargo clippy         # Lint
 ```
 
+## Project Structure
+
+For a detailed walkthrough of the codebase, see:
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) — How the code is organized, what each module does, and how systems connect
+- [ASSETS.md](ASSETS.md) — Asset pipeline, model sources, JSON configs, and how to add new content
+
+## Level Editor
+
+Levels can be edited visually using [LDtk](https://ldtk.io/) (a free 2D level editor). The project file is at `levels/jasperworld.ldtk`.
+
+**Workflow:**
+1. Open `levels/jasperworld.ldtk` in LDtk
+2. Edit tiles, place entities (enemies, stars, doors, props, lights)
+3. Save in LDtk
+4. Compile to game format: `cargo run -p ldtk_compiler -- --input levels/jasperworld.ldtk --output assets/levels/compiled_levels.json`
+5. Run the game — it reads from `compiled_levels.json` automatically
+
+Background visuals (parallax mountains, trees, buildings) are configured separately in `assets/configs/*.json` files. See [ASSETS.md](ASSETS.md) for details.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-## Support & Donations
+## Support
 
 Jasper's World is open-source under the MIT License. You are free to use, modify, and share the code.
 
 If you enjoy the game and want to support development:
 
-- GitHub Sponsors / Ko-fi / Patreon: Your donations help keep the project alive and growing.
-  - GitHub Sponsors: https://github.com/sponsors/ewitte12-ui (update if different)
-  - Ko-fi: https://ko-fi.com/yourname - coming soon
-  - Patreon: https://patreon.com/yourname - comming soon
-- Itch.io Build: COMMING SOON - Get a fully compiled version on itch.io for $2 (or pay what you want). Payment is optional -- the source code remains free.
-  - Add your itch.io page link here: https://itch.io/profile/ericjwi
+- [GitHub Sponsors](https://github.com/sponsors/ewitte12-ui)
+- [Itch.io](https://itch.io/profile/ericjwi) — Coming soon
 
 Your support is greatly appreciated and helps fund new features, art, and updates!
 
