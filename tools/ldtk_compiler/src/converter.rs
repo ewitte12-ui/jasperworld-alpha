@@ -9,6 +9,41 @@ const DEFAULT_ORIGIN_X: f32 = -864.0;
 /// Default world-space origin Y applied when the level has no OriginY field.
 const DEFAULT_ORIGIN_Y: f32 = -200.0;
 
+/// Returns the normalized distance from the model's visual bottom to its 3D
+/// origin for models whose origin sits at (or near) the vertical center.
+/// The converter shifts these models up by `offset * scale_y` so the visual
+/// bottom aligns with the LDtk editor placement.
+///
+/// Values were measured from the actual GLB mesh bounding boxes using trimesh.
+/// A model is included here when `abs(y_min) >= 0.2` — large enough that the
+/// visual sinking is noticeable in-game.
+///
+/// Returns `None` for bottom-anchored models (no offset needed).
+fn center_anchor_half_height(model_id: &str) -> Option<f32> {
+    // Strip any leading path components so both "models/city/taxi.glb"
+    // and "taxi.glb" match.
+    let filename = model_id.rsplit('/').next().unwrap_or(model_id);
+    match filename {
+        // Tripo rocks — origin at model center
+        "large_rock.glb" => Some(0.429),
+        // small_rock.glb: mesh is center-anchored (0.247) but visually
+        // acceptable without offset — adding it overshoots by ~4 units.
+        //
+        // Tripo flowers — origin at model center; trimesh reports 0.500 but
+        // in-game testing shows 0.300 aligns the visual base correctly.
+        "yellow_flower.glb" => Some(0.300),
+        // Trellis trees — origin at model center
+        "tree_oak.glb" => Some(0.500),
+        "tree_fat.glb" => Some(0.447),
+        "tree_pine.glb" => Some(0.500),
+        "tree_default.glb" => Some(0.500),
+        // Tripo city props — origin at model center
+        "taxi.glb" => Some(0.241),
+        "construction-cone.glb" => Some(0.500),
+        _ => None,
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Public output types
 // ---------------------------------------------------------------------------
@@ -132,7 +167,68 @@ pub struct ConvertedDoor {
 /// This function does **not** validate the input; run [`crate::validator::validate`]
 /// before calling this if you need validation guarantees.
 pub fn convert(root: &LdtkRoot) -> Vec<ConvertedLevel> {
-    root.levels.iter().map(convert_level).collect()
+    let raw: Vec<ConvertedLevel> = root.levels.iter().map(convert_level).collect();
+    merge_sublevel_layers(raw)
+}
+
+/// Merges related LDtk levels into multi-layer game levels.
+///
+/// LDtk stores each sublevel as a separate level (e.g. "Forest_Cave"),
+/// but the game expects a single "Forest" level with layers [0, 1, 2].
+///
+/// Layer assignment by suffix:
+///   - No suffix → layer 0 (surface)
+///   - `_Cave`, `_Sewer`, `_Subway` → layer 1 (underground)
+///   - `_Rooftop` → layer 2
+///
+/// Levels whose names don't match any known suffix are passed through
+/// unchanged (single-layer).
+fn merge_sublevel_layers(levels: Vec<ConvertedLevel>) -> Vec<ConvertedLevel> {
+    use std::collections::BTreeMap;
+
+    // Map each level to (base_name, layer_index).
+    let sublevel_suffixes: &[(&str, usize)] = &[
+        ("_Cave", 1),
+        ("_Sewer", 1),
+        ("_Subway", 1),
+        ("_Rooftop", 2),
+    ];
+
+    // Group levels by base name, tracking their layer index.
+    // BTreeMap gives deterministic ordering (alphabetical by base name).
+    let mut groups: BTreeMap<String, Vec<(usize, ConvertedLevel)>> = BTreeMap::new();
+
+    for level in levels {
+        let (base, layer_idx) = match sublevel_suffixes
+            .iter()
+            .find(|(suffix, _)| level.identifier.ends_with(suffix))
+        {
+            Some((suffix, idx)) => {
+                let base = level.identifier[..level.identifier.len() - suffix.len()].to_string();
+                (base, *idx)
+            }
+            None => (level.identifier.clone(), 0),
+        };
+        groups.entry(base).or_default().push((layer_idx, level));
+    }
+
+    // Build merged levels: sort each group's layers by index, extract the
+    // single ConvertedLayer from each ConvertedLevel, and collect into one
+    // multi-layer ConvertedLevel.
+    groups
+        .into_iter()
+        .map(|(base_name, mut entries)| {
+            entries.sort_by_key(|(idx, _)| *idx);
+            let layers: Vec<ConvertedLayer> = entries
+                .into_iter()
+                .flat_map(|(_, level)| level.layers)
+                .collect();
+            ConvertedLevel {
+                identifier: base_name,
+                layers,
+            }
+        })
+        .collect()
 }
 
 // ---------------------------------------------------------------------------
@@ -257,12 +353,19 @@ fn convert_level(level: &crate::ldtk_schema::LdtkLevel) -> ConvertedLevel {
                     // Required field — default to empty string so the converter
                     // still emits output even for partially-valid data.
                     let model_id = get_field_str(entity, "model_id")
-                        .unwrap_or_else(|| String::new());
+                        .unwrap_or_default();
                     // Optional visual tuning fields with documented gameplay-safe defaults.
                     // scale_x = 1.0 means no X scaling (natural model width).
                     let scale_x = get_field_f32(entity, "scale_x").unwrap_or(1.0);
                     // scale_y = 1.0 means no Y scaling (natural model height).
                     let scale_y = get_field_f32(entity, "scale_y").unwrap_or(1.0);
+                    // Center-anchored models need a Y offset so the visual bottom
+                    // aligns with the LDtk placement (editor shows bottom, but the
+                    // 3D model origin is at its center).
+                    let wy = match center_anchor_half_height(&model_id) {
+                        Some(half_h) => wy + half_h * scale_y,
+                        None => wy,
+                    };
                     // scale_z = 1.0 means no depth scaling.
                     let scale_z = get_field_f32(entity, "scale_z").unwrap_or(1.0);
                     // z_depth = -15.0 places props behind the action plane but
@@ -382,55 +485,59 @@ fn convert_tiles(layer: &LdtkLayerInstance) -> Vec<Vec<u8>> {
 // Coordinate conversion helpers
 // ---------------------------------------------------------------------------
 
-/// Converts an LDtk entity pixel position to game-world coordinates (tile centre).
+/// Converts an LDtk entity pixel position to game-world coordinates.
 ///
-/// LDtk pixel coordinates have the origin at the **top-left** of the level.
-/// The game has origin at the **bottom-left**, so the row index is flipped.
+/// All LDtk entities use **bottom-center pivot (0.5, 1.0)**:
+/// - `px[0]` is the horizontal **center** of the entity (already includes any
+///   half-tile offset for grid-snapped entities — do NOT add TILE_SIZE/2 again).
+/// - `px[1]` is the **bottom** of the entity (sits on a grid line).
 ///
-/// Use this for entities that float or are not position-sensitive with respect
-/// to a ground surface (e.g. Star, HealthFood, Gate, Exit).
+/// LDtk pixel coordinates have the origin at the **top-left** of the level;
+/// the game has origin at the **bottom-left**, so a Y-flip is applied using the
+/// full level height in pixels (`c_hei * TILE_SIZE`).
 ///
 /// ```text
-/// col        = px[0] / TILE_SIZE          (fractional col)
-/// ldtk_row   = px[1] / TILE_SIZE          (fractional row, 0 = top)
-/// game_row   = (c_hei - 1) - ldtk_row    (flipped, 0 = bottom)
-/// world_x    = origin_x + col * TILE_SIZE + TILE_SIZE/2   (tile centre)
-/// world_y    = origin_y + game_row * TILE_SIZE + TILE_SIZE/2
+/// level_h  = c_hei * TILE_SIZE
+/// world_x  = origin_x + px[0]              (px[0] is already the centre X)
+/// world_y  = origin_y + (level_h - px[1])  (Y-flip; px[1] is entity bottom)
 /// ```
 fn px_to_world(px: [i32; 2], c_hei: i32, origin_x: f32, origin_y: f32) -> (f32, f32) {
-    let col = px[0] as f32 / TILE_SIZE;
-    let ldtk_row = px[1] as f32 / TILE_SIZE;
-    // Flip from LDtk top-down to game bottom-up.
-    let game_row = (c_hei as f32 - 1.0) - ldtk_row;
-    let world_x = origin_x + col * TILE_SIZE + TILE_SIZE / 2.0;
-    let world_y = origin_y + game_row * TILE_SIZE + TILE_SIZE / 2.0;
+    let level_h = c_hei as f32 * TILE_SIZE;
+    // px[0] is the horizontal center — no half-tile offset needed.
+    let world_x = origin_x + px[0] as f32;
+    // Y-flip: LDtk Y=0 is the top, game Y=0 is the bottom.
+    // px[1] is the bottom edge of the entity.
+    let world_y = origin_y + (level_h - px[1] as f32);
     (world_x, world_y)
 }
 
-/// Converts an LDtk entity pixel position to the **ground-top** surface Y in
+/// Converts an LDtk entity pixel position to the **ground surface** Y in
 /// game-world coordinates.
 ///
-/// Use this for entities that stand on the ground surface (Enemy, Spawn, Door).
-/// The enemy spawner adds `COLLIDER_H/2` internally and therefore expects
-/// `ground_top` — the top edge of the tile the entity occupies — rather than
-/// the tile centre returned by [`px_to_world`].
+/// All LDtk entities use **bottom-center pivot (0.5, 1.0)**:
+/// - `px[0]` is the horizontal **center** of the entity.
+/// - `px[1]` is the **bottom** of the entity, which for ground-placed entities
+///   (Enemy, Spawn, Door) IS the ground surface — no extra TILE_SIZE offset needed.
+///
+/// With bottom-center pivot the "surface" and "centre" distinction collapses:
+/// `px[1]` always points to the bottom of the entity regardless of its height,
+/// so this function applies the same Y-flip formula as [`px_to_world`].
+///
+/// The enemy spawner adds `COLLIDER_H/2` internally and expects the ground
+/// surface coordinate — this function provides exactly that.
 ///
 /// ```text
-/// col        = px[0] / TILE_SIZE
-/// ldtk_row   = px[1] / TILE_SIZE
-/// game_row   = (c_hei - 1) - ldtk_row
-/// world_x    = origin_x + col * TILE_SIZE + TILE_SIZE/2   (tile centre X)
-/// world_y    = origin_y + (game_row + 1) * TILE_SIZE      (top surface of tile)
+/// level_h  = c_hei * TILE_SIZE
+/// world_x  = origin_x + px[0]              (px[0] is already the centre X)
+/// world_y  = origin_y + (level_h - px[1])  (Y-flip; px[1] IS the ground surface)
 /// ```
 fn px_to_world_surface(px: [i32; 2], c_hei: i32, origin_x: f32, origin_y: f32) -> (f32, f32) {
-    let col = px[0] as f32 / TILE_SIZE;
-    let ldtk_row = px[1] as f32 / TILE_SIZE;
-    // Flip from LDtk top-down to game bottom-up.
-    let game_row = (c_hei as f32 - 1.0) - ldtk_row;
-    let world_x = origin_x + col * TILE_SIZE + TILE_SIZE / 2.0;
-    // ground_top: top surface of the tile at game_row (not tile centre).
-    // Enemies/spawn/doors sit on this surface; the spawner offsets by COLLIDER_H/2 itself.
-    let world_y = origin_y + (game_row + 1.0) * TILE_SIZE;
+    let level_h = c_hei as f32 * TILE_SIZE;
+    // px[0] is the horizontal center — no half-tile offset needed.
+    let world_x = origin_x + px[0] as f32;
+    // Y-flip: LDtk Y=0 is the top, game Y=0 is the bottom.
+    // With bottom-center pivot, px[1] IS the ground surface — no extra tile offset.
+    let world_y = origin_y + (level_h - px[1] as f32);
     (world_x, world_y)
 }
 
@@ -642,24 +749,23 @@ mod tests {
     // px_to_world_converts_correctly
     // ------------------------------------------------------------------
 
-    /// With origin (0, 0), a 10×10 grid, and px = [18, 18] (one tile in, one
-    /// tile down from the LDtk top-left), we expect:
+    /// With origin (0, 0), a 10×10 grid, and px = [18, 18].
+    /// Bottom-center pivot: px[0]=18 is the horizontal center, px[1]=18 is the
+    /// entity bottom.
     ///
-    ///   col        = 18 / 18 = 1
-    ///   ldtk_row   = 18 / 18 = 1
-    ///   game_row   = (10 - 1) - 1 = 8
-    ///   world_x    = 0 + 1 * 18 + 9 = 27
-    ///   world_y    = 0 + 8 * 18 + 9 = 153
+    ///   level_h  = 10 * 18 = 180
+    ///   world_x  = 0 + 18 = 18
+    ///   world_y  = 0 + (180 - 18) = 162
     #[test]
     fn px_to_world_converts_correctly() {
         let (wx, wy) = px_to_world([18, 18], 10, 0.0, 0.0);
         assert!(
-            (wx - 27.0).abs() < 1e-4,
-            "world_x should be 27.0, got {wx}"
+            (wx - 18.0).abs() < 1e-4,
+            "world_x should be 18.0, got {wx}"
         );
         assert!(
-            (wy - 153.0).abs() < 1e-4,
-            "world_y should be 153.0, got {wy}"
+            (wy - 162.0).abs() < 1e-4,
+            "world_y should be 162.0, got {wy}"
         );
     }
 
@@ -669,11 +775,10 @@ mod tests {
 
     #[test]
     fn convert_level_extracts_enemies() {
-        // 2×2 grid, enemy at px [0, 0] (top-left in LDtk).
-        // c_hei = 2, so game_row = (2-1) - 0 = 1.
-        // world_x = -864 + 0 + 9 = -855
-        // world_y (ground_top) = -200 + (1+1)*18 = -200 + 36 = -164
-        //   (tile centre would have been -200 + 1*18 + 9 = -173)
+        // 2×2 grid, enemy at px [0, 0] (bottom-center pivot: x=0 is centre, y=0 is bottom).
+        // c_hei = 2, level_h = 2*18 = 36.
+        // world_x = -864 + 0 = -864
+        // world_y = -200 + (36 - 0) = -200 + 36 = -164  (ground surface)
         let intgrid = make_intgrid_layer(2, 2, vec![0, 0, 1, 1]);
         let enemy_entity = make_entity(
             "Enemy",
@@ -699,15 +804,15 @@ mod tests {
         assert!((enemy.health - 3.0).abs() < 1e-4);
         assert_eq!(enemy.speed_override, Some(50.0));
 
-        // Verify world position (ground_top via px_to_world_surface).
+        // Verify world position (ground surface via px_to_world_surface, bottom-center pivot).
         assert!(
-            (enemy.x - (-855.0)).abs() < 1e-4,
-            "expected x=-855, got {}",
+            (enemy.x - (-864.0)).abs() < 1e-4,
+            "expected x=-864, got {}",
             enemy.x
         );
         assert!(
             (enemy.y - (-164.0)).abs() < 1e-4,
-            "expected y=-164 (ground_top), got {}",
+            "expected y=-164 (ground surface), got {}",
             enemy.y
         );
     }
@@ -719,14 +824,16 @@ mod tests {
     #[test]
     fn convert_level_extracts_collectibles() {
         // 4×4 grid. Star at px [18, 0], HealthFood at px [36, 18].
+        // Bottom-center pivot: px[0] is centre X, px[1] is entity bottom.
+        // level_h = 4 * 18 = 72.
         //
-        // Star:
-        //   col = 1, ldtk_row = 0, game_row = 3
-        //   wx = -864 + 18 + 9 = -837, wy = -200 + 3*18 + 9 = -137
+        // Star: px=[18, 0]
+        //   world_x = -864 + 18 = -846
+        //   world_y = -200 + (72 - 0) = -200 + 72 = -128
         //
-        // HealthFood:
-        //   col = 2, ldtk_row = 1, game_row = 2
-        //   wx = -864 + 36 + 9 = -819, wy = -200 + 2*18 + 9 = -155
+        // HealthFood: px=[36, 18]
+        //   world_x = -864 + 36 = -828
+        //   world_y = -200 + (72 - 18) = -200 + 54 = -146
         let intgrid = make_intgrid_layer(4, 4, vec![0; 16]);
         let entities = make_entities_layer(
             4,
@@ -745,13 +852,13 @@ mod tests {
         assert_eq!(layer.health_foods.len(), 1, "should have one health food");
 
         let star = layer.stars[0];
-        assert!((star[0] - (-837.0)).abs() < 1e-4, "star x got {}", star[0]);
-        assert!((star[1] - (-137.0)).abs() < 1e-4, "star y got {}", star[1]);
+        assert!((star[0] - (-846.0)).abs() < 1e-4, "star x got {}", star[0]);
+        assert!((star[1] - (-128.0)).abs() < 1e-4, "star y got {}", star[1]);
         assert!((star[2] - 1.0).abs() < 1e-4, "star z should be 1.0");
 
         let hf = layer.health_foods[0];
-        assert!((hf[0] - (-819.0)).abs() < 1e-4, "hf x got {}", hf[0]);
-        assert!((hf[1] - (-155.0)).abs() < 1e-4, "hf y got {}", hf[1]);
+        assert!((hf[0] - (-828.0)).abs() < 1e-4, "hf x got {}", hf[0]);
+        assert!((hf[1] - (-146.0)).abs() < 1e-4, "hf y got {}", hf[1]);
         assert!((hf[2] - 1.0).abs() < 1e-4, "hf z should be 1.0");
     }
 
@@ -761,11 +868,11 @@ mod tests {
 
     #[test]
     fn convert_level_extracts_doors() {
-        // 3×3 grid. Door at px [0, 36], target_layer = 2.
-        //   col = 0, ldtk_row = 2, game_row = (3-1) - 2 = 0
-        //   wx = -864 + 0 + 9 = -855
-        //   wy (ground_top) = -200 + (0+1)*18 = -200 + 18 = -182
-        //     (tile centre would have been -200 + 0*18 + 9 = -191)
+        // 3×3 grid. Door at px [0, 36].
+        // Bottom-center pivot: px[0]=0 is centre X, px[1]=36 is entity bottom (ground surface).
+        // level_h = 3 * 18 = 54.
+        //   world_x = -864 + 0 = -864
+        //   world_y = -200 + (54 - 36) = -200 + 18 = -182
         let intgrid = make_intgrid_layer(3, 3, vec![0; 9]);
         let door_entity =
             make_entity("Door", [0, 36], vec![field_i64("target_layer", 2)]);
@@ -778,10 +885,10 @@ mod tests {
         assert_eq!(layer.doors.len(), 1);
         let door = &layer.doors[0];
         assert_eq!(door.target_layer, 2);
-        assert!((door.x - (-855.0)).abs() < 1e-4, "door x got {}", door.x);
+        assert!((door.x - (-864.0)).abs() < 1e-4, "door x got {}", door.x);
         assert!(
             (door.y - (-182.0)).abs() < 1e-4,
-            "expected y=-182 (ground_top), got {}",
+            "expected y=-182 (ground surface), got {}",
             door.y
         );
     }
@@ -792,10 +899,11 @@ mod tests {
 
     #[test]
     fn convert_level_extracts_spawn() {
-        // 5×5 grid. Spawn at px [36, 54] (col=2, ldtk_row=3, game_row=1).
-        //   wx = -864 + 36 + 9 = -819
-        //   wy (ground_top) = -200 + (1+1)*18 = -200 + 36 = -164
-        //     (tile centre would have been -200 + 1*18 + 9 = -173)
+        // 5×5 grid. Spawn at px [36, 54].
+        // Bottom-center pivot: px[0]=36 is centre X, px[1]=54 is entity bottom (ground surface).
+        // level_h = 5 * 18 = 90.
+        //   world_x = -864 + 36 = -828
+        //   world_y = -200 + (90 - 54) = -200 + 36 = -164
         let intgrid = make_intgrid_layer(5, 5, vec![0; 25]);
         let spawn_entity = make_entity("Spawn", [36, 54], vec![]);
         let entities = make_entities_layer(5, 5, vec![spawn_entity]);
@@ -805,10 +913,10 @@ mod tests {
         let layer = &levels[0].layers[0];
 
         let spawn = layer.spawn.expect("spawn should be set");
-        assert!((spawn[0] - (-819.0)).abs() < 1e-4, "spawn x got {}", spawn[0]);
+        assert!((spawn[0] - (-828.0)).abs() < 1e-4, "spawn x got {}", spawn[0]);
         assert!(
             (spawn[1] - (-164.0)).abs() < 1e-4,
-            "expected y=-164 (ground_top), got {}",
+            "expected y=-164 (ground surface), got {}",
             spawn[1]
         );
     }
@@ -874,6 +982,87 @@ mod tests {
             (layer.origin_y - 100.0).abs() < 1e-4,
             "expected origin_y=100, got {}",
             layer.origin_y
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // center_anchored_prop_y_offset
+    // ------------------------------------------------------------------
+
+    /// Props whose model is center-anchored (e.g. large_rock.glb) must have
+    /// their Y shifted up by `half_height * scale_y` so the visual bottom
+    /// aligns with the LDtk editor placement.
+    #[test]
+    fn center_anchored_prop_y_offset() {
+        // 4×4 grid, default origin (-864, -200), level_h = 72.
+        // Prop at px [36, 36] with model_id = "models/large_rock.glb".
+        // Base world_y = -200 + (72 - 36) = -164.
+        // large_rock half_height = 0.429, scale_y = 28.0.
+        // Adjusted world_y = -164 + 0.429 * 28.0 = -164 + 12.012 = -151.988.
+        let intgrid = make_intgrid_layer(4, 4, vec![0; 16]);
+        let prop_entity = make_entity(
+            "Prop",
+            [36, 36],
+            vec![
+                field_str("model_id", "models/large_rock.glb"),
+                field_f64("scale_x", 9.0),
+                field_f64("scale_y", 28.0),
+                field_f64("scale_z", 28.0),
+                field_f64("rotation_y", -1.5707963),
+            ],
+        );
+        let entities = make_entities_layer(4, 4, vec![prop_entity]);
+        let root = minimal_root_with_layers(intgrid, entities, vec![]);
+
+        let levels = convert(&root);
+        let layer = &levels[0].layers[0];
+
+        assert_eq!(layer.props.len(), 1);
+        let prop = &layer.props[0];
+
+        // Base Y without offset would be -164.0
+        let base_y = -164.0_f32;
+        let expected_y = base_y + 0.429 * 28.0;
+        assert!(
+            (prop.y - expected_y).abs() < 1e-2,
+            "expected y={expected_y:.3}, got {:.3} (center-anchor offset should apply)",
+            prop.y
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // non_center_anchored_prop_no_offset
+    // ------------------------------------------------------------------
+
+    /// Props with bottom-anchored models (e.g. plant_bush.glb) should NOT
+    /// get any Y offset.
+    #[test]
+    fn non_center_anchored_prop_no_offset() {
+        let intgrid = make_intgrid_layer(4, 4, vec![0; 16]);
+        let prop_entity = make_entity(
+            "Prop",
+            [36, 36],
+            vec![
+                field_str("model_id", "models/plant_bush.glb"),
+                field_f64("scale_x", 49.0),
+                field_f64("scale_y", 49.0),
+                field_f64("scale_z", 27.0),
+            ],
+        );
+        let entities = make_entities_layer(4, 4, vec![prop_entity]);
+        let root = minimal_root_with_layers(intgrid, entities, vec![]);
+
+        let levels = convert(&root);
+        let layer = &levels[0].layers[0];
+
+        assert_eq!(layer.props.len(), 1);
+        let prop = &layer.props[0];
+
+        // No offset: world_y = -200 + (72 - 36) = -164
+        assert!(
+            (prop.y - (-164.0)).abs() < 1e-2,
+            "expected y=-164.0 (no offset), got {:.3}",
+            prop.y
         );
     }
 }
