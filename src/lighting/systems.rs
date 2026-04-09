@@ -37,6 +37,7 @@ pub fn update_lighting(
             Some(LevelId::Forest) => &LightingTheme::FOREST,
             Some(LevelId::Subdivision) => &LightingTheme::SUBDIVISION,
             Some(LevelId::City) => &LightingTheme::CITY,
+            Some(LevelId::Sanctuary) => &LightingTheme::SANCTUARY,
             None => &LightingTheme::FOREST,
         }
     };

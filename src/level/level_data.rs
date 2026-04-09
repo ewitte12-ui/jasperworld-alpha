@@ -5,6 +5,7 @@ pub enum LevelId {
     Forest,
     Subdivision,
     City,
+    Sanctuary,
 }
 
 /// A single layer within a level.

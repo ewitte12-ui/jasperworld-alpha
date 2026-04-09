@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use super::level_data::LevelId;
+use crate::vfx::glow::ProximityGlow;
 
 /// Marks a door entity that transitions to a specific layer.
 #[derive(Component)]
@@ -50,6 +51,10 @@ pub fn spawn_doors_for_level(
             // row 30 top = origin_y + 31*18 = -200 + 558 = 358.0
             358.0_f32,
         ),
+        // Sanctuary has no sublevels — these doors will not be reached in practice
+        // because the level data has only one layer.  Dummy values match Forest
+        // to avoid any accidental placement impact.
+        LevelId::Sanctuary => (-351.0_f32, 45.0_f32, 70.0_f32),
     };
 
     // Door to underground — at ground level.
@@ -57,6 +62,12 @@ pub fn spawn_doors_for_level(
         SceneRoot(asset_server.load("models/door-rotate.glb#Scene0")),
         Transform::from_xyz(x_underground, ground_top, 1.0).with_scale(Vec3::new(60.0, 54.0, 7.0)),
         TransitionDoor { target_layer: 1 },
+        ProximityGlow {
+            radius: 80.0,
+            // ~20% larger than the 60×54 door model scale so the glow halo
+            // wraps around the door edges without being too large.
+            glow_size: Vec2::new(72.0, 65.0),
+        },
     ));
 
     // Door to upper layer — on the highest platform (row 14 for Forest/Subdivision, row 30 for City).
@@ -64,5 +75,11 @@ pub fn spawn_doors_for_level(
         SceneRoot(asset_server.load("models/door-rotate.glb#Scene0")),
         Transform::from_xyz(x_upper, upper_y, 1.0).with_scale(Vec3::new(60.0, 54.0, 7.0)),
         TransitionDoor { target_layer: 2 },
+        ProximityGlow {
+            radius: 80.0,
+            // ~20% larger than the 60×54 door model scale so the glow halo
+            // wraps around the door edges without being too large.
+            glow_size: Vec2::new(72.0, 65.0),
+        },
     ));
 }

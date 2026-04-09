@@ -398,6 +398,7 @@ fn level_id_from_str(s: &str) -> Option<LevelId> {
         "Forest" => Some(LevelId::Forest),
         "Subdivision" => Some(LevelId::Subdivision),
         "City" => Some(LevelId::City),
+        "Sanctuary" => Some(LevelId::Sanctuary),
         other => {
             warn!("[compiled_data] unknown level id \"{other}\" in JSON — skipping");
             None

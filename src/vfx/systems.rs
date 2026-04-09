@@ -237,6 +237,7 @@ pub fn flash_level_name(
         Some(LevelId::Forest) => "Forest",
         Some(LevelId::Subdivision) => "Subdivision",
         Some(LevelId::City) => "City",
+        Some(LevelId::Sanctuary) => "Sanctuary",
         None => return,
     };
 

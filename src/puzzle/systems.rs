@@ -90,7 +90,10 @@ pub fn check_level_exit(
 
             *collection_progress = CollectionProgress::default();
 
-            if game_progress.current_level_index >= 3 {
+            // WHY >= 4: Forest(0) → Subdivision(1) → City(2) → Sanctuary(3) → complete(4).
+            // Previously >= 3 fired after City; now Sanctuary is level index 3 and
+            // game_complete fires when the player exits Sanctuary (index reaches 4).
+            if game_progress.current_level_index >= 4 {
                 game_progress.game_complete = true;
                 // Game is over — clear immediately; no next level to guard.
                 game_progress.transition_in_progress = false;
