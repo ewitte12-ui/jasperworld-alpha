@@ -641,6 +641,10 @@ fn spawn_sanctuary_extras(
     let bottom_model: Handle<Scene> = asset_server.load("models/sanctuary/ground_blocks_bottom2layers.glb#Scene0");
     for row in 0..2_usize {
         for col in 0..48_usize {
+            // Skip cols 43–46: water quad replaces ground blocks here.
+            if (43..=46).contains(&col) {
+                continue;
+            }
             let wx = ox + col as f32 * 18.0 + 9.0;
             let wy = oy + row as f32 * 18.0 + 9.0;
             commands.spawn((
@@ -670,10 +674,9 @@ fn spawn_sanctuary_extras(
         ..default()
     });
     let water_x = col_x(45.0); // near right edge, just past the LevelExit trigger
-    // WHY ground_top - 27.0: water is 54 units tall (3 tiles). Subtracting half-height
-    // places the TOP edge at ground_top so water fills downward below the surface,
-    // matching the visual expectation of water pooled beneath ground level.
-    // Previously +27.0 floated the water above ground; -27.0 corrects this.
+    // WHY ground_top - 27.0: centers the 54-unit-tall water quad in the stone
+    // block area below the grass line. Top edge at ground_top, bottom edge at
+    // ground_top - 54, placing the water flush across the lower stone wall.
     let water_y = ground_top - 27.0;
     commands.spawn((
         Mesh3d(water_mesh),

@@ -326,21 +326,26 @@ pub fn spawn_entities_from_compiled(
         // Gate collider center is 200 units above ground_top (400-unit tall gate).
         let gate_center_y = ground_top + 200.0;
 
-        commands
-            .spawn((
-                Transform::from_xyz(gate_x, gate_center_y, 1.0),
-                Visibility::default(),
-                RigidBody::Static,
-                Collider::rectangle(36.0, 400.0),
-                LevelGate,
-            ))
-            .with_children(|parent| {
-                parent.spawn((
-                    SceneRoot(asset_server.load("models/door-rotate-large.glb#Scene0")),
-                    Transform::from_xyz(0.0, -200.0, 0.0)
-                        .with_scale(Vec3::new(18.0, 80.0, 7.0)),
-                ));
-            });
+        // Sanctuary uses water as its exit, not a physical door barrier.
+        // Skip the LevelGate collider and door model for Sanctuary so the player
+        // can walk into the water freely; LevelExit still spawns below for all levels.
+        if level_id != LevelId::Sanctuary {
+            commands
+                .spawn((
+                    Transform::from_xyz(gate_x, gate_center_y, 1.0),
+                    Visibility::default(),
+                    RigidBody::Static,
+                    Collider::rectangle(36.0, 400.0),
+                    LevelGate,
+                ))
+                .with_children(|parent| {
+                    parent.spawn((
+                        SceneRoot(asset_server.load("models/door-rotate-large.glb#Scene0")),
+                        Transform::from_xyz(0.0, -200.0, 0.0)
+                            .with_scale(Vec3::new(18.0, 80.0, 7.0)),
+                    ));
+                });
+        }
 
         // ── Level exit ───────────────────────────────────────────────────────
         // Position: 30 units right of gate, at stand_y(2) = origin_y + 3*18 + 9
