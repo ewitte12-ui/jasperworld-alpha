@@ -324,7 +324,6 @@ fn spawn_title_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
             // After -90° Y rotation: local Z→world X, local X→world Z.
             // Swap X/Z so depth stays thin and width stays full.
             scale: Vec3::new(3.0, 8.0, 8.0),
-            ..default()
         },
         TitleSceneEntity,
     ));

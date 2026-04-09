@@ -346,7 +346,7 @@ fn convert_level(level: &crate::ldtk_schema::LdtkLevel) -> ConvertedLevel {
                         y: wy,
                     });
                 }
-                "Prop" => {
+                id if id == "Prop" || id.starts_with("Prop_") => {
                     // Props can be anywhere — use tile centre (not ground_top).
                     let (wx, wy) =
                         px_to_world(entity.px, c_hei_for_entities, origin_x, origin_y);

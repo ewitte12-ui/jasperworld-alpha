@@ -4423,12 +4423,12 @@
             ],
             [
               81.0,
-              232.0,
+              268.0,
               1.0
             ],
             [
               585.0,
-              -128.0,
+              -74.0,
               1.0
             ],
             [
@@ -4439,8 +4439,8 @@
           ],
           "health_foods": [
             [
-              -585.0,
-              -128.0,
+              -603.0,
+              -110.0,
               1.0
             ],
             [
@@ -4454,8 +4454,8 @@
               1.0
             ],
             [
-              405.0,
-              -128.0,
+              387.0,
+              -110.0,
               1.0
             ],
             [
@@ -4479,7 +4479,7 @@
           "props": [
             {
               "model_id": "models/city/taxi.glb",
-              "x": -549.0,
+              "x": -567.0,
               "y": -124.31,
               "z": -15.0,
               "scale_x": 90.0,
@@ -4501,7 +4501,7 @@
             },
             {
               "model_id": "models/city/taxi.glb",
-              "x": 585.0,
+              "x": 603.0,
               "y": -124.31,
               "z": -15.0,
               "scale_x": 90.0,
@@ -4534,8 +4534,8 @@
             },
             {
               "model_id": "models/city/light-curved.glb",
-              "x": -693.0,
-              "y": -128.0,
+              "x": -639.0,
+              "y": -146.0,
               "z": -15.0,
               "scale_x": 70.0,
               "scale_y": 70.0,
@@ -4545,8 +4545,8 @@
             },
             {
               "model_id": "models/city/light-curved.glb",
-              "x": -459.0,
-              "y": -128.0,
+              "x": -513.0,
+              "y": -146.0,
               "z": -15.0,
               "scale_x": 70.0,
               "scale_y": 70.0,
@@ -4557,7 +4557,7 @@
             {
               "model_id": "models/city/light-curved.glb",
               "x": -207.0,
-              "y": -128.0,
+              "y": -146.0,
               "z": -15.0,
               "scale_x": 70.0,
               "scale_y": 70.0,
@@ -4567,8 +4567,8 @@
             },
             {
               "model_id": "models/city/light-curved.glb",
-              "x": 45.0,
-              "y": -128.0,
+              "x": 9.0,
+              "y": -146.0,
               "z": -15.0,
               "scale_x": 70.0,
               "scale_y": 70.0,
@@ -4579,7 +4579,7 @@
             {
               "model_id": "models/city/light-curved.glb",
               "x": 297.0,
-              "y": -128.0,
+              "y": -146.0,
               "z": -15.0,
               "scale_x": 70.0,
               "scale_y": 70.0,
@@ -4589,8 +4589,8 @@
             },
             {
               "model_id": "models/city/light-curved.glb",
-              "x": 549.0,
-              "y": -128.0,
+              "x": 387.0,
+              "y": -146.0,
               "z": -15.0,
               "scale_x": 70.0,
               "scale_y": 70.0,
@@ -4655,22 +4655,11 @@
             },
             {
               "model_id": "models/tree_fat.glb",
-              "x": -495.0,
+              "x": -279.0,
               "y": -110.240005,
               "z": 10.0,
               "scale_x": 80.0,
               "scale_y": 80.0,
-              "scale_z": 1.0,
-              "rotation_y": 0.0,
-              "foreground": true
-            },
-            {
-              "model_id": "models/tree_oak.glb",
-              "x": 189.0,
-              "y": -108.5,
-              "z": 10.0,
-              "scale_x": 75.0,
-              "scale_y": 75.0,
               "scale_z": 1.0,
               "rotation_y": 0.0,
               "foreground": true
@@ -4687,19 +4676,8 @@
               "foreground": true
             },
             {
-              "model_id": "models/tree_fat.glb",
-              "x": -693.0,
-              "y": -112.475,
-              "z": 10.0,
-              "scale_x": 75.0,
-              "scale_y": 75.0,
-              "scale_z": 1.0,
-              "rotation_y": 0.0,
-              "foreground": true
-            },
-            {
               "model_id": "models/tree_oak.glb",
-              "x": 549.0,
+              "x": 567.0,
               "y": -111.0,
               "z": 10.0,
               "scale_x": 70.0,
