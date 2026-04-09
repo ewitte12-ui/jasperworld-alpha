@@ -4,14 +4,14 @@
     "x": 0.0,
     "y": -160.0,
     "z": -95.0,
-    "scale": 500.0,
+    "scale": 648.0,
     "factor": 0.70,
     "rotation_x": 0.0,
     "rotation_y": -1.5708
   },
   "far_trees": {
-    "x_start": -500,
-    "x_end": 500,
+    "x_start": 0,
+    "x_end": -1,
     "step": 120,
     "y": -160.0,
     "z": -60.0,
@@ -23,8 +23,8 @@
     "x_offset": 0.0
   },
   "near_trees": {
-    "x_start": -500,
-    "x_end": 500,
+    "x_start": 0,
+    "x_end": -1,
     "step": 200,
     "y": -150.0,
     "z": -30.0,

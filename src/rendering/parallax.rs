@@ -206,13 +206,9 @@ pub fn spawn_shared_background(
             cfg.attenuation
         }
         crate::level::level_data::LevelId::Sanctuary => {
-            // Sanctuary attenuation is loaded from sanctuary_bg.json.
-            // WHY Option-based load: the file may not exist during early development;
-            // falling back to an empty vec means the level renders without a plane
-            // rather than crashing.
-            load_config::<SanctuaryBgConfig>("assets/configs/sanctuary_bg.json")
-                .map(|cfg| cfg.attenuation)
-                .unwrap_or_default()
+            let cfg: SanctuaryBgConfig = load_config("assets/configs/sanctuary_bg.json")
+                .expect("[SHARED_BG] failed to load assets/configs/sanctuary_bg.json");
+            cfg.attenuation
         }
     };
     for entry in &attn_entries {
@@ -237,13 +233,18 @@ pub fn spawn_shared_background(
 
     // ── Clouds — loaded from forest_bg.json or subdivision_bg.json ───────────
     // City: clear night sky — no clouds.
+    // Sanctuary: cherry blossom scene uses its own background; no generic forest clouds.
     // Each CloudEntry carries its own z and factor so cloud depth can vary per entry.
-    if level_id == crate::level::level_data::LevelId::City {
+    if matches!(
+        level_id,
+        crate::level::level_data::LevelId::City
+            | crate::level::level_data::LevelId::Sanctuary
+    ) {
         return;
     }
     // Both Forest and Subdivision share the same cloud list from forest_bg.json.
     // WHY forest_bg.json for both: clouds are sky-layer elements present in any
-    // non-city level; subdivision has no separate cloud list in its JSON.
+    // non-city/non-sanctuary level; subdivision has no separate cloud list in its JSON.
     let cfg: ForestBgConfig = load_config("assets/configs/forest_bg.json")
         .expect("[SHARED_BG] failed to load assets/configs/forest_bg.json");
     for cloud in &cfg.clouds {
@@ -347,7 +348,11 @@ pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &Asse
     let nh = &cfg.near_houses;
     let near_rotation = Quat::from_rotation_y(nh.rotation_y);
     for (i, x) in (nh.x_start..=nh.x_end).step_by(nh.step).enumerate() {
-        let entry = &nh.models[i % nh.models.len()];
+        // Deterministic pseudo-random model selection for visual variety.
+        // Uses a simple hash: multiply index by a large prime, XOR with another,
+        // then mod by model count. Produces consistent but varied-looking layout.
+        let model_idx = ((i.wrapping_mul(2654435761)) ^ 0xDEADBEEF) % nh.models.len();
+        let entry = &nh.models[model_idx];
         let scale = nh.scales[i % nh.scales.len()];
         let y = if entry.center_anchored {
             nh.y + entry.native_h * scale * 0.5
@@ -383,7 +388,11 @@ pub fn spawn_subdivision_background(commands: &mut Commands, asset_server: &Asse
         } else {
             x as f32
         };
-        let entry = &fh.models[i % fh.models.len()];
+        // Deterministic pseudo-random model selection for visual variety.
+        // Uses a simple hash: multiply index by a large prime, XOR with another,
+        // then mod by model count. Produces consistent but varied-looking layout.
+        let model_idx = ((i.wrapping_mul(2654435761)) ^ 0xDEADBEEF) % fh.models.len();
+        let entry = &fh.models[model_idx];
         let scale = fh.scales[i % fh.scales.len()];
         let y = if entry.center_anchored {
             fh.y + entry.native_h * scale * 0.5
@@ -507,103 +516,6 @@ pub fn spawn_city_background(commands: &mut Commands, asset_server: &AssetServer
     }
 }
 
-/// Spawns the Sanctuary background layers — deep island/temple model, cherry-blossom
-/// tree layers (far + near).
-///
-/// The island model uses a crushed Z scale (fb.scale * 0.05) to prevent its 3D depth
-/// from bleeding forward and rendering over gameplay geometry.  Rotation is driven by
-/// `rotation_x` and `rotation_y` in sanctuary_bg.json (combined as Rx * Ry).
-///
-/// Called once per Sanctuary entry from `spawn_level_decorations`.
-/// Every entity carries `Decoration` so it is despawned on level transition.
-pub fn spawn_sanctuary_background(
-    commands: &mut Commands,
-    asset_server: &AssetServer,
-    _meshes: &mut Assets<Mesh>,
-    _materials: &mut Assets<StandardMaterial>,
-) {
-    let Some(cfg) = load_config::<SanctuaryBgConfig>("assets/configs/sanctuary_bg.json") else {
-        warn!("[SANCTUARY_BG] could not load sanctuary_bg.json — background skipped");
-        return;
-    };
-
-    // ── Island / temple backdrop (deepest layer) ──────────────────────────────
-    let fb = &cfg.far_background;
-    let rotation =
-        Quat::from_rotation_x(fb.rotation_x) * Quat::from_rotation_y(fb.rotation_y);
-
-    // Rotation-aware depth crush: always flatten whichever local axis maps
-    // most closely to world Z (the camera depth axis). This keeps the crush
-    // correct regardless of rotation_x / rotation_y settings.
-    //
-    // HOW: rotate each local basis vector into world space, check which has
-    // the largest |z| component, and crush that local axis by 0.05.
-    let depth_crush = 0.05;
-    let dots = [
-        (rotation * Vec3::X).z.abs(), // how much local X aligns with world Z
-        (rotation * Vec3::Y).z.abs(), // how much local Y aligns with world Z
-        (rotation * Vec3::Z).z.abs(), // how much local Z aligns with world Z
-    ];
-    let mut scale = Vec3::splat(fb.scale);
-    if dots[0] >= dots[1] && dots[0] >= dots[2] {
-        scale.x *= depth_crush;
-    } else if dots[1] >= dots[0] && dots[1] >= dots[2] {
-        scale.y *= depth_crush;
-    } else {
-        scale.z *= depth_crush;
-    }
-
-    commands.spawn((
-        SceneRoot(asset_server.load(format!("{}#Scene0", fb.model))),
-        Transform::from_xyz(fb.x, fb.y, fb.z)
-            .with_rotation(rotation)
-            .with_scale(scale),
-        ParallaxLayer { factor: fb.factor },
-        Decoration,
-        ParallaxBackground,
-    ));
-
-    // ── Far cherry-blossom trees (z=-60) ─────────────────────────────────────
-    let ft = &cfg.far_trees;
-    for (i, x) in (ft.x_start..=ft.x_end).step_by(ft.step).enumerate() {
-        let model = &ft.models[i % ft.models.len()];
-        let scale = ft.scales[i % ft.scales.len()];
-        let y = if ft.center_anchored {
-            ft.y + scale * 0.5
-        } else {
-            ft.y
-        };
-        commands.spawn((
-            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32 + ft.x_offset, y, ft.z)
-                .with_scale(Vec3::new(scale, scale, ft.scale_z)),
-            ParallaxLayer { factor: ft.factor },
-            Decoration,
-            ParallaxBackground,
-        ));
-    }
-
-    // ── Near cherry-blossom trees (z=-30) ────────────────────────────────────
-    let nt = &cfg.near_trees;
-    for (i, x) in (nt.x_start..=nt.x_end).step_by(nt.step).enumerate() {
-        let model = &nt.models[i % nt.models.len()];
-        let scale = nt.scales[i % nt.scales.len()];
-        let y = if nt.center_anchored {
-            nt.y + scale * 0.5
-        } else {
-            nt.y
-        };
-        commands.spawn((
-            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
-            Transform::from_xyz(x as f32 + nt.x_offset, y, nt.z)
-                .with_scale(Vec3::new(scale, scale, nt.scale_z)),
-            ParallaxLayer { factor: nt.factor },
-            Decoration,
-            ParallaxBackground,
-        ));
-    }
-}
-
 /// One-shot system: finds entities with `SceneTint` whose SceneRoot children
 /// have loaded, clones each child's `StandardMaterial`, applies the tint,
 /// and removes the `SceneTint` component so it only runs once.
@@ -649,4 +561,146 @@ pub fn apply_scene_tints(
             commands.entity(entity).remove::<SceneTint>();
         }
     }
+}
+
+/// Spawns the Sanctuary level background layers — temple island, cherry blossom trees.
+///
+/// Layer stack:
+///   z = -80   Temple island (far_background): distant centerpiece, factor 0.70.
+///   z = -60   Far cherry blossom trees: mid-distance canopy, factor 0.55.
+///   z = -30   Near cherry blossom trees: foreground framing, factor 0.35.
+///
+/// All positioning and model data is loaded from `assets/configs/sanctuary_bg.json`.
+/// Every entity carries `Decoration` so it is despawned on level transition.
+pub fn spawn_sanctuary_background(
+    commands: &mut Commands,
+    asset_server: &AssetServer,
+    _meshes: &mut Assets<Mesh>,
+    _materials: &mut Assets<StandardMaterial>,
+) {
+    let cfg: SanctuaryBgConfig = load_config("assets/configs/sanctuary_bg.json")
+        .expect("[SANCTUARY_BG] failed to load assets/configs/sanctuary_bg.json");
+
+    // ── Temple island (z = -80, factor 0.70) ─────────────────────────────────
+    // Single wide model centered in the level. center_anchored Y: model origin is at
+    // midpoint so no extra Y offset needed — y is the visual center position.
+    let fb = &cfg.far_background;
+    commands.spawn((
+        SceneRoot(asset_server.load(format!("{}#Scene0", fb.model))),
+        Transform::from_xyz(fb.x, fb.y, fb.z)
+            // WHY -FRAC_PI_2 rotation: the asian+temple+island model is oriented with
+            // its length along the X axis, so without rotation it appears as a thin
+            // sliver when viewed down the -Z axis. A -90° Y rotation brings the facade
+            // forward to face the camera correctly.
+            .with_rotation(Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2))
+            // WHY non-uniform scale (0.05 on X): after the -PI/2 Y rotation, local X
+            // maps to world -Z (depth toward camera). Uniform scale causes the island's
+            // depth to bleed forward over the ground plane. Crushing local X by 0.05
+            // collapses that depth to a thin slab while preserving visible width
+            // (local Z → world X) and height (local Y → world Y).
+            .with_scale(Vec3::new(fb.scale * 0.05, fb.scale, fb.scale)),
+        // WHY 0.70: temple at z=-80 is the deepest background element.
+        // High factor = closely tracks camera = reads as very far away.
+        // 0.70 matches the far-tree layer convention from forest/subdivision.
+        ParallaxLayer { factor: fb.factor },
+        Decoration,
+        ParallaxBackground,
+    ));
+
+    // ── Far cherry blossom trees (z = -60, factor 0.55) ──────────────────────
+    // Dense layer behind near trees — fills mid-distance with pink blossoms.
+    // center_anchored=true: cherry blossom origin is at model midpoint; shift Y up
+    // by scale*0.5 so the base sits at the config y position.
+    let ft = &cfg.far_trees;
+    for (i, x) in (ft.x_start..=ft.x_end).step_by(ft.step).enumerate() {
+        let model = &ft.models[i % ft.models.len()];
+        let scale = ft.scales[i % ft.scales.len()];
+        let y = if ft.center_anchored {
+            ft.y + scale * 0.5
+        } else {
+            ft.y
+        };
+        commands.spawn((
+            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
+            Transform::from_xyz(x as f32 + ft.x_offset, y, ft.z)
+                .with_scale(Vec3::new(scale, scale, ft.scale_z)),
+            // WHY 0.55: far cherry blossom trees at z=-60 are mid-distance.
+            // Sits between near trees (0.35) and temple (0.70), giving natural depth.
+            ParallaxLayer { factor: ft.factor },
+            Decoration,
+            ParallaxBackground,
+        ));
+    }
+
+    // ── Near cherry blossom trees (z = -30, factor 0.35) ─────────────────────
+    // Sparse, larger — frame the gameplay area from close background.
+    // center_anchored=true: same model; same Y correction applies.
+    let nt = &cfg.near_trees;
+    for (i, x) in (nt.x_start..=nt.x_end).step_by(nt.step).enumerate() {
+        let model = &nt.models[i % nt.models.len()];
+        let scale = nt.scales[i % nt.scales.len()];
+        let y = if nt.center_anchored {
+            nt.y + scale * 0.5
+        } else {
+            nt.y
+        };
+        commands.spawn((
+            SceneRoot(asset_server.load(format!("{}#Scene0", model))),
+            Transform::from_xyz(x as f32 + nt.x_offset, y, nt.z)
+                .with_scale(Vec3::new(scale, scale, nt.scale_z)),
+            // WHY 0.35: near trees at z=-30 are the closest background layer.
+            // Low factor = more world-fixed = reads as near player.
+            ParallaxLayer { factor: nt.factor },
+            Decoration,
+            ParallaxBackground,
+        ));
+    }
+
+    // ── Close/foreground cherry blossom trees (z = +10, factor 0.15) ────────────
+    // Large trees at the edges of the level, rendered in front of the gameplay
+    // plane (z=+10) to create a foreground framing effect.
+    //
+    // WHY z=+10: this is the canonical foreground framing band per
+    // jasper_layered_z_separation.txt — in front of gameplay (z=0) so trees
+    // overlap the edges of the screen and create depth toward the viewer.
+    //
+    // WHY factor 0.15: low factor = layer barely moves with the camera = feels
+    // very close to the player, reinforcing the "in front" illusion. This is
+    // lower than near background trees (0.35) which are behind gameplay.
+    //
+    // WHY scale 170: foreground trees are perceived as larger because they are
+    // "closer"; 170 units fills roughly 8-10 tiles, giving a bold framing presence.
+    // Doubled from original 85 to make the foreground canopy more impactful.
+    //
+    // WHY step 275: sparse placement — foreground trees are accent pieces, not a
+    // wall. Wide spacing lets the gameplay area stay clearly readable.
+    //
+    // NOTE: Hardcoded here (not JSON-driven) because these are a simple constant
+    // foreground accent that does not need per-level config variation.
+    let close_model = asset_server.load("models/sanctuary/tree_cherryblossom.glb#Scene0");
+    // x_start/x_end match the level width (OX=-432, 48 cols × 18 = 864, x_end≈432).
+    let x_start: i32 = -500;
+    let x_end: i32 = 500;
+    let step: usize = 275;
+    let close_scales = [170.0_f32, 160.0, 180.0];
+    for (i, x) in (x_start..=x_end).step_by(step).enumerate() {
+        let scale = close_scales[i % close_scales.len()];
+        // center_anchored=true: shift Y up by scale*0.5 so tree base sits at -150.
+        let y = -150.0 + scale * 0.5;
+        commands.spawn((
+            SceneRoot(close_model.clone()),
+            Transform::from_xyz(x as f32, y, 10.0)
+                .with_scale(Vec3::new(scale, scale, 8.0)),
+            // WHY 0.15: very low factor keeps foreground trees nearly world-fixed,
+            // making them feel physically close to the camera/player.
+            ParallaxLayer { factor: 0.15 },
+            Decoration,
+            ParallaxBackground,
+        ));
+    }
+
+    // NOTE: The sky overlay (cfg.overlay) is spawned by the caller (level/mod.rs
+    // Sanctuary arm) so the mesh/material assets stay in the calling scope.
+    // The _meshes and _materials params are kept for signature parity with other
+    // background spawn functions in case future layers need direct mesh creation here.
 }
