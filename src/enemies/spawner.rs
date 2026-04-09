@@ -16,6 +16,7 @@ use crate::physics::config::GameLayer;
 use crate::animation::components::{AtlasLayout, EnemyAnimState, SpriteAnimation};
 
 use super::components::{ContactDamage, Enemy, EnemyAI, EnemyJump, EnemyType, PatrolOnly};
+use crate::vfx::glow::ProximityGlow;
 
 fn speed_for_type(enemy_type: EnemyType) -> f32 {
     match enemy_type {
@@ -161,6 +162,12 @@ pub fn spawn_enemy(
         Mesh3d(mesh),
         MeshMaterial3d(material),
         Transform::from_xyz(position.x, center_y, 5.0).with_scale(Vec3::splat(1.0)),
+        ProximityGlow {
+            radius: 80.0,
+            // ~20% larger than the 28×32 enemy quad so the glow halo is visible
+            // around the sprite edges without being too large.
+            glow_size: Vec2::new(34.0, 38.0),
+        },
         RigidBody::Dynamic,
         // Capsule instead of rectangle: rounded bottom/top slide over individual tile
         // seam edges without catching.  Rectangle colliders catch on the vertical face

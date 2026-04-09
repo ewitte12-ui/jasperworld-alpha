@@ -1027,6 +1027,7 @@ pub fn handle_pending_save_load(
             Some(crate::level::level_data::LevelId::Forest) => "Forest",
             Some(crate::level::level_data::LevelId::Subdivision) => "Subdivision",
             Some(crate::level::level_data::LevelId::City) => "City",
+            Some(crate::level::level_data::LevelId::Sanctuary) => "Sanctuary",
             None => "Forest",
         };
 

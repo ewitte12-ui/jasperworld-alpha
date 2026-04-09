@@ -62,4 +62,15 @@ impl LightingTheme {
         fill_color: Color::srgb(0.90, 0.55, 0.30),
         fill_illuminance: 3500.0,
     };
+
+    /// Sanctuary — warm golden hour, soft ambient.
+    /// Peaceful final level with warm sky and gentle fill light.
+    pub const SANCTUARY: Self = Self {
+        directional_color: Color::srgb(1.0, 0.95, 0.85), // warm late-afternoon gold
+        directional_illuminance: 8_000.0,
+        ambient_color: Color::srgb(0.9, 0.85, 0.95),
+        ambient_brightness: 150.0,
+        fill_color: Color::srgb(0.95, 0.88, 0.80),
+        fill_illuminance: 3_000.0,
+    };
 }

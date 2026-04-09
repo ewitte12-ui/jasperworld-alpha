@@ -122,6 +122,7 @@ pub fn update_level_name(
         Some(crate::level::level_data::LevelId::Forest) => "Forest",
         Some(crate::level::level_data::LevelId::Subdivision) => "Subdivision",
         Some(crate::level::level_data::LevelId::City) => "City",
+        Some(crate::level::level_data::LevelId::Sanctuary) => "Sanctuary",
         None => "Forest",
     };
     let layer = current_level.layer_index + 1;

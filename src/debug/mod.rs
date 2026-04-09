@@ -330,6 +330,7 @@ fn log_decoration_counts(
         Some(LevelId::Forest) => "Forest",
         Some(LevelId::Subdivision) => "Subdivision",
         Some(LevelId::City) => "City",
+        Some(LevelId::Sanctuary) => "Sanctuary",
         None => "None",
     };
 

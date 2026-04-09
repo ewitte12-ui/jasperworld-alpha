@@ -156,6 +156,7 @@ pub fn switch_layer(
             Some(LevelId::Forest) => Color::srgb(0.12, 0.10, 0.07),
             Some(LevelId::Subdivision) => Color::srgb(0.08, 0.10, 0.07),
             Some(LevelId::City) => Color::srgb(0.10, 0.10, 0.15),
+            Some(LevelId::Sanctuary) => Color::srgb(0.10, 0.08, 0.06),
             _ => Color::srgb(0.05, 0.05, 0.05),
         };
         let bg_mesh = meshes.add(Rectangle::new(2000.0, 1000.0));

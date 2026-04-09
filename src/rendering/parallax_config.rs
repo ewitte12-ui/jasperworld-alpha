@@ -199,6 +199,39 @@ pub struct CityFarBuildingLayer {
     pub scale_z: f32,
 }
 
+// ── Sanctuary ─────────────────────────────────────────────────────────────────
+
+/// Top-level config for the Sanctuary background (Phase 6).
+/// Fields mirror the Forest pattern for structural parity; populated by
+/// assets/configs/sanctuary_bg.json when that file is created.
+#[derive(Deserialize)]
+pub struct SanctuaryBgConfig {
+    pub far_background: SanctuaryBackgroundEntry,
+    pub far_trees: TreeLayerConfig,
+    pub near_trees: TreeLayerConfig,
+    pub attenuation: Vec<AttenuationEntry>,
+    #[serde(default)]
+    pub overlay: Option<OverlayEntry>,
+}
+
+/// A single wide background model (e.g. a temple or mountain wall) used as
+/// the deepest layer in the Sanctuary scene.
+#[derive(Deserialize)]
+pub struct SanctuaryBackgroundEntry {
+    pub model: String,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub scale: f32,
+    pub factor: f32,
+    /// X-axis rotation in radians (e.g. -FRAC_PI_2 to stand a flat model upright).
+    #[serde(default)]
+    pub rotation_x: f32,
+    /// Y-axis rotation in radians (0.0 = face camera directly).
+    #[serde(default)]
+    pub rotation_y: f32,
+}
+
 // ── Loader ────────────────────────────────────────────────────────────────────
 
 /// Load and deserialize a JSON config file at `path`.

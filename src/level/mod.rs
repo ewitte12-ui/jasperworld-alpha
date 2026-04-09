@@ -21,8 +21,8 @@ use crate::enemies::spawner::spawn_enemy;
 use crate::player::components::Player;
 use crate::puzzle::components::{GameProgress, LevelExit, LevelGate};
 use crate::rendering::parallax::{
-    spawn_city_background, spawn_nature_background, spawn_shared_background,
-    spawn_subdivision_background,
+    spawn_city_background, spawn_nature_background, spawn_sanctuary_background,
+    spawn_shared_background, spawn_subdivision_background,
 };
 use crate::states::NewGameRequested;
 use crate::tilemap::spawn::spawn_tilemap;
@@ -126,6 +126,15 @@ pub fn spawn_entities_for_level(
                 asset_server,
                 progress,
                 skip_enemies,
+            );
+        }
+        LevelId::Sanctuary => {
+            spawn_sanctuary_inner(
+                commands,
+                meshes,
+                materials,
+                asset_server,
+                progress,
             );
         }
     }
@@ -512,12 +521,12 @@ fn spawn_city_inner(
             ));
         });
 
-    // Exit — game_complete fires at level_index >= 3.
+    // Exit — transitions to Sanctuary (final level; game_complete fires there).
     commands.spawn((
         Transform::from_xyz(gate_x + 30.0, ground_y, 0.5),
         Visibility::Hidden,
         LevelExit {
-            next_level: LevelId::City,
+            next_level: LevelId::Sanctuary,
             half_extents: Vec2::new(51.0, 100.0),
         },
     ));
@@ -600,6 +609,155 @@ fn spawn_city_inner(
     } // skip_enemies
 }
 
+/// Spawns the Sanctuary ground overlay and water quad — shared by both the
+/// JSON path and the hardcoded fallback path.
+///
+/// WHY extracted: `spawn_sanctuary_inner` is only called on the hardcoded path.
+/// When Sanctuary loads from compiled_levels.json the inner function is never
+/// reached, so these decorations were silently missing. Extracting them here
+/// and calling this function from the JSON path fixes that.
+fn spawn_sanctuary_extras(
+    commands: &mut Commands,
+    asset_server: &AssetServer,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<StandardMaterial>,
+) {
+    let ox: f32 = -432.0;
+    let oy: f32 = -200.0;
+    let ground_top = oy + 3.0 * 18.0; // -146.0  (top of the 3 solid rows)
+
+    // ── Bottom 2 ground rows — decorative overlay ─────────────────────────────
+    // The tile pipeline uses grass-block for all solid tiles, but rows 0-1 should
+    // visually appear as a thick ground slab. We overlay them with
+    // ground_blocks_bottom2layers.glb which renders over the tile at z=0.1.
+    //
+    // WHY scale 18.6 (= 18.0 / 0.968): matches the grass-block tile scale.
+    // GRASS_W = 0.968, TILE_SIZE = 18.0 → uniform = 18.0 / 0.968 ≈ 18.6.
+    // ground_blocks_bottom2layers.glb is assumed to have the same native footprint;
+    // if the visual is off, adjust this value to match the actual native dimensions.
+    //
+    // WHY z=0.1: slightly in front of the gameplay-plane tiles (z=0) so this model
+    // draws on top of them without z-fighting, and stays behind the player (z≈1).
+    let bottom_model: Handle<Scene> = asset_server.load("models/sanctuary/ground_blocks_bottom2layers.glb#Scene0");
+    for row in 0..2_usize {
+        for col in 0..48_usize {
+            let wx = ox + col as f32 * 18.0 + 9.0;
+            let wy = oy + row as f32 * 18.0 + 9.0;
+            commands.spawn((
+                SceneRoot(bottom_model.clone()),
+                Transform::from_xyz(wx, wy, 0.1)
+                    .with_scale(Vec3::splat(18.6)),
+                components::Decoration,
+            ));
+        }
+    }
+
+    // Water wall at the end of the level — visual endpoint the player walks into.
+    // WHY: the old door model was removed; the water PNG acts as the finishing
+    // landmark. Placed at col 45 (just right of the LevelExit trigger at col 44)
+    // so the player sees the water and the exit fires as they step into it.
+    // WHY z=0.2: slightly in front of gameplay plane (z=0) so it draws over ground
+    // tiles, behind player (z=1). AlphaMode::Blend preserves PNG transparency.
+    let col_x = |c: f32| ox + c * 18.0 + 9.0;
+    let water_texture: Handle<Image> = asset_server.load("models/sanctuary/water_at_end_oflevel.png");
+    let water_mesh = meshes.add(Rectangle::new(72.0, 54.0)); // ~4 tiles wide, 3 tiles tall
+    let water_material = materials.add(StandardMaterial {
+        base_color_texture: Some(water_texture),
+        unlit: true,
+        alpha_mode: AlphaMode::Blend,
+        double_sided: true,
+        cull_mode: None,
+        ..default()
+    });
+    let water_x = col_x(45.0); // near right edge, just past the LevelExit trigger
+    // WHY ground_top - 27.0: water is 54 units tall (3 tiles). Subtracting half-height
+    // places the TOP edge at ground_top so water fills downward below the surface,
+    // matching the visual expectation of water pooled beneath ground level.
+    // Previously +27.0 floated the water above ground; -27.0 corrects this.
+    let water_y = ground_top - 27.0;
+    commands.spawn((
+        Mesh3d(water_mesh),
+        MeshMaterial3d(water_material),
+        Transform::from_xyz(water_x, water_y, 0.2),
+        components::Decoration,
+    ));
+}
+
+/// Inner logic for Sanctuary level entity spawning.
+///
+/// Sanctuary is the final peaceful level — no enemies, no stars, no health_foods.
+/// A single LevelExit at gate_col 44 auto-completes when the player reaches it
+/// (stars_required = 0, so the gate is never spawned).
+fn spawn_sanctuary_inner(
+    commands: &mut Commands,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<StandardMaterial>,
+    asset_server: &AssetServer,
+    progress: &mut CollectionProgress,
+) {
+    const OX: f32 = -432.0;
+    const OY: f32 = -200.0;
+    let col_x = |col: f32| OX + col * 18.0 + 9.0;
+    let stand_y = |row: f32| OY + (row + 1.0) * 18.0 + 9.0;
+    let ground_y = stand_y(2.0);
+
+    // No stars, no apples, no enemies — this is a peaceful walk to water.
+    // stars_total = 0 so check_gate never fires (no gate to despawn).
+    progress.stars_total = 0;
+    progress.stars_collected = 0;
+
+    // Exit at col 44 — walk through the sanctuary to reach it.
+    // next_level is a dummy value; game_complete fires when current_level_index >= 4.
+    let exit_x = col_x(44.0);
+    commands.spawn((
+        Transform::from_xyz(exit_x + 30.0, ground_y, 0.5),
+        Visibility::Visible,
+        LevelExit {
+            next_level: LevelId::Sanctuary, // dummy — game_complete fires
+            half_extents: Vec2::new(51.0, 100.0),
+        },
+    ));
+
+    // Ground overlay + water quad — shared with the JSON path.
+    spawn_sanctuary_extras(commands, asset_server, meshes, materials);
+}
+
+/// Hardcoded fallback LevelData for Sanctuary.
+///
+/// 48 cols × 22 rows, single layer. Matches Forest height so the level
+/// feels tall enough for background art and parallax depth.
+/// Rows 0-2: solid ground.  Rows 3-21: empty air.
+/// Used when compiled_levels.json does not yet contain a Sanctuary entry.
+fn sanctuary_level() -> crate::level::level_data::LevelData {
+    use crate::level::level_data::{LayerData, LevelData};
+    use crate::tilemap::tilemap::TileType::{Empty as E, Solid as S};
+
+    let solid = vec![S; 48];
+    let empty = vec![E; 48];
+    // 3 solid ground rows + 19 empty air rows = 22 rows total (matches Forest).
+    let mut tiles = vec![
+        solid.clone(), // row 0
+        solid.clone(), // row 1
+        solid.clone(), // row 2
+    ];
+    for _ in 3..22 {
+        tiles.push(empty.clone());
+    }
+
+    LevelData {
+        id: LevelId::Sanctuary,
+        layers: vec![LayerData {
+            id: 0,
+            tiles,
+            // origin_x = -432 gives 48 cols × 18 units = 864 units total,
+            // centred roughly on x=0 for a short peaceful level.
+            origin_x: -432.0,
+            origin_y: -200.0,
+            spawn: Vec2::new(-396.0, -128.0),
+        }],
+    }
+}
+
 /// Spawns ALL background and decoration entities for `level_id`.
 ///
 /// Called on every level entry (new game and level transitions).
@@ -664,6 +822,38 @@ pub fn spawn_level_decorations(
             // Foreground framing trees are now data-driven:
             // stored in compiled_levels.json (Subdivision layer 0 "props" array)
             // and spawned by spawn_entities_from_compiled via the JSON path.
+        }
+        LevelId::Sanctuary => {
+            spawn_sanctuary_background(commands, asset_server, meshes, materials);
+
+            // Soft pink atmosphere overlay — parameters loaded from sanctuary_bg.json.
+            // Carries Decoration so it despawns on level exit.
+            // WHY JSON-driven: overlay color/z/factor can be tuned without recompiling.
+            if let Some(cfg) = crate::rendering::parallax_config::load_config::<
+                crate::rendering::parallax_config::SanctuaryBgConfig,
+            >("assets/configs/sanctuary_bg.json")
+            {
+                if let Some(ov) = cfg.overlay {
+                    let [r, g, b, a] = ov.color;
+                    let ov_mesh = meshes.add(Rectangle::new(ov.width, ov.height));
+                    let ov_mat = materials.add(StandardMaterial {
+                        base_color: Color::srgba(r, g, b, a),
+                        unlit: true,
+                        alpha_mode: AlphaMode::Blend,
+                        ..default()
+                    });
+                    commands.spawn((
+                        Mesh3d(ov_mesh),
+                        MeshMaterial3d(ov_mat),
+                        Transform::from_xyz(0.0, 0.0, ov.z),
+                        crate::rendering::parallax::ParallaxLayer { factor: ov.factor },
+                        components::Decoration,
+                        crate::rendering::parallax::ParallaxBackground,
+                    ));
+                }
+            } else {
+                warn!("[SANCTUARY_BG] could not load sanctuary_bg.json — sky overlay skipped");
+            }
         }
         LevelId::City => {
             info!("[CITY] spawn_level_decorations: entering City arm");
@@ -765,6 +955,7 @@ pub fn spawn_sublevel_decorations(
         LevelId::Forest => "Forest",
         LevelId::Subdivision => "Subdivision",
         LevelId::City => "City",
+        LevelId::Sanctuary => "Sanctuary",
     };
 
     // Load both props and lights from the same JSON layer 1 entry.
@@ -793,7 +984,8 @@ pub fn spawn_sublevel_decorations(
     let glow = match level_id {
         LevelId::Forest => Some(LinearRgba::new(1.2, 0.8, 0.4, 1.0)),
         LevelId::Subdivision => Some(LinearRgba::new(0.4, 0.7, 0.4, 1.0)),
-        LevelId::City => None, // point lights instead
+        LevelId::City => None,      // point lights instead
+        LevelId::Sanctuary => None, // no sublevels; arm required for exhaustiveness
     };
 
     info!(
@@ -915,6 +1107,10 @@ pub fn tile_models_for_layer(
         (LevelId::City, 1) => ("models/cement-platform.glb", "models/cement-platform.glb"),
         (LevelId::Subdivision, _) => ("models/redbricks.glb", "models/redbricks.glb"),
         (LevelId::City, _) => ("models/cement-platform.glb", "models/cement-platform.glb"),
+        (LevelId::Sanctuary, _) => (
+            "models/sanctuary/ground_block_top.glb",
+            "models/sanctuary/ground_block_top.glb",
+        ),
         _ => ("models/grass-block.glb", "models/grass-block.glb"),
     }
 }
@@ -962,6 +1158,7 @@ pub fn spawn_level_full(
         LevelId::Forest => "Forest",
         LevelId::Subdivision => "Subdivision",
         LevelId::City => "City",
+        LevelId::Sanctuary => "Sanctuary",
     };
 
     // `json_entities_spawned` tracks whether the JSON path handled entity
@@ -1027,10 +1224,19 @@ pub fn spawn_level_full(
                         skip_enemies,
                     );
 
+                    // Sanctuary extras (ground overlay + water quad) are not
+                    // encoded in compiled_levels.json — spawn them here so the
+                    // JSON path gets the same decorations as the hardcoded path.
+                    if level_id == LevelId::Sanctuary {
+                        spawn_sanctuary_extras(commands, asset_server, meshes, materials);
+                    }
+
                     // JSON doors: only spawn from hardcoded path when the compiled
                     // layer has no door entries (so JSON-driven levels with explicit
                     // door positions win; levels without override fall back).
-                    if compiled_layer.doors.is_empty() {
+                    // WHY Sanctuary excluded: Sanctuary has no doors by design (peaceful
+                    // walk-to-water level). The fallback would spawn an unwanted door.
+                    if compiled_layer.doors.is_empty() && level_id != LevelId::Sanctuary {
                         doors::spawn_doors_for_level(commands, asset_server, level_id);
                     }
                 } else {
@@ -1052,6 +1258,7 @@ pub fn spawn_level_full(
                     LevelId::Forest => forest_level(),
                     LevelId::Subdivision => subdivision_level(),
                     LevelId::City => city_level(),
+                    LevelId::Sanctuary => sanctuary_level(),
                 }
             }
         } else {
@@ -1060,6 +1267,7 @@ pub fn spawn_level_full(
                 LevelId::Forest => forest_level(),
                 LevelId::Subdivision => subdivision_level(),
                 LevelId::City => city_level(),
+                LevelId::Sanctuary => sanctuary_level(),
             }
         };
 
@@ -1119,6 +1327,7 @@ pub fn spawn_level_full(
             LevelId::Forest => Color::srgb(0.12, 0.10, 0.07),
             LevelId::Subdivision => Color::srgb(0.08, 0.10, 0.07),
             LevelId::City => Color::srgb(0.10, 0.10, 0.15),
+            LevelId::Sanctuary => Color::srgb(0.10, 0.08, 0.06),
         };
         let bg_mesh = meshes.add(Rectangle::new(2000.0, 1000.0));
         let bg_mat = materials.add(StandardMaterial {
