@@ -96,7 +96,7 @@ pub fn validate(root: &LdtkRoot) -> Result<(), Vec<String>> {
                             &mut errors,
                         );
                     }
-                    "Prop" => {
+                    id if id == "Prop" || id.starts_with("Prop_") => {
                         // Must have: model_id (the asset path to load)
                         validate_entity_field(entity, "model_id", &level.identifier, &mut errors);
                     }
