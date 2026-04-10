@@ -101,6 +101,7 @@ fn read_debug_config(
         "Forest" => LevelId::Forest,
         "Subdivision" => LevelId::Subdivision,
         "City" => LevelId::City,
+        "Sanctuary" => LevelId::Sanctuary,
         other => {
             warn!("[DEBUG] unknown level \"{other}\" — defaulting to Forest");
             LevelId::Forest
