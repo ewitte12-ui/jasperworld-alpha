@@ -53,7 +53,11 @@ impl Plugin for LevelPlugin {
                     systems::switch_layer
                         .in_set(crate::puzzle::components::TransitionSet)
                         .after(crate::puzzle::systems::check_level_exit),
-                    systems::camera_clamp.in_set(crate::rendering::camera::CameraPipeline::Clamp),
+                    systems::camera_clamp
+                        .in_set(crate::rendering::camera::CameraPipeline::Clamp)
+                        // Suppressed during sanctuary cutscene so the cutscene camera
+                        // can pan below the normal level bounds to frame the characters.
+                        .run_if(not(resource_exists::<crate::sanctuary::cutscene::CutsceneCameraOverride>)),
                 )
                     .run_if(in_state(crate::states::AppState::Playing)),
             );
@@ -663,8 +667,7 @@ fn spawn_sanctuary_extras(
     // Invisible wall at the left edge of the water gap (col 43).
     // WHY: ground colliders were removed at cols 43-46 for the water, so
     // without this the player falls into the void. This thin static wall
-    // stops the player at the water's edge while the LevelExit trigger
-    // (at col 44 + 30 units) fires as they approach.
+    // stops the player at the water's edge.
     let wall_x = col_x(43.0) - 9.0; // left edge of col 43
     let wall_y = ground_top + 100.0; // tall enough the player can't jump over
     commands.spawn((
@@ -672,6 +675,20 @@ fn spawn_sanctuary_extras(
         Visibility::Hidden,
         avian2d::prelude::RigidBody::Static,
         avian2d::prelude::Collider::rectangle(4.0, 200.0),
+        components::Decoration,
+    ));
+
+    // Cutscene trigger line — Jasper stops and the cutscene starts when he crosses
+    // this X position walking left → right.
+    // WHY 99.0: LDtk pixel x=531 within the Sanctuary level; world x = origin_x
+    // + 531 = −432 + 531 = 99.  Chosen by level design to fire before the family.
+    // WHY Decoration: cleaned up with all other level entities on any transition.
+    let family_x = 99.0;
+    let family_y = ground_top + 27.0; // -119.0
+    commands.spawn((
+        Transform::from_xyz(family_x, family_y, 0.0),
+        Visibility::Hidden,
+        crate::sanctuary::cutscene::SanctuaryCutsceneTrigger,
         components::Decoration,
     ));
 }

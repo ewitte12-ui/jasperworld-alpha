@@ -1,0 +1,15 @@
+{
+  "trigger_distance": 80.0,
+  "zoom_height": 180.0,
+  "zoom_duration": 1.2,
+  "camera_target_x": 169.0,
+  "lines": [
+    { "speaker": "family", "text": "Jasper! You made it! We were so worried..." },
+    { "speaker": "jasper", "text": "Mom, Dad... I can't believe I'm finally home." },
+    { "speaker": "family", "text": "We watched you — the forest, the city, all those dangers." },
+    { "speaker": "jasper", "text": "I had to get back to you. Nothing was going to stop me." },
+    { "speaker": "family", "text": "Come here. You're safe now. You're home." },
+    { "speaker": "jasper", "text": "Home... yeah. I'm home." }
+  ],
+  "finish_prompt": "Jasper has found his way home."
+}

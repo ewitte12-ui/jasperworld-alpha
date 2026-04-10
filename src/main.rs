@@ -19,6 +19,7 @@ use jaspersworld::resources::{
     AudioSettings, ControlBindings, GraphicsSettings, PendingLoadSlot, PendingSaveSlot,
     RebindingState, SaveSlots,
 };
+use jaspersworld::sanctuary::SanctuaryPlugin;
 use jaspersworld::save_load::SaveLoadPlugin;
 use jaspersworld::states::{
     AppState, NewGameRequested, QuitRequested, SaveLoadMode, SaveLoadReturnState,
@@ -97,6 +98,7 @@ fn main() {
     .add_plugins(ParticlesPlugin)
     .add_plugins(LightingPlugin)
     .add_plugins(VfxPlugin)
+    .add_plugins(SanctuaryPlugin)
     // Menu plugin (title, main menu, pause, settings, save/load)
     .add_plugins(MenuPlugin)
     .add_plugins(TitleBackgroundPlugin)

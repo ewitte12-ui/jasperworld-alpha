@@ -17,6 +17,7 @@ pub mod player;
 pub mod puzzle;
 pub mod rendering;
 pub mod resources;
+pub mod sanctuary;
 pub mod save_load;
 pub mod states;
 pub mod tilemap;
