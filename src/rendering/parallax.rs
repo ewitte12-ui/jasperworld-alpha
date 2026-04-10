@@ -593,12 +593,12 @@ pub fn spawn_sanctuary_background(
             // sliver when viewed down the -Z axis. A -90° Y rotation brings the facade
             // forward to face the camera correctly.
             .with_rotation(Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2))
-            // WHY non-uniform scale (0.05 on X): after the -PI/2 Y rotation, local X
+            // WHY non-uniform scale (0.20 on X): after the -PI/2 Y rotation, local X
             // maps to world -Z (depth toward camera). Uniform scale causes the island's
-            // depth to bleed forward over the ground plane. Crushing local X by 0.05
+            // depth to bleed forward over the ground plane. Crushing local X by 0.20
             // collapses that depth to a thin slab while preserving visible width
             // (local Z → world X) and height (local Y → world Y).
-            .with_scale(Vec3::new(fb.scale * 0.05, fb.scale, fb.scale)),
+            .with_scale(Vec3::new(fb.scale * 0.20, fb.scale, fb.scale)),
         // WHY 0.70: temple at z=-80 is the deepest background element.
         // High factor = closely tracks camera = reads as very far away.
         // 0.70 matches the far-tree layer convention from forest/subdivision.
