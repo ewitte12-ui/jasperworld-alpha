@@ -605,6 +605,9 @@ pub fn spawn_sanctuary_background(
         // High factor = closely tracks camera = reads as very far away.
         // 0.70 matches the far-tree layer convention from forest/subdivision.
         ParallaxLayer { factor: fb.factor },
+        // WHY Multiply tint: same aerial-perspective treatment as subdivision far houses
+        // ([0.3, 0.4, 0.5]). Darkens and blue-shifts the island to read as distant.
+        SceneTint::Multiply(Color::srgb(0.3, 0.4, 0.5)),
         Decoration,
         ParallaxBackground,
     ));
