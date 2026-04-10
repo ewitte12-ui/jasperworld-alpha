@@ -25,6 +25,7 @@ use crate::rendering::parallax::{
     spawn_shared_background, spawn_subdivision_background,
 };
 use crate::states::NewGameRequested;
+use crate::vfx::glow::GlowIndicator;
 use crate::tilemap::spawn::spawn_tilemap;
 use crate::tilemap::tilemap::TILE_SIZE;
 use city::city_level;
@@ -1402,7 +1403,11 @@ fn handle_new_game(
     collectibles: Query<Entity, With<Collectible>>,
     gates: Query<Entity, With<LevelGate>>,
     exits: Query<Entity, With<LevelExit>>,
-    doors: Query<Entity, With<TransitionDoor>>,
+    // WHY Or<>: Bevy 0.18 systems are limited to 16 parameters. TransitionDoor and
+    // GlowIndicator are both cleanup-only; combining them into one query avoids a 17th
+    // parameter. GlowIndicator children are spawned by ProximityGlow and must be
+    // explicitly queried because despawn() does not remove children in Bevy 0.18.
+    doors_and_glow: Query<Entity, Or<(With<TransitionDoor>, With<GlowIndicator>)>>,
     // Decoration covers all level-specific parallax (ParallaxBackground entities also
     // carry Decoration), so no separate parallax query needed here.
     decorations: Query<Entity, With<components::Decoration>>,
@@ -1428,7 +1433,7 @@ fn handle_new_game(
         .chain(collectibles.iter())
         .chain(gates.iter())
         .chain(exits.iter())
-        .chain(doors.iter())
+        .chain(doors_and_glow.iter())
         .chain(decorations.iter())
     {
         commands.entity(entity).despawn();

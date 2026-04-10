@@ -46637,7 +46637,7 @@
               "__identifier": "Spawn",
               "__grid": [
                 2,
-                18
+                17
               ],
               "__pivot": [
                 0.5,
@@ -46661,16 +46661,14 @@
                 324
               ],
               "fieldInstances": [],
-              "__worldX": 36,
-              "__worldY": 3324,
-              "worldX": 45,
-              "worldY": 3324
+              "__worldX": 45,
+              "__worldY": 3324
             },
             {
               "__identifier": "Prop_SanctuaryArch",
               "__grid": [
                 4,
-                17
+                18
               ],
               "__pivot": [
                 0.5,
@@ -46691,7 +46689,7 @@
               "defUid": 492,
               "px": [
                 81,
-                306
+                342
               ],
               "fieldInstances": [
                 {
@@ -46800,16 +46798,14 @@
                   ]
                 }
               ],
-              "__worldX": 72,
-              "__worldY": 3306,
-              "worldX": 81,
-              "worldY": 3306
+              "__worldX": 81,
+              "__worldY": 3342
             },
             {
               "__identifier": "Prop_SanctuaryLion",
               "__grid": [
-                10,
-                19
+                15,
+                18
               ],
               "__pivot": [
                 0.5,
@@ -46829,7 +46825,7 @@
               "height": 18,
               "defUid": 500,
               "px": [
-                189,
+                279,
                 342
               ],
               "fieldInstances": [
@@ -46939,154 +46935,13 @@
                   ]
                 }
               ],
-              "__worldX": 196,
-              "__worldY": 3336,
-              "worldX": 189,
-              "worldY": 3342
-            },
-            {
-              "__identifier": "Prop_SanctuaryLion",
-              "__grid": [
-                21,
-                19
-              ],
-              "__pivot": [
-                0.5,
-                1
-              ],
-              "__tags": [],
-              "__tile": {
-                "tilesetUid": 600,
-                "x": 192,
-                "y": 256,
-                "w": 64,
-                "h": 64
-              },
-              "__smartColor": "#E91E63",
-              "iid": "b253ccb0-4a9c-445c-9c3c-8c4702337f1e",
-              "width": 18,
-              "height": 18,
-              "defUid": 500,
-              "px": [
-                387,
-                342
-              ],
-              "fieldInstances": [
-                {
-                  "__identifier": "model_id",
-                  "__type": "String",
-                  "__value": "models/sanctuary/sanctuary_lionstatue.glb",
-                  "__tile": null,
-                  "defUid": 501,
-                  "realEditorValues": [
-                    {
-                      "id": "V_String",
-                      "params": [
-                        "models/sanctuary/sanctuary_lionstatue.glb"
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "__identifier": "scale_x",
-                  "__type": "Float",
-                  "__value": 30,
-                  "__tile": null,
-                  "defUid": 502,
-                  "realEditorValues": [
-                    {
-                      "id": "V_Float",
-                      "params": [
-                        30
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "__identifier": "scale_z",
-                  "__type": "Float",
-                  "__value": 30,
-                  "__tile": null,
-                  "defUid": 503,
-                  "realEditorValues": [
-                    {
-                      "id": "V_Float",
-                      "params": [
-                        30
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "__identifier": "z_depth",
-                  "__type": "Float",
-                  "__value": 2,
-                  "__tile": null,
-                  "defUid": 504,
-                  "realEditorValues": [
-                    {
-                      "id": "V_Float",
-                      "params": [
-                        2
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "__identifier": "rotation_y",
-                  "__type": "Float",
-                  "__value": 0,
-                  "__tile": null,
-                  "defUid": 505,
-                  "realEditorValues": [
-                    {
-                      "id": "V_Float",
-                      "params": [
-                        0
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "__identifier": "scale_y",
-                  "__type": "Float",
-                  "__value": 30,
-                  "__tile": null,
-                  "defUid": 506,
-                  "realEditorValues": [
-                    {
-                      "id": "V_Float",
-                      "params": [
-                        30
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "__identifier": "foreground",
-                  "__type": "Bool",
-                  "__value": false,
-                  "__tile": null,
-                  "defUid": 507,
-                  "realEditorValues": [
-                    {
-                      "id": "V_Bool",
-                      "params": [
-                        false
-                      ]
-                    }
-                  ]
-                }
-              ],
-              "__worldX": 382,
-              "__worldY": 3336,
-              "worldX": 387,
-              "worldY": 3342
+              "__worldX": 279,
+              "__worldY": 3342
             },
             {
               "__identifier": "Prop_CherryBlossom",
               "__grid": [
-                -4,
+                7,
                 14
               ],
               "__pivot": [
@@ -47102,12 +46957,12 @@
                 "h": 64
               },
               "__smartColor": "#E91E63",
-              "iid": "8bfd4f2f-00b2-4d2e-9150-47f81a3d4c37",
+              "iid": "92c79f3a-40bf-4d6c-a615-62429dbe6168",
               "width": 18,
               "height": 18,
               "defUid": 508,
               "px": [
-                -63,
+                135,
                 252
               ],
               "fieldInstances": [
@@ -47129,14 +46984,14 @@
                 {
                   "__identifier": "scale_x",
                   "__type": "Float",
-                  "__value": 170,
+                  "__value": 160,
                   "__tile": null,
                   "defUid": 510,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        170
+                        160
                       ]
                     }
                   ]
@@ -47189,14 +47044,14 @@
                 {
                   "__identifier": "scale_y",
                   "__type": "Float",
-                  "__value": 170,
+                  "__value": 160,
                   "__tile": null,
                   "defUid": 514,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        170
+                        160
                       ]
                     }
                   ]
@@ -47217,154 +47072,14 @@
                   ]
                 }
               ],
-              "__worldX": -68,
-              "__worldY": 3261,
-              "worldX": -63,
+              "__worldX": 135,
+              "__worldY": 3342,
               "worldY": 3252
             },
             {
               "__identifier": "Prop_CherryBlossom",
               "__grid": [
-                11,
-                15
-              ],
-              "__pivot": [
-                0.5,
-                1
-              ],
-              "__tags": [],
-              "__tile": {
-                "tilesetUid": 600,
-                "x": 384,
-                "y": 64,
-                "w": 64,
-                "h": 64
-              },
-              "__smartColor": "#E91E63",
-              "iid": "92c79f3a-40bf-4d6c-a615-62429dbe6168",
-              "width": 18,
-              "height": 18,
-              "defUid": 508,
-              "px": [
-                207,
-                270
-              ],
-              "fieldInstances": [
-                {
-                  "__identifier": "model_id",
-                  "__type": "String",
-                  "__value": "models/sanctuary/tree_cherryblossom.glb",
-                  "__tile": null,
-                  "defUid": 509,
-                  "realEditorValues": [
-                    {
-                      "id": "V_String",
-                      "params": [
-                        "models/sanctuary/tree_cherryblossom.glb"
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "__identifier": "scale_x",
-                  "__type": "Float",
-                  "__value": 160,
-                  "__tile": null,
-                  "defUid": 510,
-                  "realEditorValues": [
-                    {
-                      "id": "V_Float",
-                      "params": [
-                        160
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "__identifier": "scale_z",
-                  "__type": "Float",
-                  "__value": 8,
-                  "__tile": null,
-                  "defUid": 511,
-                  "realEditorValues": [
-                    {
-                      "id": "V_Float",
-                      "params": [
-                        8
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "__identifier": "z_depth",
-                  "__type": "Float",
-                  "__value": 10,
-                  "__tile": null,
-                  "defUid": 512,
-                  "realEditorValues": [
-                    {
-                      "id": "V_Float",
-                      "params": [
-                        10
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "__identifier": "rotation_y",
-                  "__type": "Float",
-                  "__value": 0,
-                  "__tile": null,
-                  "defUid": 513,
-                  "realEditorValues": [
-                    {
-                      "id": "V_Float",
-                      "params": [
-                        0
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "__identifier": "scale_y",
-                  "__type": "Float",
-                  "__value": 160,
-                  "__tile": null,
-                  "defUid": 514,
-                  "realEditorValues": [
-                    {
-                      "id": "V_Float",
-                      "params": [
-                        160
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "__identifier": "foreground",
-                  "__type": "Bool",
-                  "__value": true,
-                  "__tile": null,
-                  "defUid": 515,
-                  "realEditorValues": [
-                    {
-                      "id": "V_Bool",
-                      "params": [
-                        true
-                      ]
-                    }
-                  ]
-                }
-              ],
-              "__worldX": 207,
-              "__worldY": 3266,
-              "worldX": 207,
-              "worldY": 3270
-            },
-            {
-              "__identifier": "Prop_CherryBlossom",
-              "__grid": [
-                46,
+                31,
                 14
               ],
               "__pivot": [
@@ -47385,7 +47100,7 @@
               "height": 18,
               "defUid": 508,
               "px": [
-                837,
+                567,
                 252
               ],
               "fieldInstances": [
@@ -47495,16 +47210,15 @@
                   ]
                 }
               ],
-              "__worldX": 829,
-              "__worldY": 3261,
-              "worldX": 837,
+              "__worldX": 567,
+              "__worldY": 3342,
               "worldY": 3252
             },
             {
               "__identifier": "Prop_Water",
               "__grid": [
                 45,
-                20
+                19
               ],
               "__pivot": [
                 0.5,
@@ -47546,14 +47260,14 @@
                 {
                   "__identifier": "scale_x",
                   "__type": "Float",
-                  "__value": 72,
+                  "__value": 90,
                   "__tile": null,
                   "defUid": 528,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        72
+                        90
                       ]
                     }
                   ]
@@ -47635,15 +47349,13 @@
                 }
               ],
               "__worldX": 819,
-              "__worldY": 3369,
-              "worldX": 819,
-              "worldY": 3360
+              "__worldY": 3360
             },
             {
               "__identifier": "Prop_RaccoonFamily",
               "__grid": [
                 41,
-                18
+                17
               ],
               "__pivot": [
                 0.5,
@@ -47664,7 +47376,7 @@
               "defUid": 534,
               "px": [
                 747,
-                324
+                306
               ],
               "fieldInstances": [
                 {
@@ -47774,9 +47486,8 @@
                 }
               ],
               "__worldX": 747,
-              "__worldY": 3315,
-              "worldX": 747,
-              "worldY": 3324
+              "__worldY": 3342,
+              "worldY": 3306
             }
           ]
         },
