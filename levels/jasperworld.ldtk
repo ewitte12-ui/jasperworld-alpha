@@ -10775,7 +10775,7 @@
             "defaultOverride": {
               "id": "V_Float",
               "params": [
-                1
+                160
               ]
             },
             "textLanguageMode": null,
@@ -10859,7 +10859,7 @@
             "defaultOverride": {
               "id": "V_Float",
               "params": [
-                0
+                -1.5707963267948966
               ]
             },
             "textLanguageMode": null,
@@ -46994,14 +46994,14 @@
                 {
                   "__identifier": "scale_z",
                   "__type": "Float",
-                  "__value": 8,
+                  "__value": 160,
                   "__tile": null,
                   "defUid": 511,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        8
+                        160
                       ]
                     }
                   ]
@@ -47024,14 +47024,14 @@
                 {
                   "__identifier": "rotation_y",
                   "__type": "Float",
-                  "__value": 0.0,
+                  "__value": -1.5707963267948966,
                   "__tile": null,
                   "defUid": 513,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        0.0
+                        -1.5707963267948966
                       ]
                     }
                   ]
@@ -47131,14 +47131,14 @@
                 {
                   "__identifier": "scale_z",
                   "__type": "Float",
-                  "__value": 8,
+                  "__value": 170,
                   "__tile": null,
                   "defUid": 511,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        8
+                        170
                       ]
                     }
                   ]
@@ -47161,14 +47161,14 @@
                 {
                   "__identifier": "rotation_y",
                   "__type": "Float",
-                  "__value": 0.0,
+                  "__value": -1.5707963267948966,
                   "__tile": null,
                   "defUid": 513,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        0.0
+                        -1.5707963267948966
                       ]
                     }
                   ]
