@@ -11,6 +11,7 @@ use systems::{
 };
 use vignette::spawn_vignette;
 
+use crate::puzzle::components::TransitionSet;
 use crate::states::AppState;
 
 pub struct VfxPlugin;
@@ -31,7 +32,17 @@ impl Plugin for VfxPlugin {
             )
             .add_systems(
                 Update,
-                update_proximity_glow.run_if(in_state(AppState::Playing)),
+                // WHY after(TransitionSet): check_level_exit (inside TransitionSet) despawns
+                // enemy entities and their GlowIndicator children in the transition frame.
+                // If update_proximity_glow runs BEFORE check_level_exit in the same frame, it
+                // can queue a deferred "spawn GlowIndicator" on an enemy that check_level_exit
+                // then despawns — the deferred spawn completes after the despawn, leaving an
+                // orphaned GlowIndicator in the next level.  Running after TransitionSet
+                // guarantees the enemy's existing Children are still visible to the glow query
+                // (deferred despawn not yet applied), so has_glow=true and no new spawn occurs.
+                update_proximity_glow
+                    .run_if(in_state(AppState::Playing))
+                    .after(TransitionSet),
             );
     }
 }
