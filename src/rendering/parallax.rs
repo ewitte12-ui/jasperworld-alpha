@@ -588,9 +588,9 @@ pub fn spawn_sanctuary_background(
     commands.spawn((
         SceneRoot(asset_server.load(format!("{}#Scene0", fb.model))),
         Transform::from_xyz(fb.x, fb.y, fb.z)
-            // WHY -100°: the model is oriented along X; -100° Y rotation brings the
-            // facade forward to face the camera with a slight leftward angle.
-            .with_rotation(Quat::from_rotation_y(-100_f32.to_radians()))
+            // WHY -120°: rotating 30° past perpendicular pulls the right side of the
+            // facade toward the camera (world +Z), reducing the apparent rightward tilt.
+            .with_rotation(Quat::from_rotation_y(-120_f32.to_radians()))
             // WHY non-uniform scale (0.25 on X): after the Y rotation, local X
             // maps to world -Z (depth toward camera). Uniform scale causes the island's
             // depth to bleed forward over the ground plane. Crushing local X by 0.25
