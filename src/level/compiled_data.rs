@@ -326,9 +326,8 @@ pub fn spawn_entities_from_compiled(
         // Gate collider center is 200 units above ground_top (400-unit tall gate).
         let gate_center_y = ground_top + 200.0;
 
-        // Sanctuary uses water as its exit, not a physical door barrier.
-        // Skip the LevelGate collider and door model for Sanctuary so the player
-        // can walk into the water freely; LevelExit still spawns below for all levels.
+        // Sanctuary uses water as its visual endpoint — no gate, exit trigger,
+        // or door model. The game ending is handled separately.
         if level_id != LevelId::Sanctuary {
             commands
                 .spawn((
@@ -345,36 +344,36 @@ pub fn spawn_entities_from_compiled(
                             .with_scale(Vec3::new(18.0, 80.0, 7.0)),
                     ));
                 });
+
+            // ── Level exit ───────────────────────────────────────────────────
+            // Position: 30 units right of gate, at stand_y(2) = origin_y + 3*18 + 9
+            let ground_y = layer.origin_y + 3.0 * 18.0 + 9.0;
+
+            let next_level = layer
+                .exit_next_level
+                .as_deref()
+                .and_then(level_id_from_str)
+                // If JSON omits exit_next_level, stay on current level
+                // (City does this — game_complete fires at level_index >= 3).
+                .unwrap_or(level_id);
+
+            commands.spawn((
+                Transform::from_xyz(gate_x + 30.0, ground_y, 0.5),
+                Visibility::Hidden,
+                LevelExit {
+                    next_level,
+                    half_extents: Vec2::new(51.0, 100.0),
+                },
+            ));
+
+            // End-zone landmark — open door prop as visual cue.
+            commands.spawn((
+                SceneRoot(asset_server.load("models/door-open.glb#Scene0")),
+                Transform::from_xyz(gate_x + 40.0, ground_top, -1.0)
+                    .with_scale(Vec3::new(60.0, 54.0, 7.0)),
+                super::components::Decoration,
+            ));
         }
-
-        // ── Level exit ───────────────────────────────────────────────────────
-        // Position: 30 units right of gate, at stand_y(2) = origin_y + 3*18 + 9
-        let ground_y = layer.origin_y + 3.0 * 18.0 + 9.0;
-
-        let next_level = layer
-            .exit_next_level
-            .as_deref()
-            .and_then(level_id_from_str)
-            // If JSON omits exit_next_level, stay on current level
-            // (City does this — game_complete fires at level_index >= 3).
-            .unwrap_or(level_id);
-
-        commands.spawn((
-            Transform::from_xyz(gate_x + 30.0, ground_y, 0.5),
-            Visibility::Hidden,
-            LevelExit {
-                next_level,
-                half_extents: Vec2::new(51.0, 100.0),
-            },
-        ));
-
-        // End-zone landmark — open door prop as visual cue.
-        commands.spawn((
-            SceneRoot(asset_server.load("models/door-open.glb#Scene0")),
-            Transform::from_xyz(gate_x + 40.0, ground_top, -1.0)
-                .with_scale(Vec3::new(60.0, 54.0, 7.0)),
-            super::components::Decoration,
-        ));
     }
 }
 
