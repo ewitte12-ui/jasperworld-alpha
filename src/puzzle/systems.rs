@@ -9,6 +9,7 @@ use crate::level::level_data::CurrentLevel;
 use crate::level::spawn_level_full;
 use crate::player::components::Player;
 use crate::states::AppState;
+use crate::vfx::glow::GlowIndicator;
 
 use super::components::{GameProgress, LevelExit, LevelGate};
 
@@ -47,7 +48,11 @@ pub fn check_level_exit(
     decoration_entities: Query<Entity, With<Decoration>>,
     enemy_entities: Query<Entity, With<Enemy>>,
     collectible_entities: Query<Entity, With<Collectible>>,
-    door_entities: Query<Entity, With<TransitionDoor>>,
+    // WHY Or<>: Bevy 0.18 systems are limited to 16 parameters. TransitionDoor and
+    // GlowIndicator are both cleanup-only; combining them into one query avoids a 17th
+    // parameter. GlowIndicator children are spawned by ProximityGlow and must be
+    // explicitly queried because despawn() does not remove children in Bevy 0.18.
+    door_and_glow_entities: Query<Entity, Or<(With<TransitionDoor>, With<GlowIndicator>)>>,
     exit_entities: Query<Entity, With<LevelExit>>,
     mut game_progress: ResMut<GameProgress>,
     mut collection_progress: ResMut<CollectionProgress>,
@@ -82,7 +87,7 @@ pub fn check_level_exit(
                 .chain(decoration_entities.iter())
                 .chain(enemy_entities.iter())
                 .chain(collectible_entities.iter())
-                .chain(door_entities.iter())
+                .chain(door_and_glow_entities.iter())
                 .chain(exit_entities.iter())
             {
                 commands.entity(entity).despawn();
