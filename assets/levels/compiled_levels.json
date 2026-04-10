@@ -20776,6 +20776,72 @@
               "scale_x": 30.0, "scale_y": 30.0, "scale_z": 30.0,
               "rotation_y": 3.14159,
               "foreground": false
+            },
+            {
+              "model_id": "models/sanctuary/tree_cherryblossom.glb",
+              "x": -500.0,
+              "y": -65.0,
+              "z": 10.0,
+              "scale_x": 170.0,
+              "scale_y": 170.0,
+              "scale_z": 8.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/sanctuary/tree_cherryblossom.glb",
+              "x": -225.0,
+              "y": -70.0,
+              "z": 10.0,
+              "scale_x": 160.0,
+              "scale_y": 160.0,
+              "scale_z": 8.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/sanctuary/tree_cherryblossom.glb",
+              "x": 50.0,
+              "y": -60.0,
+              "z": 10.0,
+              "scale_x": 180.0,
+              "scale_y": 180.0,
+              "scale_z": 8.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/sanctuary/tree_cherryblossom.glb",
+              "x": 325.0,
+              "y": -65.0,
+              "z": 10.0,
+              "scale_x": 170.0,
+              "scale_y": 170.0,
+              "scale_z": 8.0,
+              "rotation_y": 0.0,
+              "foreground": true
+            },
+            {
+              "model_id": "models/sanctuary/water_at_end_oflevel.png",
+              "x": 387.0,
+              "y": -173.0,
+              "z": 0.2,
+              "scale_x": 72.0,
+              "scale_y": 54.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": false
+            },
+            {
+              "model_id": "models/sanctuary/raccoon_family.png",
+              "x": 333.0,
+              "y": -119.0,
+              "z": 1.5,
+              "scale_x": 54.0,
+              "scale_y": 54.0,
+              "scale_z": 1.0,
+              "rotation_y": 0.0,
+              "foreground": false
             }
           ],
           "lights": [],

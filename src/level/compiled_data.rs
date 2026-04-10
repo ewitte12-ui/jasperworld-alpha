@@ -305,15 +305,36 @@ pub fn spawn_entities_from_compiled(
     for prop in &layer.props {
         // rotation_y is stored in radians as authored in LDtk.
         let rotation = Quat::from_rotation_y(prop.rotation_y);
-        let mut entity = commands.spawn((
-            SceneRoot(asset_server.load(format!("{}#Scene0", prop.model_id))),
-            Transform::from_xyz(prop.x, prop.y, prop.z)
-                .with_rotation(rotation)
-                .with_scale(Vec3::new(prop.scale_x, prop.scale_y, prop.scale_z)),
-            super::components::Decoration,
-        ));
-        if prop.foreground {
-            entity.insert(super::components::ForegroundDecoration);
+        if prop.model_id.ends_with(".png") {
+            // PNG flat-quad prop: scale_x/scale_y are the rectangle dimensions in world units.
+            // WHY: PNG assets are spawned as Rectangle meshes with StandardMaterial, not GLB scenes.
+            let texture = asset_server.load(prop.model_id.clone());
+            let mesh = meshes.add(Rectangle::new(prop.scale_x, prop.scale_y));
+            let material = materials.add(StandardMaterial {
+                base_color_texture: Some(texture),
+                unlit: true,
+                alpha_mode: AlphaMode::Blend,
+                double_sided: true,
+                cull_mode: None,
+                ..default()
+            });
+            commands.spawn((
+                Mesh3d(mesh),
+                MeshMaterial3d(material),
+                Transform::from_xyz(prop.x, prop.y, prop.z).with_rotation(rotation),
+                super::components::Decoration,
+            ));
+        } else {
+            let mut entity = commands.spawn((
+                SceneRoot(asset_server.load(format!("{}#Scene0", prop.model_id))),
+                Transform::from_xyz(prop.x, prop.y, prop.z)
+                    .with_rotation(rotation)
+                    .with_scale(Vec3::new(prop.scale_x, prop.scale_y, prop.scale_z)),
+                super::components::Decoration,
+            ));
+            if prop.foreground {
+                entity.insert(super::components::ForegroundDecoration);
+            }
         }
     }
 

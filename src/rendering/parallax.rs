@@ -656,49 +656,6 @@ pub fn spawn_sanctuary_background(
         ));
     }
 
-    // ── Close/foreground cherry blossom trees (z = +10, factor 0.15) ────────────
-    // Large trees at the edges of the level, rendered in front of the gameplay
-    // plane (z=+10) to create a foreground framing effect.
-    //
-    // WHY z=+10: this is the canonical foreground framing band per
-    // jasper_layered_z_separation.txt — in front of gameplay (z=0) so trees
-    // overlap the edges of the screen and create depth toward the viewer.
-    //
-    // WHY factor 0.15: low factor = layer barely moves with the camera = feels
-    // very close to the player, reinforcing the "in front" illusion. This is
-    // lower than near background trees (0.35) which are behind gameplay.
-    //
-    // WHY scale 170: foreground trees are perceived as larger because they are
-    // "closer"; 170 units fills roughly 8-10 tiles, giving a bold framing presence.
-    // Doubled from original 85 to make the foreground canopy more impactful.
-    //
-    // WHY step 275: sparse placement — foreground trees are accent pieces, not a
-    // wall. Wide spacing lets the gameplay area stay clearly readable.
-    //
-    // NOTE: Hardcoded here (not JSON-driven) because these are a simple constant
-    // foreground accent that does not need per-level config variation.
-    let close_model = asset_server.load("models/sanctuary/tree_cherryblossom.glb#Scene0");
-    // x_start/x_end match the level width (OX=-432, 48 cols × 18 = 864, x_end≈432).
-    let x_start: i32 = -500;
-    let x_end: i32 = 500;
-    let step: usize = 275;
-    let close_scales = [170.0_f32, 160.0, 180.0];
-    for (i, x) in (x_start..=x_end).step_by(step).enumerate() {
-        let scale = close_scales[i % close_scales.len()];
-        // center_anchored=true: shift Y up by scale*0.5 so tree base sits at -150.
-        let y = -150.0 + scale * 0.5;
-        commands.spawn((
-            SceneRoot(close_model.clone()),
-            Transform::from_xyz(x as f32, y, 10.0)
-                .with_scale(Vec3::new(scale, scale, 8.0)),
-            // WHY 0.15: very low factor keeps foreground trees nearly world-fixed,
-            // making them feel physically close to the camera/player.
-            ParallaxLayer { factor: 0.15 },
-            Decoration,
-            ParallaxBackground,
-        ));
-    }
-
     // NOTE: The sky overlay (cfg.overlay) is spawned by the caller (level/mod.rs
     // Sanctuary arm) so the mesh/material assets stay in the calling scope.
     // The _meshes and _materials params are kept for signature parity with other

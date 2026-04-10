@@ -6,11 +6,11 @@ Use subagents for all work while making changes no matter how trivial.  The main
 
 | Agent | Model | When to Use |
 |-------|-------|-------------|
-| **Main** | Opus | Coordination, synthesis, user communication |
+| **Main** | Sonnet (user switches to Opus manually) | Coordination, synthesis, user communication |
 | **Research** | Sonnet | When investigating unknowns, searching docs, exploring APIs |
 | **Coding** | Sonnet | Always when writing or modifying code |
 | **Testing** | Sonnet | Always when coding — validate syntax, check builds, verify changes |
-| **Critic** | Opus | Always when coding — audit changes for bugs, regressions, edge cases |
+| **Critic** | Sonnet | Always when coding — audit changes for bugs, regressions, edge cases |
 | **Debug** | Sonnet | When diagnosing crashes, unexpected behavior, or pipeline failures |
 
 ### Rules

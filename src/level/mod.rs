@@ -619,30 +619,26 @@ fn spawn_city_inner(
 fn spawn_sanctuary_extras(
     commands: &mut Commands,
     asset_server: &AssetServer,
-    meshes: &mut Assets<Mesh>,
-    materials: &mut Assets<StandardMaterial>,
+    _meshes: &mut Assets<Mesh>,
+    _materials: &mut Assets<StandardMaterial>,
+    tiles: &[Vec<u8>],
 ) {
     let ox: f32 = -432.0;
     let oy: f32 = -200.0;
     let ground_top = oy + 3.0 * 18.0; // -146.0  (top of the 3 solid rows)
 
-    // ── Bottom 2 ground rows — decorative overlay ─────────────────────────────
-    // The tile pipeline uses grass-block for all solid tiles, but rows 0-1 should
-    // visually appear as a thick ground slab. We overlay them with
-    // ground_blocks_bottom2layers.glb which renders over the tile at z=0.1.
-    //
+    // ── Bottom ground rows — decorative overlay ────────────────────────────────
+    // Iterate the tile grid: for each solid tile (value 1) in rows 0–1, spawn
+    // the ground_blocks_bottom2layers visual. The water gap (cols 43-46) is
+    // naturally skipped because those cells are 0 in the tile grid.
+    // WHY rows 0-1 only: rows 0-1 are the sub-ground slab; row 2 is the walkable
+    // surface and uses the standard grass-block tile visual.
     // WHY scale 18.6 (= 18.0 / 0.968): matches the grass-block tile scale.
     // GRASS_W = 0.968, TILE_SIZE = 18.0 → uniform = 18.0 / 0.968 ≈ 18.6.
-    // ground_blocks_bottom2layers.glb is assumed to have the same native footprint;
-    // if the visual is off, adjust this value to match the actual native dimensions.
-    //
-    // WHY z=0.1: slightly in front of the gameplay-plane tiles (z=0) so this model
-    // draws on top of them without z-fighting, and stays behind the player (z≈1).
     let bottom_model: Handle<Scene> = asset_server.load("models/sanctuary/ground_blocks_bottom2layers.glb#Scene0");
-    for row in 0..2_usize {
-        for col in 0..48_usize {
-            // Skip cols 43–46: water quad replaces ground blocks here.
-            if (43..=46).contains(&col) {
+    for (row, tile_row) in tiles.iter().take(2).enumerate() {
+        for (col, &tile_val) in tile_row.iter().enumerate() {
+            if tile_val != 1 {
                 continue;
             }
             let wx = ox + col as f32 * 18.0 + 9.0;
@@ -656,58 +652,12 @@ fn spawn_sanctuary_extras(
         }
     }
 
-    // Water wall at the end of the level — visual endpoint the player walks into.
-    // WHY: the old door model was removed; the water PNG acts as the finishing
-    // landmark. Placed at col 45 (just right of the LevelExit trigger at col 44)
-    // so the player sees the water and the exit fires as they step into it.
-    // WHY z=0.2: slightly in front of gameplay plane (z=0) so it draws over ground
-    // tiles, behind player (z=1). AlphaMode::Blend preserves PNG transparency.
+    // Water is now a CompiledProp in compiled_levels.json — spawned via the JSON prop
+    // pipeline so it can be placed/adjusted in LDtk without recompiling Rust.
     let col_x = |c: f32| ox + c * 18.0 + 9.0;
-    let water_texture: Handle<Image> = asset_server.load("models/sanctuary/water_at_end_oflevel.png");
-    let water_mesh = meshes.add(Rectangle::new(72.0, 54.0)); // ~4 tiles wide, 3 tiles tall
-    let water_material = materials.add(StandardMaterial {
-        base_color_texture: Some(water_texture),
-        unlit: true,
-        alpha_mode: AlphaMode::Blend,
-        double_sided: true,
-        cull_mode: None,
-        ..default()
-    });
-    let water_x = col_x(45.0); // near right edge, just past the LevelExit trigger
-    // WHY ground_top - 27.0: centers the 54-unit-tall water quad in the stone
-    // block area below the grass line. Top edge at ground_top, bottom edge at
-    // ground_top - 54, placing the water flush across the lower stone wall.
-    let water_y = ground_top - 27.0;
-    commands.spawn((
-        Mesh3d(water_mesh),
-        MeshMaterial3d(water_material),
-        Transform::from_xyz(water_x, water_y, 0.2),
-        components::Decoration,
-    ));
 
-    // Raccoon family portrait at the water's edge — the ending scene.
-    // Positioned just left of the water, standing on the ground surface.
-    let family_texture: Handle<Image> =
-        asset_server.load("models/sanctuary/raccoon_family.png");
-    let family_mesh = meshes.add(Rectangle::new(54.0, 54.0)); // ~3 tiles square
-    let family_material = materials.add(StandardMaterial {
-        base_color_texture: Some(family_texture),
-        unlit: true,
-        alpha_mode: AlphaMode::Blend,
-        double_sided: true,
-        cull_mode: None,
-        ..default()
-    });
-    // Place at col 42 (just left of the water gap), centered vertically
-    // with base at ground_top.
-    let family_x = col_x(42.0);
-    let family_y = ground_top + 27.0; // base at ground_top, center 27 units up
-    commands.spawn((
-        Mesh3d(family_mesh),
-        MeshMaterial3d(family_material),
-        Transform::from_xyz(family_x, family_y, 1.5),
-        components::Decoration,
-    ));
+    // Raccoon family portrait is now a CompiledProp in compiled_levels.json —
+    // spawned via the JSON prop pipeline so it can be placed/resized in LDtk.
 
     // Invisible wall at the left edge of the water gap (col 43).
     // WHY: ground colliders were removed at cols 43-46 for the water, so
@@ -760,8 +710,17 @@ fn spawn_sanctuary_inner(
         },
     ));
 
-    // Ground overlay + water quad — shared with the JSON path.
-    spawn_sanctuary_extras(commands, asset_server, meshes, materials);
+    // Ground overlay — shared with the JSON path.
+    // WHY inline tile grid: this is the hardcoded fallback path (no JSON available).
+    // Generate the same Sanctuary tile layout as bootstrap.rs so the overlay matches.
+    let mut sanctuary_tiles: Vec<Vec<u8>> = vec![vec![0u8; 48]; 22];
+    for r in 0..3 {
+        sanctuary_tiles[r] = vec![1u8; 48];
+        for c in 43..=46 {
+            sanctuary_tiles[r][c] = 0;
+        }
+    }
+    spawn_sanctuary_extras(commands, asset_server, meshes, materials, &sanctuary_tiles);
 }
 
 /// Hardcoded fallback LevelData for Sanctuary.
@@ -984,6 +943,8 @@ pub fn spawn_level_decorations(
 /// Grid is 32 cols × 18 rows at origin (0,0). TILE_SIZE = 18.
 pub fn spawn_sublevel_decorations(
     commands: &mut Commands,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<StandardMaterial>,
     asset_server: &AssetServer,
     level_id: LevelId,
     origin_x: f32,
@@ -1042,20 +1003,42 @@ pub fn spawn_sublevel_decorations(
             prop.model_id, prop.x, prop.y, prop.z
         );
         let rotation = Quat::from_rotation_y(prop.rotation_y);
-        let xform = Transform::from_xyz(prop.x, prop.y, prop.z)
-            .with_rotation(rotation)
-            .with_scale(Vec3::new(prop.scale_x, prop.scale_y, prop.scale_z));
-        let mut entity = commands.spawn((
-            SceneRoot(asset_server.load(format!("{}#Scene0", prop.model_id))),
-            xform,
-            components::TileEntity,
-            components::ForegroundDecoration,
-        ));
-        if let Some(color) = glow {
-            entity.insert(crate::collectibles::components::MakeEmissive {
-                color,
-                keep_lit: true,
+        if prop.model_id.ends_with(".png") {
+            // PNG flat-quad prop: scale_x/scale_y are the rectangle dimensions in world units.
+            // WHY: PNG assets are spawned as Rectangle meshes with StandardMaterial, not GLB scenes.
+            let texture = asset_server.load(prop.model_id.clone());
+            let mesh = meshes.add(Rectangle::new(prop.scale_x, prop.scale_y));
+            let material = materials.add(StandardMaterial {
+                base_color_texture: Some(texture),
+                unlit: true,
+                alpha_mode: AlphaMode::Blend,
+                double_sided: true,
+                cull_mode: None,
+                ..default()
             });
+            commands.spawn((
+                Mesh3d(mesh),
+                MeshMaterial3d(material),
+                Transform::from_xyz(prop.x, prop.y, prop.z).with_rotation(rotation),
+                components::TileEntity,
+                components::ForegroundDecoration,
+            ));
+        } else {
+            let xform = Transform::from_xyz(prop.x, prop.y, prop.z)
+                .with_rotation(rotation)
+                .with_scale(Vec3::new(prop.scale_x, prop.scale_y, prop.scale_z));
+            let mut entity = commands.spawn((
+                SceneRoot(asset_server.load(format!("{}#Scene0", prop.model_id))),
+                xform,
+                components::TileEntity,
+                components::ForegroundDecoration,
+            ));
+            if let Some(color) = glow {
+                entity.insert(crate::collectibles::components::MakeEmissive {
+                    color,
+                    keep_lit: true,
+                });
+            }
         }
     }
 
@@ -1270,7 +1253,9 @@ pub fn spawn_level_full(
                     // encoded in compiled_levels.json — spawn them here so the
                     // JSON path gets the same decorations as the hardcoded path.
                     if level_id == LevelId::Sanctuary {
-                        spawn_sanctuary_extras(commands, asset_server, meshes, materials);
+                        // Pass the compiled tile grid so the ground overlay follows
+                        // whatever the designer has set in LDtk, not a hardcoded layout.
+                        spawn_sanctuary_extras(commands, asset_server, meshes, materials, &compiled_layer.tiles);
                     }
 
                     // JSON doors: only spawn from hardcoded path when the compiled
@@ -1385,7 +1370,7 @@ pub fn spawn_level_full(
             components::TileEntity,
         ));
 
-        spawn_sublevel_decorations(commands, asset_server, level_id, ox, oy);
+        spawn_sublevel_decorations(commands, meshes, materials, asset_server, level_id, ox, oy);
 
         let door_x = ox + 28.0 * TILE_SIZE + TILE_SIZE * 0.5;
         let door_y = oy + 2.0 * TILE_SIZE;
