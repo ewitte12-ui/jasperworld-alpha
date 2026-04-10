@@ -588,11 +588,13 @@ pub fn spawn_sanctuary_background(
     commands.spawn((
         SceneRoot(asset_server.load(format!("{}#Scene0", fb.model))),
         Transform::from_xyz(fb.x, fb.y, fb.z)
-            // WHY -FRAC_PI_2 rotation: the asian+temple+island model is oriented with
-            // its length along the X axis, so without rotation it appears as a thin
-            // sliver when viewed down the -Z axis. A -90° Y rotation brings the facade
-            // forward to face the camera correctly.
-            .with_rotation(Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2))
+            // WHY -FRAC_PI_2 on Y: the model is oriented along X, so a -90° Y rotation
+            // brings the facade forward to face the camera correctly.
+            // WHY -5° on X: small tilt left on the X axis for visual composition.
+            .with_rotation(
+                Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2)
+                    * Quat::from_rotation_x(-5_f32.to_radians()),
+            )
             // WHY non-uniform scale (0.20 on X): after the -PI/2 Y rotation, local X
             // maps to world -Z (depth toward camera). Uniform scale causes the island's
             // depth to bleed forward over the ground plane. Crushing local X by 0.20
