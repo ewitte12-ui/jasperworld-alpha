@@ -10859,7 +10859,7 @@
             "defaultOverride": {
               "id": "V_Float",
               "params": [
-                -1.5707963267948966
+                0
               ]
             },
             "textLanguageMode": null,
@@ -47024,14 +47024,14 @@
                 {
                   "__identifier": "rotation_y",
                   "__type": "Float",
-                  "__value": -1.5707963267948966,
+                  "__value": 0.0,
                   "__tile": null,
                   "defUid": 513,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        -1.5707963267948966
+                        0.0
                       ]
                     }
                   ]
@@ -47161,14 +47161,14 @@
                 {
                   "__identifier": "rotation_y",
                   "__type": "Float",
-                  "__value": -1.5707963267948966,
+                  "__value": 0.0,
                   "__tile": null,
                   "defUid": 513,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        -1.5707963267948966
+                        0.0
                       ]
                     }
                   ]
