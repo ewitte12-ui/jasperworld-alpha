@@ -11986,9 +11986,12 @@
     ],
     "tilesets": [
       {
-        "uid": 600,
+        "__cWid": 8,
+        "__cHei": 5,
         "identifier": "EntityIcons",
+        "uid": 600,
         "relPath": "../assets/entity_icons.png",
+        "embedAtlas": null,
         "pxWid": 512,
         "pxHei": 320,
         "tileGridSize": 64,
@@ -11999,9 +12002,10 @@
         "enumTags": [],
         "customData": [],
         "savedSelections": [],
-        "cachedPixelData": null,
-        "__cHei": 5,
-        "__cWid": 8
+        "cachedPixelData": {
+          "opaqueTiles": "0000000000000000000000000000000000000010",
+          "averageColors": "9fe59e559fd49f979a4b986697899d85123102311231034103520352121202311342034205120540162113321314122212220431066305201432032212331455133314441412040114026877f7cd0000"
+        }
       }
     ],
     "enums": [],
@@ -46633,6 +46637,39 @@
               "__identifier": "Spawn",
               "__grid": [
                 2,
+                18
+              ],
+              "__pivot": [
+                0.5,
+                1
+              ],
+              "__tags": [],
+              "__tile": {
+                "tilesetUid": 600,
+                "x": 0,
+                "y": 0,
+                "w": 64,
+                "h": 64
+              },
+              "__smartColor": "#FFEB3B",
+              "iid": "9e512488-596f-4930-8ff0-707e5403477e",
+              "width": 18,
+              "height": 18,
+              "defUid": 10,
+              "px": [
+                45,
+                324
+              ],
+              "fieldInstances": [],
+              "__worldX": 36,
+              "__worldY": 3324,
+              "worldX": 45,
+              "worldY": 3324
+            },
+            {
+              "__identifier": "Prop_SanctuaryArch",
+              "__grid": [
+                4,
                 17
               ],
               "__pivot": [
@@ -46640,39 +46677,20 @@
                 1
               ],
               "__tags": [],
-              "__tile": null,
-              "__smartColor": "#FFEB3B",
-              "iid": "9e512488-596f-4930-8ff0-707e5403477e",
-              "width": 18,
-              "height": 18,
-              "defUid": 10,
-              "px": [
-                36,
-                324
-              ],
-              "fieldInstances": [],
-              "__worldX": 36,
-              "__worldY": 3324
-            },
-            {
-              "__identifier": "Prop_SanctuaryArch",
-              "__grid": [
-                4,
-                16
-              ],
-              "__pivot": [
-                0.5,
-                1
-              ],
-              "__tags": [],
-              "__tile": null,
+              "__tile": {
+                "tilesetUid": 600,
+                "x": 128,
+                "y": 256,
+                "w": 64,
+                "h": 64
+              },
               "__smartColor": "#E91E63",
               "iid": "2a480458-2229-4a7e-8477-bc62998d3c03",
               "width": 18,
               "height": 18,
               "defUid": 492,
               "px": [
-                72,
+                81,
                 306
               ],
               "fieldInstances": [
@@ -46783,28 +46801,36 @@
                 }
               ],
               "__worldX": 72,
-              "__worldY": 3306
+              "__worldY": 3306,
+              "worldX": 81,
+              "worldY": 3306
             },
             {
               "__identifier": "Prop_SanctuaryLion",
               "__grid": [
-                5,
-                18
+                10,
+                19
               ],
               "__pivot": [
                 0.5,
                 1
               ],
               "__tags": [],
-              "__tile": null,
+              "__tile": {
+                "tilesetUid": 600,
+                "x": 192,
+                "y": 256,
+                "w": 64,
+                "h": 64
+              },
               "__smartColor": "#E91E63",
               "iid": "1d1d7602-a280-4e3f-8b37-517294502534",
               "width": 18,
               "height": 18,
               "defUid": 500,
               "px": [
-                106,
-                336
+                189,
+                342
               ],
               "fieldInstances": [
                 {
@@ -46913,29 +46939,37 @@
                   ]
                 }
               ],
-              "__worldX": 106,
-              "__worldY": 3336
+              "__worldX": 196,
+              "__worldY": 3336,
+              "worldX": 189,
+              "worldY": 3342
             },
             {
               "__identifier": "Prop_SanctuaryLion",
               "__grid": [
                 21,
-                18
+                19
               ],
               "__pivot": [
                 0.5,
                 1
               ],
               "__tags": [],
-              "__tile": null,
+              "__tile": {
+                "tilesetUid": 600,
+                "x": 192,
+                "y": 256,
+                "w": 64,
+                "h": 64
+              },
               "__smartColor": "#E91E63",
               "iid": "b253ccb0-4a9c-445c-9c3c-8c4702337f1e",
               "width": 18,
               "height": 18,
               "defUid": 500,
               "px": [
-                382,
-                336
+                387,
+                342
               ],
               "fieldInstances": [
                 {
@@ -47045,12 +47079,14 @@
                 }
               ],
               "__worldX": 382,
-              "__worldY": 3336
+              "__worldY": 3336,
+              "worldX": 387,
+              "worldY": 3342
             },
             {
               "__identifier": "Prop_CherryBlossom",
               "__grid": [
-                -3,
+                -4,
                 14
               ],
               "__pivot": [
@@ -47058,15 +47094,21 @@
                 1
               ],
               "__tags": [],
-              "__tile": null,
+              "__tile": {
+                "tilesetUid": 600,
+                "x": 384,
+                "y": 64,
+                "w": 64,
+                "h": 64
+              },
               "__smartColor": "#E91E63",
               "iid": "8bfd4f2f-00b2-4d2e-9150-47f81a3d4c37",
               "width": 18,
               "height": 18,
               "defUid": 508,
               "px": [
-                -68,
-                261
+                -63,
+                252
               ],
               "fieldInstances": [
                 {
@@ -47176,20 +47218,28 @@
                 }
               ],
               "__worldX": -68,
-              "__worldY": 3261
+              "__worldY": 3261,
+              "worldX": -63,
+              "worldY": 3252
             },
             {
               "__identifier": "Prop_CherryBlossom",
               "__grid": [
                 11,
-                14
+                15
               ],
               "__pivot": [
                 0.5,
                 1
               ],
               "__tags": [],
-              "__tile": null,
+              "__tile": {
+                "tilesetUid": 600,
+                "x": 384,
+                "y": 64,
+                "w": 64,
+                "h": 64
+              },
               "__smartColor": "#E91E63",
               "iid": "92c79f3a-40bf-4d6c-a615-62429dbe6168",
               "width": 18,
@@ -47197,7 +47247,7 @@
               "defUid": 508,
               "px": [
                 207,
-                266
+                270
               ],
               "fieldInstances": [
                 {
@@ -47307,7 +47357,9 @@
                 }
               ],
               "__worldX": 207,
-              "__worldY": 3266
+              "__worldY": 3266,
+              "worldX": 207,
+              "worldY": 3270
             },
             {
               "__identifier": "Prop_CherryBlossom",
@@ -47320,15 +47372,21 @@
                 1
               ],
               "__tags": [],
-              "__tile": null,
+              "__tile": {
+                "tilesetUid": 600,
+                "x": 384,
+                "y": 64,
+                "w": 64,
+                "h": 64
+              },
               "__smartColor": "#E91E63",
               "iid": "77ec3089-559c-4e94-b64d-8061be001cd8",
               "width": 18,
               "height": 18,
               "defUid": 508,
               "px": [
-                829,
-                261
+                837,
+                252
               ],
               "fieldInstances": [
                 {
@@ -47438,7 +47496,9 @@
                 }
               ],
               "__worldX": 829,
-              "__worldY": 3261
+              "__worldY": 3261,
+              "worldX": 837,
+              "worldY": 3252
             },
             {
               "__identifier": "Prop_Water",
@@ -47451,7 +47511,13 @@
                 1
               ],
               "__tags": [],
-              "__tile": null,
+              "__tile": {
+                "tilesetUid": 600,
+                "x": 384,
+                "y": 256,
+                "w": 64,
+                "h": 64
+              },
               "__smartColor": "#03A9F4",
               "iid": "2819d9fc-5853-47ed-b296-7b36d0ee6e96",
               "width": 18,
@@ -47459,7 +47525,7 @@
               "defUid": 526,
               "px": [
                 819,
-                369
+                360
               ],
               "fieldInstances": [
                 {
@@ -47569,20 +47635,28 @@
                 }
               ],
               "__worldX": 819,
-              "__worldY": 3369
+              "__worldY": 3369,
+              "worldX": 819,
+              "worldY": 3360
             },
             {
               "__identifier": "Prop_RaccoonFamily",
               "__grid": [
                 41,
-                17
+                18
               ],
               "__pivot": [
                 0.5,
                 1
               ],
               "__tags": [],
-              "__tile": null,
+              "__tile": {
+                "tilesetUid": 600,
+                "x": 320,
+                "y": 256,
+                "w": 64,
+                "h": 64
+              },
               "__smartColor": "#FF9800",
               "iid": "bdd9dd14-a293-4bf0-9e45-449ba786aeab",
               "width": 18,
@@ -47590,7 +47664,7 @@
               "defUid": 534,
               "px": [
                 747,
-                315
+                324
               ],
               "fieldInstances": [
                 {
@@ -47700,7 +47774,9 @@
                 }
               ],
               "__worldX": 747,
-              "__worldY": 3315
+              "__worldY": 3315,
+              "worldX": 747,
+              "worldY": 3324
             }
           ]
         },
