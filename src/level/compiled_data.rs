@@ -308,6 +308,12 @@ pub fn spawn_entities_from_compiled(
         if prop.model_id.ends_with(".png") {
             // PNG flat-quad prop: scale_x/scale_y are the rectangle dimensions in world units.
             // WHY: PNG assets are spawned as Rectangle meshes with StandardMaterial, not GLB scenes.
+            //
+            // WHY y + scale_y/2: LDtk entities use bottom-center pivot (pivotY=1), so prop.y
+            // is the bottom edge of the prop in world space.  Bevy's Rectangle is center-anchored,
+            // so without the offset the center sits at the ground surface and the sprite sinks
+            // halfway underground.  Adding half the height shifts the center up so the bottom
+            // aligns with prop.y — same technique used by the enemy spawner.
             let texture = asset_server.load(prop.model_id.clone());
             let mesh = meshes.add(Rectangle::new(prop.scale_x, prop.scale_y));
             let material = materials.add(StandardMaterial {
@@ -321,7 +327,8 @@ pub fn spawn_entities_from_compiled(
             commands.spawn((
                 Mesh3d(mesh),
                 MeshMaterial3d(material),
-                Transform::from_xyz(prop.x, prop.y, prop.z).with_rotation(rotation),
+                Transform::from_xyz(prop.x, prop.y + prop.scale_y / 2.0, prop.z)
+                    .with_rotation(rotation),
                 super::components::Decoration,
             ));
         } else {

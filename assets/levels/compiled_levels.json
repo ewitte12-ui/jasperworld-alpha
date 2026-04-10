@@ -16580,7 +16580,7 @@
             {
               "model_id": "models/sanctuary/tree_cherryblossom.glb",
               "x": -297.0,
-              "y": -56.0,
+              "y": 24.0,
               "z": 10.0,
               "scale_x": 160.0,
               "scale_y": 160.0,
@@ -16591,7 +16591,7 @@
             {
               "model_id": "models/sanctuary/tree_cherryblossom.glb",
               "x": 135.0,
-              "y": -56.0,
+              "y": -61.0,
               "z": 10.0,
               "scale_x": 170.0,
               "scale_y": 170.0,
@@ -16602,7 +16602,7 @@
             {
               "model_id": "models/sanctuary/water_at_end_oflevel.png",
               "x": 387.0,
-              "y": -164.0,
+              "y": -168.0,
               "z": 0.2,
               "scale_x": 90.0,
               "scale_y": 54.0,
@@ -16612,7 +16612,7 @@
             {
               "model_id": "models/sanctuary/raccoon_family.png",
               "x": 315.0,
-              "y": -110.0,
+              "y": -146.0,
               "z": 1.5,
               "scale_x": 54.0,
               "scale_y": 54.0,

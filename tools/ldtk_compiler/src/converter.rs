@@ -37,6 +37,8 @@ fn center_anchor_half_height(model_id: &str) -> Option<f32> {
         "tree_fat.glb" => Some(0.447),
         "tree_pine.glb" => Some(0.500),
         "tree_default.glb" => Some(0.500),
+        // Sanctuary cherry blossom — trimesh: y_min=-0.5, y_max=0.5, origin at center
+        "tree_cherryblossom.glb" => Some(0.500),
         // Tripo city props — origin at model center
         "taxi.glb" => Some(0.241),
         "construction-cone.glb" => Some(0.500),
