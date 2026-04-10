@@ -6,7 +6,7 @@
 /// The output path is resolved at compile time from CARGO_MANIFEST_DIR,
 /// walking two levels up to reach the workspace root.
 
-use ldtk_compiler::output_schema::{OutputDoor, OutputEnemy, OutputLayer, OutputLevel, OutputRoot};
+use ldtk_compiler::output_schema::{OutputDoor, OutputEnemy, OutputLayer, OutputLevel, OutputProp, OutputRoot};
 use ldtk_compiler::writer::write_atomic;
 
 // ---------------------------------------------------------------------------
@@ -693,7 +693,7 @@ fn city_layer0() -> OutputLayer {
         props: vec![],
         lights: vec![],
         gate_col: Some(91),
-        exit_next_level: Some("City".to_string()),
+        exit_next_level: Some("Sanctuary".to_string()),
         stars_required: Some(10),
     }
 }
@@ -886,6 +886,167 @@ fn city_level() -> OutputLevel {
     }
 }
 
+fn sanctuary_level() -> OutputLevel {
+    let cols: usize = 48;
+    let rows: usize = 22;
+    let mut grid = empty_grid(cols, rows);
+
+    // Rows 0-2: all solid except cols 43-46 are empty, col 47 = solid.
+    for row in 0..3 {
+        grid[row] = solid_row(cols);
+        // cols 43-46 are empty (0)
+        for col in 43..47 {
+            grid[row][col] = 0;
+        }
+        // col 47 stays solid (already set by solid_row)
+    }
+    // Rows 3-21: all empty (already zeroed by empty_grid)
+
+    OutputLevel {
+        id: "Sanctuary".to_string(),
+        layers: vec![OutputLayer {
+            id: 0,
+            cols: cols as i32,
+            rows: rows as i32,
+            origin_x: -432.0,
+            origin_y: -200.0,
+            spawn: Some([-396.0, -128.0]),
+            tiles: grid,
+            enemies: vec![],
+            stars: vec![],
+            health_foods: vec![],
+            doors: vec![],
+            props: vec![
+                OutputProp {
+                    model_id: "models/sanctuary/ornate+chinese+arch+3d+model.glb".to_string(),
+                    x: -360.0,
+                    y: -110.0,
+                    z: -5.0,
+                    scale_x: 60.0,
+                    scale_y: 60.0,
+                    scale_z: 60.0,
+                    rotation_y: -1.5707963,
+                    foreground: false,
+                },
+                OutputProp {
+                    model_id: "models/sanctuary/sanctuary_lionstatue.glb".to_string(),
+                    x: -380.0,
+                    y: -140.0,
+                    z: 2.0,
+                    scale_x: 30.0,
+                    scale_y: 30.0,
+                    scale_z: 30.0,
+                    rotation_y: 0.0,
+                    foreground: false,
+                },
+                OutputProp {
+                    model_id: "models/sanctuary/sanctuary_lionstatue.glb".to_string(),
+                    x: -340.0,
+                    y: -140.0,
+                    z: 2.0,
+                    scale_x: 30.0,
+                    scale_y: 30.0,
+                    scale_z: 30.0,
+                    rotation_y: 3.14159,
+                    foreground: false,
+                },
+                OutputProp {
+                    model_id: "models/sanctuary/sanctuary_lionstatue.glb".to_string(),
+                    x: -50.0,
+                    y: -140.0,
+                    z: 2.0,
+                    scale_x: 30.0,
+                    scale_y: 30.0,
+                    scale_z: 30.0,
+                    rotation_y: 0.0,
+                    foreground: false,
+                },
+                OutputProp {
+                    model_id: "models/sanctuary/sanctuary_lionstatue.glb".to_string(),
+                    x: -10.0,
+                    y: -140.0,
+                    z: 2.0,
+                    scale_x: 30.0,
+                    scale_y: 30.0,
+                    scale_z: 30.0,
+                    rotation_y: 3.14159,
+                    foreground: false,
+                },
+                OutputProp {
+                    model_id: "models/sanctuary/tree_cherryblossom.glb".to_string(),
+                    x: -500.0,
+                    y: -65.0,
+                    z: 10.0,
+                    scale_x: 170.0,
+                    scale_y: 170.0,
+                    scale_z: 8.0,
+                    rotation_y: 0.0,
+                    foreground: true,
+                },
+                OutputProp {
+                    model_id: "models/sanctuary/tree_cherryblossom.glb".to_string(),
+                    x: -225.0,
+                    y: -70.0,
+                    z: 10.0,
+                    scale_x: 160.0,
+                    scale_y: 160.0,
+                    scale_z: 8.0,
+                    rotation_y: 0.0,
+                    foreground: true,
+                },
+                OutputProp {
+                    model_id: "models/sanctuary/tree_cherryblossom.glb".to_string(),
+                    x: 50.0,
+                    y: -60.0,
+                    z: 10.0,
+                    scale_x: 180.0,
+                    scale_y: 180.0,
+                    scale_z: 8.0,
+                    rotation_y: 0.0,
+                    foreground: true,
+                },
+                OutputProp {
+                    model_id: "models/sanctuary/tree_cherryblossom.glb".to_string(),
+                    x: 325.0,
+                    y: -65.0,
+                    z: 10.0,
+                    scale_x: 170.0,
+                    scale_y: 170.0,
+                    scale_z: 8.0,
+                    rotation_y: 0.0,
+                    foreground: true,
+                },
+                OutputProp {
+                    model_id: "models/sanctuary/water_at_end_oflevel.png".to_string(),
+                    x: 387.0,
+                    y: -173.0,
+                    z: 0.2,
+                    scale_x: 72.0,
+                    scale_y: 54.0,
+                    scale_z: 1.0,
+                    rotation_y: 0.0,
+                    foreground: false,
+                },
+                OutputProp {
+                    model_id: "models/sanctuary/raccoon_family.png".to_string(),
+                    x: 333.0,
+                    y: -119.0,
+                    z: 1.5,
+                    scale_x: 54.0,
+                    scale_y: 54.0,
+                    scale_z: 1.0,
+                    rotation_y: 0.0,
+                    foreground: false,
+                },
+            ],
+            lights: vec![],
+            gate_col: Some(44),
+            exit_next_level: Some("Sanctuary".to_string()),
+            stars_required: Some(0),
+        }],
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -910,7 +1071,7 @@ fn main() -> anyhow::Result<()> {
 
     let root = OutputRoot {
         schema_version: 1,
-        levels: vec![forest_level(), subdivision_level(), city_level()],
+        levels: vec![forest_level(), subdivision_level(), city_level(), sanctuary_level()],
     };
 
     // Print summary before writing

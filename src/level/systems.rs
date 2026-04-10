@@ -175,7 +175,7 @@ pub fn switch_layer(
 
         // Themed decorations
         if let Some(lid) = current_level.level_id {
-            crate::level::spawn_sublevel_decorations(&mut commands, &asset_server, lid, ox, oy);
+            crate::level::spawn_sublevel_decorations(&mut commands, &mut meshes, &mut materials, &asset_server, lid, ox, oy);
         }
 
         // Return door at col 28, ground level

@@ -4,6 +4,7 @@ pub mod spawner;
 
 use bevy::prelude::*;
 
+use crate::puzzle::components::GameProgress;
 use crate::states::AppState;
 use components::TraversalBlockoutMode;
 
@@ -22,7 +23,8 @@ impl Plugin for EnemiesPlugin {
             Update,
             (ai::enemy_ai, ai::enemy_ai_state_machine, ai::enemy_jump)
                 .run_if(in_state(AppState::Playing))
-                .run_if(not(resource_exists::<TraversalBlockoutMode>)),
+                .run_if(not(resource_exists::<TraversalBlockoutMode>))
+                .run_if(|gp: Res<GameProgress>| !gp.transition_in_progress),
         );
     }
 }
