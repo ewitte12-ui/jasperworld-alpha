@@ -16586,7 +16586,7 @@
               "scale_x": 160.0,
               "scale_y": 160.0,
               "scale_z": 8.0,
-              "rotation_y": -1.5707964,
+              "rotation_y": 0.0,
               "foreground": true
             },
             {
@@ -16597,7 +16597,7 @@
               "scale_x": 170.0,
               "scale_y": 170.0,
               "scale_z": 8.0,
-              "rotation_y": -1.5707964,
+              "rotation_y": 0.0,
               "foreground": true
             },
             {
