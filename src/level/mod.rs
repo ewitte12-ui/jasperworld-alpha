@@ -684,6 +684,45 @@ fn spawn_sanctuary_extras(
         Transform::from_xyz(water_x, water_y, 0.2),
         components::Decoration,
     ));
+
+    // Raccoon family portrait at the water's edge — the ending scene.
+    // Positioned just left of the water, standing on the ground surface.
+    let family_texture: Handle<Image> =
+        asset_server.load("models/sanctuary/raccoon_family.png");
+    let family_mesh = meshes.add(Rectangle::new(54.0, 54.0)); // ~3 tiles square
+    let family_material = materials.add(StandardMaterial {
+        base_color_texture: Some(family_texture),
+        unlit: true,
+        alpha_mode: AlphaMode::Blend,
+        double_sided: true,
+        cull_mode: None,
+        ..default()
+    });
+    // Place at col 42 (just left of the water gap), centered vertically
+    // with base at ground_top.
+    let family_x = col_x(42.0);
+    let family_y = ground_top + 27.0; // base at ground_top, center 27 units up
+    commands.spawn((
+        Mesh3d(family_mesh),
+        MeshMaterial3d(family_material),
+        Transform::from_xyz(family_x, family_y, 1.5),
+        components::Decoration,
+    ));
+
+    // Invisible wall at the left edge of the water gap (col 43).
+    // WHY: ground colliders were removed at cols 43-46 for the water, so
+    // without this the player falls into the void. This thin static wall
+    // stops the player at the water's edge while the LevelExit trigger
+    // (at col 44 + 30 units) fires as they approach.
+    let wall_x = col_x(43.0) - 9.0; // left edge of col 43
+    let wall_y = ground_top + 100.0; // tall enough the player can't jump over
+    commands.spawn((
+        Transform::from_xyz(wall_x, wall_y, 0.0),
+        Visibility::Hidden,
+        avian2d::prelude::RigidBody::Static,
+        avian2d::prelude::Collider::rectangle(4.0, 200.0),
+        components::Decoration,
+    ));
 }
 
 /// Inner logic for Sanctuary level entity spawning.
