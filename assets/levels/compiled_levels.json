@@ -16560,21 +16560,21 @@
             {
               "model_id": "models/sanctuary/ornate+chinese+arch+3d+model.glb",
               "x": 225.0,
-              "y": -146.0,
+              "y": -137.0,
               "z": -5.0,
               "scale_x": 240.0,
               "scale_y": 240.0,
               "scale_z": 240.0,
-              "rotation_y": -1.75,
+              "rotation_y": -1.571,
               "foreground": true
             },
             {
               "model_id": "models/sanctuary/sanctuary_lionstatue.glb",
-              "x": -225.0,
+              "x": -351.0,
               "y": -146.0,
               "z": 2.0,
-              "scale_x": 60.0,
-              "scale_y": 60.0,
+              "scale_x": 72.0,
+              "scale_y": 72.0,
               "scale_z": 30.0,
               "rotation_y": 0.0
             },
@@ -16586,18 +16586,18 @@
               "scale_x": 160.0,
               "scale_y": 160.0,
               "scale_z": 8.0,
-              "rotation_y": 0.0,
+              "rotation_y": -1.5707964,
               "foreground": true
             },
             {
               "model_id": "models/sanctuary/tree_cherryblossom.glb",
-              "x": 135.0,
+              "x": 45.0,
               "y": -61.0,
               "z": 10.0,
               "scale_x": 170.0,
               "scale_y": 170.0,
               "scale_z": 8.0,
-              "rotation_y": 0.0,
+              "rotation_y": -1.5707964,
               "foreground": true
             },
             {
@@ -16612,13 +16612,14 @@
             },
             {
               "model_id": "models/sanctuary/raccoon_family.png",
-              "x": 243.0,
-              "y": -146.0,
+              "x": 225.0,
+              "y": -155.0,
               "z": 1.5,
-              "scale_x": 54.0,
-              "scale_y": 54.0,
+              "scale_x": 72.0,
+              "scale_y": 72.0,
               "scale_z": 1.0,
-              "rotation_y": 0.0
+              "rotation_y": 0.0,
+              "foreground": true
             }
           ],
           "lights": [],

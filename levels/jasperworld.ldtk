@@ -10859,7 +10859,7 @@
             "defaultOverride": {
               "id": "V_Float",
               "params": [
-                0
+                -1.5707963267948966
               ]
             },
             "textLanguageMode": null,
@@ -46689,7 +46689,7 @@
               "defUid": 492,
               "px": [
                 657,
-                342
+                333
               ],
               "fieldInstances": [
                 {
@@ -46755,16 +46755,11 @@
                 {
                   "__identifier": "rotation_y",
                   "__type": "Float",
-                  "__value": -1.75,
+                  "__value": -1.571,
                   "__tile": null,
                   "defUid": 497,
                   "realEditorValues": [
-                    {
-                      "id": "V_Float",
-                      "params": [
-                        -1.75
-                      ]
-                    }
+                    null
                   ]
                 },
                 {
@@ -46799,12 +46794,12 @@
                 }
               ],
               "__worldX": 657,
-              "__worldY": 3342
+              "__worldY": 3333
             },
             {
               "__identifier": "Prop_SanctuaryLion",
               "__grid": [
-                11,
+                4,
                 18
               ],
               "__pivot": [
@@ -46825,7 +46820,7 @@
               "height": 18,
               "defUid": 500,
               "px": [
-                207,
+                81,
                 342
               ],
               "fieldInstances": [
@@ -46847,14 +46842,14 @@
                 {
                   "__identifier": "scale_x",
                   "__type": "Float",
-                  "__value": 60,
+                  "__value": 72,
                   "__tile": null,
                   "defUid": 502,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        60
+                        72
                       ]
                     }
                   ]
@@ -46907,14 +46902,14 @@
                 {
                   "__identifier": "scale_y",
                   "__type": "Float",
-                  "__value": 60,
+                  "__value": 72,
                   "__tile": null,
                   "defUid": 506,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        60
+                        72
                       ]
                     }
                   ]
@@ -46935,7 +46930,7 @@
                   ]
                 }
               ],
-              "__worldX": 207,
+              "__worldX": 81,
               "__worldY": 3342
             },
             {
@@ -47029,14 +47024,14 @@
                 {
                   "__identifier": "rotation_y",
                   "__type": "Float",
-                  "__value": 0,
+                  "__value": -1.5707963267948966,
                   "__tile": null,
                   "defUid": 513,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        0
+                        -1.5707963267948966
                       ]
                     }
                   ]
@@ -47078,7 +47073,7 @@
             {
               "__identifier": "Prop_CherryBlossom",
               "__grid": [
-                31,
+                26,
                 18
               ],
               "__pivot": [
@@ -47099,7 +47094,7 @@
               "height": 18,
               "defUid": 508,
               "px": [
-                567,
+                477,
                 342
               ],
               "fieldInstances": [
@@ -47166,14 +47161,14 @@
                 {
                   "__identifier": "rotation_y",
                   "__type": "Float",
-                  "__value": 0,
+                  "__value": -1.5707963267948966,
                   "__tile": null,
                   "defUid": 513,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        0
+                        -1.5707963267948966
                       ]
                     }
                   ]
@@ -47209,7 +47204,7 @@
                   ]
                 }
               ],
-              "__worldX": 567,
+              "__worldX": 477,
               "__worldY": 3342
             },
             {
@@ -47352,8 +47347,8 @@
             {
               "__identifier": "Prop_RaccoonFamily",
               "__grid": [
-                37,
-                18
+                36,
+                19
               ],
               "__pivot": [
                 0.5,
@@ -47373,8 +47368,8 @@
               "height": 18,
               "defUid": 534,
               "px": [
-                675,
-                342
+                657,
+                351
               ],
               "fieldInstances": [
                 {
@@ -47395,14 +47390,14 @@
                 {
                   "__identifier": "scale_x",
                   "__type": "Float",
-                  "__value": 54,
+                  "__value": 72,
                   "__tile": null,
                   "defUid": 536,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        54
+                        72
                       ]
                     }
                   ]
@@ -47455,14 +47450,14 @@
                 {
                   "__identifier": "scale_y",
                   "__type": "Float",
-                  "__value": 54,
+                  "__value": 72,
                   "__tile": null,
                   "defUid": 540,
                   "realEditorValues": [
                     {
                       "id": "V_Float",
                       "params": [
-                        54
+                        72
                       ]
                     }
                   ]
@@ -47470,21 +47465,21 @@
                 {
                   "__identifier": "foreground",
                   "__type": "Bool",
-                  "__value": false,
+                  "__value": true,
                   "__tile": null,
                   "defUid": 541,
                   "realEditorValues": [
                     {
                       "id": "V_Bool",
                       "params": [
-                        false
+                        true
                       ]
                     }
                   ]
                 }
               ],
-              "__worldX": 675,
-              "__worldY": 3342
+              "__worldX": 657,
+              "__worldY": 3351
             }
           ]
         },
