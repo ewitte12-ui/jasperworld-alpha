@@ -8,12 +8,12 @@ use bevy::prelude::*;
 use bevy_tnua::{TnuaControllerPlugin, TnuaUserControlsSystems};
 
 use crate::rendering::camera::CameraPipeline;
+use crate::sanctuary::cutscene::CutsceneCameraOverride;
+use crate::states::AppState;
 use components::PlayerControlScheme;
 use controller::setup_player_physics;
 use input::player_input;
 use systems::{camera_follow, player_clamp};
-
-use crate::states::AppState;
 
 pub struct PlayerPlugin;
 
@@ -29,11 +29,17 @@ impl Plugin for PlayerPlugin {
             Update,
             (
                 // player_input feeds Tnua every frame; must be in TnuaUserControlsSystems.
-                player_input.in_set(TnuaUserControlsSystems),
+                // Suppressed during cutscene so Jasper can't move while dialog is active.
+                player_input
+                    .in_set(TnuaUserControlsSystems)
+                    .run_if(not(resource_exists::<CutsceneCameraOverride>)),
                 player_clamp.after(player_input),
                 camera_follow
                     .after(player_clamp)
-                    .in_set(CameraPipeline::Follow),
+                    .in_set(CameraPipeline::Follow)
+                    // Suppressed when the sanctuary cutscene is active so the
+                    // cutscene camera systems take over without fighting for control.
+                    .run_if(not(resource_exists::<CutsceneCameraOverride>)),
             )
                 .run_if(in_state(AppState::Playing)),
         );
