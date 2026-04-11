@@ -5319,7 +5319,13 @@
           "enemies": [],
           "stars": [],
           "health_foods": [],
-          "doors": [],
+          "doors": [
+            {
+              "target_layer": 0,
+              "x": 5513.0,
+              "y": 5036.0
+            }
+          ],
           "props": [
             {
               "model_id": "models/sewer/column-large.glb",
@@ -5438,7 +5444,19 @@
           ],
           "gate_col": null,
           "exit_next_level": null,
-          "stars_required": null
+          "stars_required": null,
+          "bg_color": [
+            0.101960786,
+            0.101960786,
+            0.14901961
+          ],
+          "glow_enabled": false,
+          "glow_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_intensity": 0.0
         },
         {
           "id": 2,
@@ -13129,7 +13147,13 @@
           "enemies": [],
           "stars": [],
           "health_foods": [],
-          "doors": [],
+          "doors": [
+            {
+              "target_layer": 0,
+              "x": 5513.0,
+              "y": 5036.0
+            }
+          ],
           "props": [
             {
               "model_id": "models/cave/cliff_cave_stone.glb",
@@ -13255,7 +13279,19 @@
           ],
           "gate_col": null,
           "exit_next_level": null,
-          "stars_required": null
+          "stars_required": null,
+          "bg_color": [
+            0.12156863,
+            0.101960786,
+            0.07058824
+          ],
+          "glow_enabled": true,
+          "glow_color": [
+            1.0,
+            0.8352941,
+            0.6117647
+          ],
+          "glow_intensity": 1.2
         },
         {
           "id": 2,
@@ -19597,7 +19633,13 @@
           "enemies": [],
           "stars": [],
           "health_foods": [],
-          "doors": [],
+          "doors": [
+            {
+              "target_layer": 0,
+              "x": 5513.0,
+              "y": 5036.0
+            }
+          ],
           "props": [
             {
               "model_id": "models/sewer/column-large.glb",
@@ -19713,7 +19755,19 @@
           ],
           "gate_col": null,
           "exit_next_level": null,
-          "stars_required": null
+          "stars_required": null,
+          "bg_color": [
+            0.078431375,
+            0.101960786,
+            0.07058824
+          ],
+          "glow_enabled": true,
+          "glow_color": [
+            0.78039217,
+            1.0,
+            0.78039217
+          ],
+          "glow_intensity": 0.7
         },
         {
           "id": 2,
@@ -21891,7 +21945,22 @@
           "lights": [],
           "gate_col": null,
           "exit_next_level": null,
-          "stars_required": null
+          "stars_required": null,
+          "canopy_enabled": true,
+          "canopy_panel_bottom": 106.0,
+          "canopy_panel_height": 18.0,
+          "canopy_backdrop_height": 500.0,
+          "canopy_panel_color": [
+            0.101960786,
+            0.12156863,
+            0.2509804
+          ],
+          "canopy_panel_alpha": 0.65,
+          "canopy_backdrop_color": [
+            0.41960785,
+            0.4509804,
+            0.52156866
+          ]
         }
       ]
     }

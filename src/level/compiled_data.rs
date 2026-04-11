@@ -60,6 +60,50 @@ pub struct CompiledLayer {
     pub gate_col: Option<i32>,
     pub exit_next_level: Option<String>,
     pub stars_required: Option<i32>,
+    /// Sublevel (L1) dark background color as sRGB `[r, g, b]` floats.
+    /// `#[serde(default)]` for backwards-compat with pre-Phase-B+C outputs.
+    #[serde(default)]
+    pub bg_color: Option<[f32; 3]>,
+    /// Sublevel (L1) emissive glow on/off flag.
+    /// `#[serde(default)]` for backwards-compat with pre-Phase-B+C outputs.
+    #[serde(default)]
+    pub glow_enabled: Option<bool>,
+    /// Sublevel (L1) emissive glow color as sRGB `[r, g, b]` floats.
+    /// `#[serde(default)]` for backwards-compat with pre-Phase-B+C outputs.
+    #[serde(default)]
+    pub glow_color: Option<[f32; 3]>,
+    /// Sublevel (L1) emissive glow intensity multiplier in linear space.
+    /// `#[serde(default)]` for backwards-compat with pre-Phase-B+C outputs.
+    #[serde(default)]
+    pub glow_intensity: Option<f32>,
+    /// Solar canopy on/off flag for the rooftop layer (L2 Subdivision only).
+    /// `#[serde(default)]` for backwards-compat with pre-Phase-D compiled outputs.
+    #[serde(default)]
+    pub canopy_enabled: Option<bool>,
+    /// Solar canopy panel bottom Y in world units.
+    /// `#[serde(default)]` for backwards-compat with pre-Phase-D compiled outputs.
+    #[serde(default)]
+    pub canopy_panel_bottom: Option<f32>,
+    /// Solar canopy panel strip thickness in world units.
+    /// `#[serde(default)]` for backwards-compat with pre-Phase-D compiled outputs.
+    #[serde(default)]
+    pub canopy_panel_height: Option<f32>,
+    /// Solar canopy opaque backdrop height above panel in world units.
+    /// `#[serde(default)]` for backwards-compat with pre-Phase-D compiled outputs.
+    #[serde(default)]
+    pub canopy_backdrop_height: Option<f32>,
+    /// Solar canopy panel strip base color as sRGB `[r, g, b]` floats.
+    /// `#[serde(default)]` for backwards-compat with pre-Phase-D compiled outputs.
+    #[serde(default)]
+    pub canopy_panel_color: Option<[f32; 3]>,
+    /// Solar canopy panel strip alpha (0..1).
+    /// `#[serde(default)]` for backwards-compat with pre-Phase-D compiled outputs.
+    #[serde(default)]
+    pub canopy_panel_alpha: Option<f32>,
+    /// Solar canopy opaque backdrop base color as sRGB `[r, g, b]` floats.
+    /// `#[serde(default)]` for backwards-compat with pre-Phase-D compiled outputs.
+    #[serde(default)]
+    pub canopy_backdrop_color: Option<[f32; 3]>,
 }
 
 #[derive(Deserialize)]
@@ -302,6 +346,11 @@ pub fn spawn_entities_from_compiled(
     }
 
     // ── Props (decorative models placed in LDtk) ─────────────────────────────
+    // WHY id != 1: Layer 1 is the sublevel (cave / sewer / subway). Layer-1 props
+    // are owned by spawn_sublevel_decorations (src/level/mod.rs), which applies
+    // TileEntity for per-layer cleanup and MakeEmissive glow for bioluminescent
+    // atmosphere. Spawning here as well would double every cave prop.
+    if layer.id != 1 {
     for prop in &layer.props {
         // rotation_y is stored in radians as authored in LDtk.
         let rotation = Quat::from_rotation_y(prop.rotation_y);
@@ -343,6 +392,7 @@ pub fn spawn_entities_from_compiled(
                 entity.insert(super::components::ForegroundDecoration);
             }
         }
+    }
     }
 
     // ── Level gate ───────────────────────────────────────────────────────────

@@ -68,6 +68,9 @@ const CONTOUR_SCALE: f32 = 1.15;
 /// sprite's contour.
 ///
 /// For doors (entities without `Mesh3d`): spawns a plain additive rectangle.
+// WHY clippy::too_many_arguments allowed: this system needs player/glowable/child/mesh/material
+// queries plus a local cache; splitting would obscure the single-pass glow update logic.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn update_proximity_glow(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,

@@ -36,7 +36,9 @@ pub fn check_gate(
 /// `OnEnter(Playing)` and are not mid-gameplay transitions.
 /// Layer switches (`switch_layer`) swap tiles within the same level and are
 /// not level transitions.
-#[allow(clippy::too_many_arguments)]
+// WHY clippy::type_complexity allowed: door_and_glow_entities uses Or<(With<TransitionDoor>, With<GlowIndicator>)>
+// intentionally to stay within Bevy 0.18's 16-parameter system limit (see comment on query below).
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub fn check_level_exit(
     mut commands: Commands,
     asset_server: Res<AssetServer>,

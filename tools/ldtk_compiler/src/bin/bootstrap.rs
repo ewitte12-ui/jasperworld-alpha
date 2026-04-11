@@ -136,6 +136,17 @@ fn forest_layer0() -> OutputLayer {
         gate_col: Some(91),
         exit_next_level: Some("Subdivision".to_string()),
         stars_required: Some(10),
+        bg_color: None,
+        glow_enabled: None,
+        glow_color: None,
+        glow_intensity: None,
+        canopy_enabled: None,
+        canopy_panel_bottom: None,
+        canopy_panel_height: None,
+        canopy_backdrop_height: None,
+        canopy_panel_color: None,
+        canopy_panel_alpha: None,
+        canopy_backdrop_color: None,
     }
 }
 
@@ -205,6 +216,17 @@ fn forest_layer1() -> OutputLayer {
         gate_col: None,
         exit_next_level: None,
         stars_required: None,
+        bg_color: None,
+        glow_enabled: None,
+        glow_color: None,
+        glow_intensity: None,
+        canopy_enabled: None,
+        canopy_panel_bottom: None,
+        canopy_panel_height: None,
+        canopy_backdrop_height: None,
+        canopy_panel_color: None,
+        canopy_panel_alpha: None,
+        canopy_backdrop_color: None,
     }
 }
 
@@ -258,6 +280,17 @@ fn forest_layer2() -> OutputLayer {
         gate_col: None,
         exit_next_level: None,
         stars_required: None,
+        bg_color: None,
+        glow_enabled: None,
+        glow_color: None,
+        glow_intensity: None,
+        canopy_enabled: None,
+        canopy_panel_bottom: None,
+        canopy_panel_height: None,
+        canopy_backdrop_height: None,
+        canopy_panel_color: None,
+        canopy_panel_alpha: None,
+        canopy_backdrop_color: None,
     }
 }
 
@@ -371,6 +404,17 @@ fn subdivision_layer0() -> OutputLayer {
         gate_col: Some(91),
         exit_next_level: Some("City".to_string()),
         stars_required: Some(10),
+        bg_color: None,
+        glow_enabled: None,
+        glow_color: None,
+        glow_intensity: None,
+        canopy_enabled: None,
+        canopy_panel_bottom: None,
+        canopy_panel_height: None,
+        canopy_backdrop_height: None,
+        canopy_panel_color: None,
+        canopy_panel_alpha: None,
+        canopy_backdrop_color: None,
     }
 }
 
@@ -441,6 +485,17 @@ fn subdivision_layer1() -> OutputLayer {
         gate_col: None,
         exit_next_level: None,
         stars_required: None,
+        bg_color: None,
+        glow_enabled: None,
+        glow_color: None,
+        glow_intensity: None,
+        canopy_enabled: None,
+        canopy_panel_bottom: None,
+        canopy_panel_height: None,
+        canopy_backdrop_height: None,
+        canopy_panel_color: None,
+        canopy_panel_alpha: None,
+        canopy_backdrop_color: None,
     }
 }
 
@@ -496,6 +551,17 @@ fn subdivision_layer2() -> OutputLayer {
         gate_col: None,
         exit_next_level: None,
         stars_required: None,
+        bg_color: None,
+        glow_enabled: None,
+        glow_color: None,
+        glow_intensity: None,
+        canopy_enabled: None,
+        canopy_panel_bottom: None,
+        canopy_panel_height: None,
+        canopy_backdrop_height: None,
+        canopy_panel_color: None,
+        canopy_panel_alpha: None,
+        canopy_backdrop_color: None,
     }
 }
 
@@ -695,6 +761,17 @@ fn city_layer0() -> OutputLayer {
         gate_col: Some(91),
         exit_next_level: Some("Sanctuary".to_string()),
         stars_required: Some(10),
+        bg_color: None,
+        glow_enabled: None,
+        glow_color: None,
+        glow_intensity: None,
+        canopy_enabled: None,
+        canopy_panel_bottom: None,
+        canopy_panel_height: None,
+        canopy_backdrop_height: None,
+        canopy_panel_color: None,
+        canopy_panel_alpha: None,
+        canopy_backdrop_color: None,
     }
 }
 
@@ -765,6 +842,17 @@ fn city_layer1() -> OutputLayer {
         gate_col: None,
         exit_next_level: None,
         stars_required: None,
+        bg_color: None,
+        glow_enabled: None,
+        glow_color: None,
+        glow_intensity: None,
+        canopy_enabled: None,
+        canopy_panel_bottom: None,
+        canopy_panel_height: None,
+        canopy_backdrop_height: None,
+        canopy_panel_color: None,
+        canopy_panel_alpha: None,
+        canopy_backdrop_color: None,
     }
 }
 
@@ -876,6 +964,17 @@ fn city_layer2() -> OutputLayer {
         gate_col: None,
         exit_next_level: None,
         stars_required: None,
+        bg_color: None,
+        glow_enabled: None,
+        glow_color: None,
+        glow_intensity: None,
+        canopy_enabled: None,
+        canopy_panel_bottom: None,
+        canopy_panel_height: None,
+        canopy_backdrop_height: None,
+        canopy_panel_color: None,
+        canopy_panel_alpha: None,
+        canopy_backdrop_color: None,
     }
 }
 
@@ -1043,6 +1142,17 @@ fn sanctuary_level() -> OutputLevel {
             gate_col: Some(44),
             exit_next_level: Some("Sanctuary".to_string()),
             stars_required: Some(0),
+            bg_color: None,
+            glow_enabled: None,
+            glow_color: None,
+            glow_intensity: None,
+            canopy_enabled: None,
+            canopy_panel_bottom: None,
+            canopy_panel_height: None,
+            canopy_backdrop_height: None,
+            canopy_panel_color: None,
+            canopy_panel_alpha: None,
+            canopy_backdrop_color: None,
         }],
     }
 }
