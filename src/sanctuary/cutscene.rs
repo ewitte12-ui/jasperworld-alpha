@@ -1,5 +1,3 @@
-use std::f32::consts::FRAC_PI_2;
-
 use bevy::camera::ScalingMode;
 use bevy::prelude::*;
 use serde::Deserialize;

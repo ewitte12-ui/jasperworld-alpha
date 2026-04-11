@@ -588,12 +588,13 @@ pub fn spawn_sanctuary_background(
     commands.spawn((
         SceneRoot(asset_server.load(format!("{}#Scene0", fb.model))),
         Transform::from_xyz(fb.x, fb.y, fb.z)
-            // WHY -FRAC_PI_2 on Y: brings the facade forward to face the camera.
-            // WHY Z rotation: the island model tilts up on the right due to its geometry;
+            // WHY rotation_y: brings the facade forward to face the camera.
+            // WHY rotation_z: the island model tilts up on the right due to its geometry;
             // a small negative Z rotation (clockwise from camera) levels it visually.
+            // Both values come from sanctuary_bg.json (far_background.rotation_y / rotation_z).
             .with_rotation(
-                Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2)
-                    * Quat::from_rotation_z(-8_f32.to_radians()),
+                Quat::from_rotation_y(fb.rotation_y)
+                    * Quat::from_rotation_z(fb.rotation_z),
             )
             // WHY non-uniform scale (0.25 on X): after the Y rotation, local X
             // maps to world -Z (depth toward camera). Uniform scale causes the island's
