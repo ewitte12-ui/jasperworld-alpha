@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::combat::components::Health;
+use crate::level::level_data::CurrentLevel;
 use crate::player::components::Player;
 
 use super::components::{
@@ -26,6 +27,7 @@ pub fn pickup_collectibles(
     player_query: Query<&Transform, With<Player>>,
     collectible_query: Query<(Entity, &Transform, &Collectible)>,
     mut progress: ResMut<CollectionProgress>,
+    current_level: Res<CurrentLevel>,
     mut health_query: Query<&mut Health, With<Player>>,
     mut collected_writer: MessageWriter<CollectedEvent>,
 ) {
@@ -41,8 +43,29 @@ pub fn pickup_collectibles(
         if distance < 64.0 {
             commands.entity(entity).despawn();
 
+            // Build a key for the collected_by_layer map. level_id is always Some
+            // during normal gameplay (set before any collectibles exist), but the
+            // guard prevents panics in debug/editor scenarios.
+            let layer_key = current_level
+                .level_id
+                .map(|lid| (lid, current_level.layer_index));
+            // Use logical_pos (the pre-offset position from compiled JSON) as the
+            // persistence key. The spawn functions add a +6 Y visual offset to the
+            // Transform, so collectible_transform.translation would be [x, y+6, z]
+            // while spawn_entities_from_compiled uses the raw [x, y, z] as its key.
+            // logical_pos stores the raw position so both sides match.
+            let pos_key = CollectionProgress::pos_key(collectible.logical_pos);
+
             match collectible.collectible_type {
                 CollectibleType::Star => {
+                    if let Some(key) = layer_key {
+                        progress
+                            .collected_by_layer
+                            .entry(key)
+                            .or_default()
+                            .stars
+                            .insert(pos_key);
+                    }
                     progress.stars_collected += 1;
                     info!(
                         "Star collected! {}/{}",
@@ -50,6 +73,14 @@ pub fn pickup_collectibles(
                     );
                 }
                 CollectibleType::HealthFood => {
+                    if let Some(key) = layer_key {
+                        progress
+                            .collected_by_layer
+                            .entry(key)
+                            .or_default()
+                            .health_foods
+                            .insert(pos_key);
+                    }
                     if let Ok(mut health) = health_query.single_mut() {
                         health.current = (health.current + 20.0).min(health.max);
                     }
@@ -137,6 +168,10 @@ pub fn spawn_collectible(
 /// logical position (used by pickup_collectibles distance check) is the
 /// Transform translation, which includes this offset — but pickup_radius is
 /// 64 units, so 6 units of vertical shift has zero gameplay impact.
+///
+/// `position` is the raw pre-offset position from the compiled JSON, stored as
+/// `Collectible::logical_pos` so that `pickup_collectibles` can use a key that
+/// matches what `spawn_entities_from_compiled` uses for skipping.
 fn spawn_star_3d(
     commands: &mut Commands,
     asset_server: &AssetServer,
@@ -149,6 +184,7 @@ fn spawn_star_3d(
         Transform::from_translation(position + visual_offset).with_scale(Vec3::splat(50.0)),
         Collectible {
             collectible_type: CollectibleType::Star,
+            logical_pos: position,
         },
         Spinning { speed: 1.5 },
     ));
@@ -176,6 +212,8 @@ fn spawn_star_3d(
 /// Spawns apple.glb as a health pickup.
 ///
 /// Same visual Y offset as stars — prevents clipping into platform surfaces.
+/// `position` is stored as `Collectible::logical_pos` (pre-offset) for the
+/// same persistence-key reason as `spawn_star_3d`.
 fn spawn_health_food_3d(
     commands: &mut Commands,
     asset_server: &AssetServer,
@@ -188,6 +226,7 @@ fn spawn_health_food_3d(
         Transform::from_translation(position + visual_offset).with_scale(Vec3::splat(80.0)),
         Collectible {
             collectible_type: CollectibleType::HealthFood,
+            logical_pos: position,
         },
         Spinning { speed: 1.5 },
     ));

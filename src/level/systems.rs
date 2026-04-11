@@ -148,12 +148,20 @@ pub fn switch_layer(
         commands.entity(entity).despawn();
     }
 
-    // ── Reset per-layer progress ─────────────────────────────────────────
-    // Reset per-layer counts to match check_level_exit's contract.
-    // spawn_level_full → spawn_entities_from_compiled will immediately set
-    // stars_total to the target layer's count.
-    collection_progress.stars_collected = 0;
-    collection_progress.stars_total = 0;
+    // ── Preserve progress across layer switch ───────────────────────────
+    // WHY no reset of stars_collected/stars_total here: sublevels (e.g. the
+    // Forest cave at L1) share the parent level's HUD display. If we zero'd
+    // the counts, entering a sublevel with no stars would show "0/10" instead
+    // of the expected "3/10". See the companion gate in
+    // `spawn_entities_from_compiled` at `src/level/compiled_data.rs`
+    // (`if !layer.stars.is_empty()`) — that function only overwrites these
+    // fields when the target layer has its own stars, so:
+    //   • L0 → L1 (empty cave): counts unchanged, HUD preserves L0 display.
+    //   • L1 → L0: spawn recomputes from collected_by_layer, restoring the
+    //     correct "3/10" after the round trip.
+    // collected_by_layer is also preserved — it's cleared only on full level
+    // transitions (check_level_exit) and new game (handle_new_game) via
+    // ::default(). NOTE: collected_by_layer deliberately NOT touched here.
 
     // ── Respawn the target layer via the canonical shared path ──────────
     // Handles: tiles, JSON entities (enemies, stars, gate, exit, layer-0/2

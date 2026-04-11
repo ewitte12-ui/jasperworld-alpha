@@ -275,31 +275,70 @@ pub fn spawn_entities_from_compiled(
     // City-level collectibles use the shimmer/emissive effect.
     let shimmer = matches!(level_id, LevelId::City);
 
+    // Build lookup for already-collected items at this (level, layer).
+    // Missing entry → fresh layer, spawn everything; present → skip collected
+    // positions and bump stars_collected to the previously-collected count.
+    let layer_key = (level_id, layer.id);
+
     // ── Stars ────────────────────────────────────────────────────────────────
-    for &[x, y, z] in &layer.stars {
-        spawn_collectible(
-            commands,
-            asset_server,
-            Vec3::new(x, y, z),
-            CollectibleType::Star,
-            shimmer,
-        );
+    // Use a scope block so the immutable borrow of `progress.collected_by_layer`
+    // is dropped before the mutable assignments to `progress.stars_*` below.
+    let stars_already_collected;
+    {
+        let collected_set = progress.collected_by_layer.get(&layer_key);
+        let mut count = 0u32;
+        for &[x, y, z] in &layer.stars {
+            let pos = Vec3::new(x, y, z);
+            let pos_key = CollectionProgress::pos_key(pos);
+            if let Some(set) = collected_set
+                && set.stars.contains(&pos_key)
+            {
+                count += 1;
+                continue;
+            }
+            spawn_collectible(commands, asset_server, pos, CollectibleType::Star, shimmer);
+        }
+        stars_already_collected = count;
     }
 
     // Set stars_required (default 10 to match hardcoded levels if absent).
-    let required = layer.stars_required.unwrap_or(10) as u32;
-    progress.stars_total = required;
-    progress.stars_collected = 0;
+    //
+    // WHY the `!layer.stars.is_empty()` gate: sublevels (e.g. Forest L1 cave)
+    // have no stars of their own, so they should NOT overwrite the parent
+    // layer's star counts. Preserving the caller's values lets the HUD keep
+    // showing e.g. "3/10" while the player is in a sublevel. If a sublevel
+    // later gains its own stars, that layer's stars_required will take over
+    // (probably the desired behavior — the stars count toward that layer).
+    // On full level transitions `check_level_exit` resets progress via
+    // `::default()`, so there is no cross-level leakage.
+    if !layer.stars.is_empty() {
+        let required = layer.stars_required.unwrap_or(10) as u32;
+        progress.stars_total = required;
+        // Restore previously-collected count so the HUD and gate check remain correct.
+        progress.stars_collected = stars_already_collected;
+    }
 
     // ── Health foods ─────────────────────────────────────────────────────────
-    for &[x, y, z] in &layer.health_foods {
-        spawn_collectible(
-            commands,
-            asset_server,
-            Vec3::new(x, y, z),
-            CollectibleType::HealthFood,
-            shimmer,
-        );
+    // Same scope-block pattern: immutable borrow is released before any further
+    // mutable use of `progress`.
+    {
+        let collected_set = progress.collected_by_layer.get(&layer_key);
+        for &[x, y, z] in &layer.health_foods {
+            let pos = Vec3::new(x, y, z);
+            let pos_key = CollectionProgress::pos_key(pos);
+            if let Some(set) = collected_set
+                && set.health_foods.contains(&pos_key)
+            {
+                continue;
+            }
+            spawn_collectible(
+                commands,
+                asset_server,
+                pos,
+                CollectibleType::HealthFood,
+                shimmer,
+            );
+        }
     }
 
     // ── Enemies ──────────────────────────────────────────────────────────────
