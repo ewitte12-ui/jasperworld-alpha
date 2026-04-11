@@ -732,11 +732,11 @@ fn spawn_sanctuary_inner(
     // WHY inline tile grid: this is the hardcoded fallback path (no JSON available).
     // Generate the same Sanctuary tile layout as bootstrap.rs so the overlay matches.
     let mut sanctuary_tiles: Vec<Vec<u8>> = vec![vec![0u8; 48]; 22];
-    for r in 0..3 {
-        sanctuary_tiles[r] = vec![1u8; 48];
-        for c in 43..=46 {
-            sanctuary_tiles[r][c] = 0;
-        }
+    // WHY iter_mut().take(3): idiomatic form satisfies clippy::needless_range_loop
+    // while preserving the original semantics (first 3 rows solid, cols 43..=46 cleared).
+    for row in sanctuary_tiles.iter_mut().take(3) {
+        *row = vec![1u8; 48];
+        row[43..=46].fill(0);
     }
     spawn_sanctuary_extras(commands, asset_server, meshes, materials, &sanctuary_tiles);
 }
@@ -979,10 +979,20 @@ pub fn spawn_sublevel_decorations(
         LevelId::Sanctuary => "Sanctuary",
     };
 
-    // Load both props and lights from the same JSON layer 1 entry.
-    let (props, lights_data): (
+    // Load props, lights, and the JSON-driven emissive glow from the same
+    // layer 1 entry. The glow triple (enabled, srgb color, intensity) is
+    // reconstructed into a final HDR LinearRgba at spawn time by converting
+    // the sRGB color to linear space and multiplying by the intensity.
+    //
+    // WHY convert through Color::srgb(...).to_linear() rather than using the
+    // raw [r, g, b] triple directly: LDtk stores colors in sRGB hex, but the
+    // game's emissive material expects linear-space values. The reconstruction
+    // matches the previously hardcoded values exactly (e.g. #FFD59C * 1.2
+    // → linear (1.2, 0.8, 0.4), which matches the old LinearRgba::new(1.2, 0.8, 0.4, 1.0)).
+    let (props, lights_data, json_glow): (
         Vec<compiled_data::CompiledProp>,
         Vec<compiled_data::CompiledLight>,
+        Option<LinearRgba>,
     ) = if let Some(root) =
         compiled_data::try_load_compiled_levels("assets/levels/compiled_levels.json")
     {
@@ -993,21 +1003,41 @@ pub fn spawn_sublevel_decorations(
                 // Layer 1 is the sublevel (index 1 in the layers Vec).
                 level.layers.into_iter().find(|l| l.id == 1)
             })
-            .map(|layer| (layer.props, layer.lights))
+            .map(|layer| {
+                let glow = if layer.glow_enabled.unwrap_or(false) {
+                    let [r, g, b] = layer.glow_color.unwrap_or([0.0, 0.0, 0.0]);
+                    let intensity = layer.glow_intensity.unwrap_or(0.0);
+                    let linear = Color::srgb(r, g, b).to_linear();
+                    Some(LinearRgba {
+                        red: linear.red * intensity,
+                        green: linear.green * intensity,
+                        blue: linear.blue * intensity,
+                        alpha: 1.0,
+                    })
+                } else {
+                    None
+                };
+                (layer.props, layer.lights, glow)
+            })
             .unwrap_or_default()
     } else {
         warn!("[SUBLEVEL_DECOR] could not load compiled_levels.json — no props or lights spawned");
-        (Vec::new(), Vec::new())
+        (Vec::new(), Vec::new(), None)
     };
 
     // Cave/Sewer: emissive glow (bioluminescent/atmospheric).
     // Subway: NO emissive — lit by point lights for proper 3D edge definition.
-    let glow = match level_id {
+    //
+    // WHY fallback match remains: insurance against compiled_levels.json being
+    // missing or the LDtk level not having the glow fields set. If the JSON
+    // path produced a glow value we use it; otherwise we fall back to the
+    // original hardcoded per-level values so visuals don't regress.
+    let glow = json_glow.or_else(|| match level_id {
         LevelId::Forest => Some(LinearRgba::new(1.2, 0.8, 0.4, 1.0)),
         LevelId::Subdivision => Some(LinearRgba::new(0.4, 0.7, 0.4, 1.0)),
         LevelId::City => None,      // point lights instead
         LevelId::Sanctuary => None, // no sublevels; arm required for exhaustiveness
-    };
+    });
 
     info!(
         "[SUBLEVEL_DECOR] level={:?} origin=({origin_x}, {origin_y}) prop_count={} glow={:?}",
@@ -1089,28 +1119,45 @@ pub fn spawn_sublevel_decorations(
 /// through the semi-transparent panel, giving the "rain above, player below" feel.
 ///
 /// Entities carry `TileEntity` so they despawn automatically on layer switch.
-/// Only call when level_id == Subdivision && layer_index == 2.
+/// Gating is handled by the caller via the LDtk `canopy_enabled` field
+/// (fallback: `level_id == Subdivision && layer_index == 2`).
+///
+/// All geometry/color params are caller-supplied; defaults used to be
+/// hardcoded inline (panel_bottom=106, panel_height=18, backdrop_height=500,
+/// panel_color=srgb(0.10,0.12,0.25), panel_alpha=0.65, backdrop_color=
+/// srgb(0.42,0.45,0.52)) and are now authored as LDtk level custom-field
+/// defaultOverrides (defUids 605–611 in `levels/jasperworld.ldtk`). Historic
+/// tuning note: 106 = row 14 top (70) + ~2 tiles (36), panel_height=18 = 1
+/// tile thick (low overhead structure).
+// Allow > 7 arguments: this is a plain helper, not a Bevy system.
+// The extra params were previously hardcoded inside; they are now caller-
+// supplied so designers can tune them via LDtk level fields.
+#[allow(clippy::too_many_arguments)]
 pub fn spawn_solar_panel_canopy(
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
+    panel_bottom: f32,
+    panel_height: f32,
+    backdrop_height: f32,
+    panel_color: Color,
+    panel_alpha: f32,
+    backdrop_color: Color,
 ) {
-    // Row 14 top = 70.  Panel bottom sits ~2 tiles above that = 70 + 36 = 106.
-    // Panel is 18 units tall (1 tile thick) — feels like a low overhead structure.
-    let panel_bottom = 106.0;
-    let panel_height = 18.0;
-    let panel_center_y = panel_bottom + panel_height * 0.5; // 115
-    let level_width = 2000.0; // wider than the 1728-unit level for edge coverage
+    let panel_center_y = panel_bottom + panel_height * 0.5;
+    // level_width is infrastructure (wider than the 1728-unit level for edge
+    // coverage so parallax assets never peek through at the edges), not a
+    // creative tuning knob — leave hardcoded.
+    let level_width = 2000.0;
 
     // Opaque backdrop: covers from panel bottom to well above camera top.
     // Blocks parallax houses (z=-50/-80) and sky (z=-100) from showing
     // above the panel. Uses a dark grey-blue matching the overcast sky overlay
     // so the transition is seamless.
-    let backdrop_height = 500.0;
     let backdrop_y = panel_bottom + backdrop_height * 0.5;
     let backdrop_mesh = meshes.add(Rectangle::new(level_width, backdrop_height));
     let backdrop_mat = materials.add(StandardMaterial {
-        base_color: Color::srgb(0.42, 0.45, 0.52),
+        base_color: backdrop_color,
         unlit: true,
         alpha_mode: AlphaMode::Opaque,
         ..default()
@@ -1123,9 +1170,11 @@ pub fn spawn_solar_panel_canopy(
     ));
 
     // Solar panel: dark blue-grey, semi-transparent. Full level width.
+    // Extract r/g/b from panel_color and combine with separate panel_alpha.
+    let pc = panel_color.to_srgba();
     let panel_mesh = meshes.add(Rectangle::new(level_width, panel_height));
     let panel_mat = materials.add(StandardMaterial {
-        base_color: Color::srgba(0.10, 0.12, 0.25, 0.65),
+        base_color: Color::srgba(pc.red, pc.green, pc.blue, panel_alpha),
         unlit: true,
         alpha_mode: AlphaMode::Blend,
         ..default()
@@ -1208,6 +1257,23 @@ pub fn spawn_level_full(
     // spawning so the fallback does not double-spawn.
     let mut json_entities_spawned = false;
 
+    // Sublevel (L1) dark-background color captured from the compiled layer so
+    // it can be consumed later in the function when the L1 background quad
+    // is spawned. `None` means "no JSON value available — use hardcoded
+    // per-level fallback".
+    let mut sublevel_bg_color: Option<[f32; 3]> = None;
+
+    // Subdivision L2 solar canopy parameters captured from the compiled layer so
+    // they can be consumed later in the function when the canopy is spawned.
+    // All optional — `None` means "fall back to the per-level hardcoded default".
+    let mut canopy_enabled: Option<bool> = None;
+    let mut canopy_panel_bottom: Option<f32> = None;
+    let mut canopy_panel_height: Option<f32> = None;
+    let mut canopy_backdrop_height: Option<f32> = None;
+    let mut canopy_panel_color: Option<[f32; 3]> = None;
+    let mut canopy_panel_alpha: Option<f32> = None;
+    let mut canopy_backdrop_color: Option<[f32; 3]> = None;
+
     // Attempt to load compiled JSON.  `try_load_compiled_levels` returns None
     // on any file / parse / version error and logs a warning internally.
     let level_data =
@@ -1256,6 +1322,23 @@ pub fn spawn_level_full(
                 // Bounds-check against the raw JSON layers (should match converted
                 // data, but guard against divergence to prevent panics).
                 if let Some(compiled_layer) = compiled_level.layers.get(clamped) {
+                    // Capture the sublevel bg_color so the dark-background
+                    // quad spawned below the match can consume it. Only L1
+                    // layers populate this field in LDtk; other layers leave
+                    // it as `None` and the hardcoded fallback applies.
+                    sublevel_bg_color = compiled_layer.bg_color;
+
+                    // Capture canopy params from L2 Subdivision_Rooftop.
+                    // All None on non-rooftop layers (skip_serializing_if
+                    // omits them from JSON; serde default gives None on read).
+                    canopy_enabled = compiled_layer.canopy_enabled;
+                    canopy_panel_bottom = compiled_layer.canopy_panel_bottom;
+                    canopy_panel_height = compiled_layer.canopy_panel_height;
+                    canopy_backdrop_height = compiled_layer.canopy_backdrop_height;
+                    canopy_panel_color = compiled_layer.canopy_panel_color;
+                    canopy_panel_alpha = compiled_layer.canopy_panel_alpha;
+                    canopy_backdrop_color = compiled_layer.canopy_backdrop_color;
+
                     compiled_data::spawn_entities_from_compiled(
                         commands,
                         meshes,
@@ -1356,9 +1439,23 @@ pub fn spawn_level_full(
     }
     spawn_level_decorations(commands, meshes, materials, asset_server, level_id);
 
-    // Solar panel canopy on Subdivision Rooftop layer only.
-    if level_id == LevelId::Subdivision && layer_index == 2 {
-        spawn_solar_panel_canopy(commands, meshes, materials);
+    // Solar panel canopy: config sourced from LDtk `canopy_*` level fields
+    // on the rooftop level. When the field is absent, fall back to the old
+    // per-level gate + hardcoded values so behavior is preserved for pre-
+    // migration compiled outputs.
+    let canopy_is_hardcoded_subdivision = level_id == LevelId::Subdivision && layer_index == 2;
+    if canopy_enabled.unwrap_or(canopy_is_hardcoded_subdivision) {
+        let pb = canopy_panel_bottom.unwrap_or(106.0);
+        let ph = canopy_panel_height.unwrap_or(18.0);
+        let bh = canopy_backdrop_height.unwrap_or(500.0);
+        let pc = canopy_panel_color
+            .map(|[r, g, b]| Color::srgb(r, g, b))
+            .unwrap_or_else(|| Color::srgb(0.10, 0.12, 0.25));
+        let pa = canopy_panel_alpha.unwrap_or(0.65);
+        let bc = canopy_backdrop_color
+            .map(|[r, g, b]| Color::srgb(r, g, b))
+            .unwrap_or_else(|| Color::srgb(0.42, 0.45, 0.52));
+        spawn_solar_panel_canopy(commands, meshes, materials, pb, ph, bh, pc, pa, bc);
     }
 
     // Sublevel setup: dark background, decorations, return door.
@@ -1368,12 +1465,21 @@ pub fn spawn_level_full(
         let center_x = ox + 16.0 * TILE_SIZE;
         let center_y = oy + 9.0 * TILE_SIZE;
 
-        let bg_color = match level_id {
-            LevelId::Forest => Color::srgb(0.12, 0.10, 0.07),
-            LevelId::Subdivision => Color::srgb(0.08, 0.10, 0.07),
-            LevelId::City => Color::srgb(0.10, 0.10, 0.15),
-            LevelId::Sanctuary => Color::srgb(0.10, 0.08, 0.06),
-        };
+        // Sublevel dark background: color driven by LDtk level field `bg_color`
+        // (see tools/ldtk_compiler converter.rs::get_level_field_color).
+        //
+        // WHY fallback preserved: if compiled_levels.json is missing, stale,
+        // or the designer has cleared the field, we still want the visuals
+        // to match the pre-migration appearance. This match mirrors the
+        // previously hardcoded colors so the background never goes black.
+        let bg_color = sublevel_bg_color
+            .map(|[r, g, b]| Color::srgb(r, g, b))
+            .unwrap_or_else(|| match level_id {
+                LevelId::Forest => Color::srgb(0.12, 0.10, 0.07),
+                LevelId::Subdivision => Color::srgb(0.08, 0.10, 0.07),
+                LevelId::City => Color::srgb(0.10, 0.10, 0.15),
+                LevelId::Sanctuary => Color::srgb(0.10, 0.08, 0.06),
+            });
         let bg_mesh = meshes.add(Rectangle::new(2000.0, 1000.0));
         let bg_mat = materials.add(StandardMaterial {
             base_color: bg_color,
@@ -1390,14 +1496,8 @@ pub fn spawn_level_full(
 
         spawn_sublevel_decorations(commands, meshes, materials, asset_server, level_id, ox, oy);
 
-        let door_x = ox + 28.0 * TILE_SIZE + TILE_SIZE * 0.5;
-        let door_y = oy + 2.0 * TILE_SIZE;
-        commands.spawn((
-            SceneRoot(asset_server.load("models/door-rotate.glb#Scene0")),
-            Transform::from_xyz(door_x, door_y, 1.0).with_scale(Vec3::new(60.0, 54.0, 7.0)),
-            doors::TransitionDoor { target_layer: 0 },
-            components::TileEntity,
-        ));
+        // Return door is now placed in LDtk as a Door entity with target_layer=0,
+        // spawned via spawn_entities_from_compiled. See compiled_data.rs:286.
     }
 
     commands.insert_resource(level_data);
@@ -1405,7 +1505,9 @@ pub fn spawn_level_full(
     spawn
 }
 
-#[allow(clippy::too_many_arguments)]
+// WHY clippy::type_complexity allowed: doors_and_glow uses Or<(With<TransitionDoor>, With<GlowIndicator>)>
+// intentionally to stay within Bevy 0.18's 16-parameter system limit (see comment on query below).
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn handle_new_game(
     mut commands: Commands,
     mut new_game: ResMut<NewGameRequested>,

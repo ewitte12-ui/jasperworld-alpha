@@ -92,6 +92,37 @@ pub struct ConvertedLayer {
     pub exit_next_level: Option<String>,
     /// Stars required to pass through the Gate, extracted from the Gate entity.
     pub stars_required: Option<i32>,
+    /// Sublevel (L1) dark-background color as an sRGB `[r, g, b]` triple,
+    /// sourced from the LDtk level's `bg_color` custom field.
+    /// Only populated on L1 levels (Forest_Cave / Subdivision_Sewer / City_Subway);
+    /// `None` on surface/rooftop levels where no dark background is drawn.
+    pub bg_color: Option<[f32; 3]>,
+    /// Sublevel (L1) emissive glow on/off flag, from the `glow_enabled` field.
+    pub glow_enabled: Option<bool>,
+    /// Sublevel (L1) emissive glow color as an sRGB `[r, g, b]` triple,
+    /// from the `glow_color` field. Multiplied by `glow_intensity` in linear
+    /// space at spawn time to reconstruct the final HDR glow value.
+    pub glow_color: Option<[f32; 3]>,
+    /// Sublevel (L1) emissive glow intensity multiplier (linear space),
+    /// from the `glow_intensity` field. 0.0 disables the glow.
+    pub glow_intensity: Option<f32>,
+    /// Solar canopy on/off flag for the rooftop layer, from `canopy_enabled`.
+    /// `None` on all levels except Subdivision_Rooftop.
+    pub canopy_enabled: Option<bool>,
+    /// Solar canopy panel bottom Y (world units), from `canopy_panel_bottom`.
+    pub canopy_panel_bottom: Option<f32>,
+    /// Solar canopy panel strip thickness (world units), from `canopy_panel_height`.
+    pub canopy_panel_height: Option<f32>,
+    /// Solar canopy opaque backdrop height above panel (world units), from `canopy_backdrop_height`.
+    pub canopy_backdrop_height: Option<f32>,
+    /// Solar canopy panel strip base color as sRGB `[r, g, b]` triple,
+    /// parsed from `canopy_panel_color` hex field.
+    pub canopy_panel_color: Option<[f32; 3]>,
+    /// Solar canopy panel strip alpha (0..1), from `canopy_panel_alpha`.
+    pub canopy_panel_alpha: Option<f32>,
+    /// Solar canopy opaque backdrop base color as sRGB `[r, g, b]` triple,
+    /// parsed from `canopy_backdrop_color` hex field.
+    pub canopy_backdrop_color: Option<[f32; 3]>,
 }
 
 /// A converted enemy entity.
@@ -241,6 +272,24 @@ fn convert_level(level: &crate::ldtk_schema::LdtkLevel) -> ConvertedLevel {
     // Extract world-space origin from level field instances, using defaults when absent.
     let origin_x = get_level_field_f32(level, "OriginX").unwrap_or(DEFAULT_ORIGIN_X);
     let origin_y = get_level_field_f32(level, "OriginY").unwrap_or(DEFAULT_ORIGIN_Y);
+
+    // Sublevel (L1) dark-background + emissive glow fields.
+    // These are `None` for surface/rooftop LDtk levels that don't set them;
+    // after merge_sublevel_layers runs, the values end up on layer 1 of the
+    // merged output (matching where they were authored in LDtk).
+    let bg_color = get_level_field_color(level, "bg_color");
+    let glow_enabled = get_level_field_bool(level, "glow_enabled");
+    let glow_color = get_level_field_color(level, "glow_color");
+    let glow_intensity = get_level_field_f32(level, "glow_intensity");
+
+    // Solar canopy fields (L2 rooftop only; absent / None on all other levels).
+    let canopy_enabled = get_level_field_bool(level, "canopy_enabled");
+    let canopy_panel_bottom = get_level_field_f32(level, "canopy_panel_bottom");
+    let canopy_panel_height = get_level_field_f32(level, "canopy_panel_height");
+    let canopy_backdrop_height = get_level_field_f32(level, "canopy_backdrop_height");
+    let canopy_panel_color = get_level_field_color(level, "canopy_panel_color");
+    let canopy_panel_alpha = get_level_field_f32(level, "canopy_panel_alpha");
+    let canopy_backdrop_color = get_level_field_color(level, "canopy_backdrop_color");
 
     let layers = match &level.layer_instances {
         Some(l) => l,
@@ -446,6 +495,17 @@ fn convert_level(level: &crate::ldtk_schema::LdtkLevel) -> ConvertedLevel {
         gate_col,
         exit_next_level,
         stars_required,
+        bg_color,
+        glow_enabled,
+        glow_color,
+        glow_intensity,
+        canopy_enabled,
+        canopy_panel_bottom,
+        canopy_panel_height,
+        canopy_backdrop_height,
+        canopy_panel_color,
+        canopy_panel_alpha,
+        canopy_backdrop_color,
     };
 
     ConvertedLevel {
@@ -555,6 +615,30 @@ fn get_level_field_f32(level: &crate::ldtk_schema::LdtkLevel, name: &str) -> Opt
         .and_then(|f| f.value.as_ref())
         .and_then(|v| v.as_f64())
         .map(|n| n as f32)
+}
+
+/// Returns the bool value of a named custom field from a Level, or `None`
+/// when the field is absent, null, or not a JSON boolean.
+fn get_level_field_bool(level: &crate::ldtk_schema::LdtkLevel, name: &str) -> Option<bool> {
+    level
+        .field_instances
+        .iter()
+        .find(|f| f.identifier == name)
+        .and_then(|f| f.value.as_ref())
+        .and_then(|v| v.as_bool())
+}
+
+/// Returns the sRGB `[r, g, b]` value of a named Color custom field from a
+/// Level, parsed from LDtk's hex string format (e.g. `"#1F1A12"`).
+/// Returns `None` when the field is absent, null, or not a JSON string.
+fn get_level_field_color(level: &crate::ldtk_schema::LdtkLevel, name: &str) -> Option<[f32; 3]> {
+    level
+        .field_instances
+        .iter()
+        .find(|f| f.identifier == name)
+        .and_then(|f| f.value.as_ref())
+        .and_then(|v| v.as_str())
+        .map(parse_hex_color)
 }
 
 // ---------------------------------------------------------------------------

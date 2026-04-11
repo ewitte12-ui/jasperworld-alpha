@@ -1,12 +1,16 @@
 use avian2d::prelude::LinearVelocity;
 use bevy::prelude::*;
 
-use crate::level::components::TileEntity;
-use crate::level::level_data::{CurrentLevel, LevelData, LevelId};
+use crate::collectibles::components::{Collectible, CollectionProgress};
+use crate::enemies::components::Enemy;
+use crate::level::components::{Decoration, TileEntity};
+use crate::level::level_data::{CurrentLevel, LevelData};
+use crate::level::spawn_level_full;
 use crate::player::components::Player;
+use crate::puzzle::components::{LevelExit, LevelGate};
 use crate::rendering::camera::GameplayCamera;
-use crate::tilemap::spawn::spawn_tilemap;
 use crate::tilemap::tilemap::TILE_SIZE;
+use crate::vfx::glow::GlowIndicator;
 
 /// Half of the orthographic viewport height (FixedVertical 320 / 2).
 const HALF_HEIGHT: f32 = 160.0;
@@ -23,182 +27,160 @@ const HALF_HEIGHT: f32 = 160.0;
 const VIEW_BOTTOM_OFFSET: f32 = 234.0;
 const VIEW_TOP_OFFSET: f32 = 128.0;
 
-/// Cycles to the next layer when the player presses E, but only if the player
-/// is within 60 units of a [`super::doors::TransitionDoor`].
-/// Despawns all [`TileEntity`] entities, spawns the new layer's tiles,
-/// and teleports the player to the new layer's spawn point.
+/// Transitions the player to a new layer when they press E near a
+/// [`super::doors::TransitionDoor`]. Executes a full entity wipe and
+/// respawns the target layer via [`spawn_level_full`] — the same canonical
+/// path used by `check_level_exit` and `handle_new_game`.
 ///
-/// Sets `transition_in_progress` for the duration of the switch so that
-/// player input is suppressed and cannot fight the teleport.
-#[allow(clippy::too_many_arguments)]
+/// This makes each layer a self-contained stage: sublevels get their own
+/// fresh enemies/stars/gate/exit, and returning to layer 0 respawns all
+/// layer-0 entities (including previously killed enemies).
+///
+/// Sets `transition_in_progress` and arms `transition_cooldown=1` so that
+/// player input is suppressed until the despawn commands have applied.
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 pub fn switch_layer(
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut current_level: ResMut<CurrentLevel>,
-    level_data: Option<Res<LevelData>>,
-    tile_entities: Query<Entity, With<TileEntity>>,
-    mut player_query: Query<(&mut Transform, &mut LinearVelocity), With<Player>>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    door_query: Query<(&Transform, &super::doors::TransitionDoor), Without<Player>>,
-    mut game_progress: ResMut<crate::puzzle::components::GameProgress>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut current_level: ResMut<CurrentLevel>,
+    level_data: Option<Res<LevelData>>,
+    mut game_progress: ResMut<crate::puzzle::components::GameProgress>,
+    mut collection_progress: ResMut<CollectionProgress>,
+    mut player_query: Query<(&mut Transform, &mut LinearVelocity), With<Player>>,
+    // Dual-purpose: proximity check (Transform) AND cleanup despawn (Entity).
+    door_query: Query<(Entity, &Transform, &super::doors::TransitionDoor), Without<Player>>,
+    tile_entities: Query<Entity, With<TileEntity>>,
+    decoration_entities: Query<Entity, With<Decoration>>,
+    enemy_entities: Query<Entity, With<Enemy>>,
+    collectible_entities: Query<Entity, With<Collectible>>,
+    // WHY Or<>: Bevy 0.18 system limit is 16 parameters. Merging three cleanup-only
+    // markers into one Or query keeps us at exactly 16. LevelGate is included here
+    // (unlike check_level_exit) because switch_layer can fire BEFORE all stars are
+    // collected, so a gate may still exist; check_level_exit relies on check_gate
+    // having already cleared it.
+    cleanup_bundle: Query<
+        Entity,
+        Or<(With<GlowIndicator>, With<LevelExit>, With<LevelGate>)>,
+    >,
 ) {
+    // ── Guard: E-key ─────────────────────────────────────────────────────
     if !keyboard.just_pressed(KeyCode::KeyE) {
         return;
     }
 
+    // ── Guard: transition lock / game over ───────────────────────────────
     if game_progress.transition_in_progress || game_progress.game_complete {
         return;
     }
 
-    let Some(level_data) = level_data else { return };
-
-    let num_layers = level_data.layers.len();
+    // ── Guard: required state ────────────────────────────────────────────
+    let Some(current_level_id) = current_level.level_id else {
+        return;
+    };
+    let Some(level_data_ref) = level_data.as_ref() else {
+        return;
+    };
+    let num_layers = level_data_ref.layers.len();
     if num_layers == 0 {
         return;
     }
 
-    // Find nearest door within interaction range.
-    let player_pos = player_query
-        .single()
-        .map(|(t, _)| t.translation.truncate())
-        .unwrap_or_default();
-    let nearest_door = door_query
+    // ── Proximity: find nearest TransitionDoor within 60 units ───────────
+    let Ok((player_tf, _)) = player_query.single() else {
+        return;
+    };
+    let player_pos = player_tf.translation.truncate();
+
+    let Some((_, _, nearest_door)) = door_query
         .iter()
-        .filter(|(door_tf, _)| door_tf.translation.truncate().distance(player_pos) < 60.0)
-        .min_by(|(a_tf, _), (b_tf, _)| {
-            let da = a_tf.translation.truncate().distance(player_pos);
-            let db = b_tf.translation.truncate().distance(player_pos);
+        .filter(|(_, t, _)| t.translation.truncate().distance(player_pos) < 60.0)
+        .min_by(|(_, a, _), (_, b, _)| {
+            let da = a.translation.truncate().distance(player_pos);
+            let db = b.translation.truncate().distance(player_pos);
             da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
-        });
-    let Some((_, door)) = nearest_door else {
+        })
+    else {
         return;
     };
 
     // Use the door's explicit target layer instead of blind cycling.
-    // WHY: sublevel return doors need target_layer=0, which the old
+    // WHY: sublevel return doors need target_layer=0, which a
     // `(index + 1) % num_layers` formula cannot express.
-    let target = door.target_layer;
+    let target = nearest_door.target_layer;
     if target >= num_layers {
-        warn!("[TRANSITION] door target_layer={target} out of range (num_layers={num_layers})");
+        warn!(
+            "[TRANSITION] door target_layer={target} out of range (num_layers={num_layers})"
+        );
         return;
+    }
+    if target == current_level.layer_index {
+        return; // defensive: already on the target layer
     }
 
     info!(
-        "[TRANSITION] switch_layer: player={player_pos}, from layer {} -> {}",
-        current_level.layer_index, target,
+        "[TRANSITION] switch_layer: level={:?} layer {} -> {}",
+        current_level_id, current_level.layer_index, target
     );
 
-    // Lock player input for the duration of the layer switch.
+    // ── Lock the transition (cleared next frame by tick_transition_cooldown) ─
+    // Note: level_data_ref (a &Res<LevelData>) and level_data (Option<Res>)
+    // are no longer used after this point. Commands that re-insert LevelData
+    // are deferred, so the immutable borrow does not conflict with the
+    // spawn_level_full call below — no explicit drop needed.
     game_progress.transition_in_progress = true;
 
-    current_level.layer_index = target;
-
-    let layer = &level_data.layers[current_level.layer_index];
-
-    // Despawn all existing tile entities.
-    for entity in &tile_entities {
+    // ── Full wipe — mirror check_level_exit, plus doors + LevelGate ──────
+    // All TransitionDoor entities (L0 transition doors + L1 return door)
+    // are now JSON-spawned via spawn_entities_from_compiled and carry
+    // only the TransitionDoor marker (no TileEntity), so they're cleaned
+    // up here via door_query.
+    for entity in tile_entities
+        .iter()
+        .chain(decoration_entities.iter())
+        .chain(enemy_entities.iter())
+        .chain(collectible_entities.iter())
+        .chain(door_query.iter().map(|(e, _, _)| e))
+        .chain(cleanup_bundle.iter())
+    {
         commands.entity(entity).despawn();
     }
 
-    // Pick tile models based on level + layer (sublevels use themed tiles).
-    let (solid_model, platform_model) = match current_level.level_id {
-        Some(lid) => crate::level::tile_models_for_layer(lid, current_level.layer_index),
-        None => ("models/grass-block.glb", "models/grass-block.glb"),
-    };
+    // ── Reset per-layer progress ─────────────────────────────────────────
+    // Reset per-layer counts to match check_level_exit's contract.
+    // spawn_level_full → spawn_entities_from_compiled will immediately set
+    // stars_total to the target layer's count.
+    collection_progress.stars_collected = 0;
+    collection_progress.stars_total = 0;
 
-    // Spawn new layer tiles.
-    // spawn_tilemap expects origin = world position of tile center (col=0, row=0).
-    let origin = Vec2::new(
-        layer.origin_x + TILE_SIZE * 0.5,
-        layer.origin_y + TILE_SIZE * 0.5,
-    );
-    spawn_tilemap(
+    // ── Respawn the target layer via the canonical shared path ──────────
+    // Handles: tiles, JSON entities (enemies, stars, gate, exit, layer-0/2
+    // props, doors), LevelData resource, biome decorations (parallax),
+    // Subdivision layer-2 solar panel canopy, and layer-1 sublevel setup
+    // (dark background, sublevel decorations + emissive props, return door).
+    let spawn = spawn_level_full(
         &mut commands,
+        &mut meshes,
+        &mut materials,
         &asset_server,
-        solid_model,
-        platform_model,
-        &layer.tiles,
-        origin,
-        0.0,
+        &mut collection_progress,
+        &mut current_level,
+        current_level_id,
+        target,
+        false, // skip_enemies = false (matches check_level_exit)
     );
 
-    // Solar panel canopy on Subdivision Rooftop layer only.
-    if current_level.level_id == Some(LevelId::Subdivision) && current_level.layer_index == 2 {
-        crate::level::spawn_solar_panel_canopy(&mut commands, &mut meshes, &mut materials);
-    }
-
-    // Sublevel setup: dark background, decorations, return door.
-    // All carry TileEntity so they auto-despawn on layer switch.
-    // Uses the layer's origin so positions work regardless of where the grid is.
-    info!(
-        "[SUBLEVEL] layer_index={} origin=({}, {}) spawn=({}, {}) grid={}x{}",
-        current_level.layer_index,
-        layer.origin_x,
-        layer.origin_y,
-        layer.spawn.x,
-        layer.spawn.y,
-        layer.cols(),
-        layer.rows(),
-    );
-    if current_level.layer_index == 1 {
-        let ox = layer.origin_x;
-        let oy = layer.origin_y;
-        // Center of 32×18 grid: (ox + 16*18, oy + 9*18)
-        let center_x = ox + 16.0 * TILE_SIZE;
-        let center_y = oy + 9.0 * TILE_SIZE;
-        info!("[SUBLEVEL] entering sublevel: ox={ox} oy={oy} center=({center_x}, {center_y})");
-
-        // Dark background at z=-5: in front of ALL parallax backgrounds
-        // (mountains at z=-50, clouds z=-60, sky z=-100) but behind tiles (z=0).
-        let bg_color = match current_level.level_id {
-            Some(LevelId::Forest) => Color::srgb(0.12, 0.10, 0.07),
-            Some(LevelId::Subdivision) => Color::srgb(0.08, 0.10, 0.07),
-            Some(LevelId::City) => Color::srgb(0.10, 0.10, 0.15),
-            Some(LevelId::Sanctuary) => Color::srgb(0.10, 0.08, 0.06),
-            _ => Color::srgb(0.05, 0.05, 0.05),
-        };
-        let bg_mesh = meshes.add(Rectangle::new(2000.0, 1000.0));
-        let bg_mat = materials.add(StandardMaterial {
-            base_color: bg_color,
-            unlit: true,
-            alpha_mode: AlphaMode::Opaque,
-            ..default()
-        });
-        commands.spawn((
-            Mesh3d(bg_mesh),
-            MeshMaterial3d(bg_mat),
-            Transform::from_xyz(center_x, center_y, -5.0),
-            TileEntity,
-        ));
-
-        // Themed decorations
-        if let Some(lid) = current_level.level_id {
-            crate::level::spawn_sublevel_decorations(&mut commands, &mut meshes, &mut materials, &asset_server, lid, ox, oy);
-        }
-
-        // Return door at col 28, ground level
-        let door_x = ox + 28.0 * TILE_SIZE + TILE_SIZE * 0.5;
-        let door_y = oy + 2.0 * TILE_SIZE;
-        commands.spawn((
-            SceneRoot(asset_server.load("models/door-rotate.glb#Scene0")),
-            Transform::from_xyz(door_x, door_y, 1.0).with_scale(Vec3::new(60.0, 54.0, 7.0)),
-            super::doors::TransitionDoor { target_layer: 0 },
-            TileEntity,
-        ));
-    }
-
-    // Teleport player to the new layer's spawn point.
-    if let Ok((mut player_transform, mut player_vel)) = player_query.single_mut() {
-        player_transform.translation.x = layer.spawn.x;
-        player_transform.translation.y = layer.spawn.y;
+    // ── Teleport player and zero velocity ────────────────────────────────
+    if let Ok((mut player_tf, mut player_vel)) = player_query.single_mut() {
+        player_tf.translation.x = spawn.x;
+        player_tf.translation.y = spawn.y;
         // Zero velocity so entry vector does not carry into the new layer.
         *player_vel = LinearVelocity::ZERO;
     }
 
-    // Arm cooldown — tick_transition_cooldown clears the lock after 1 frame,
-    // ensuring deferred tile despawn commands have applied before re-entry.
+    // ── Arm cooldown — tick_transition_cooldown clears the lock next frame ─
     game_progress.transition_cooldown = 1;
 }
 

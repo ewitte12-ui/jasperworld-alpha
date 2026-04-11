@@ -59,6 +59,43 @@ pub struct OutputLayer {
     pub exit_next_level: Option<String>,
     /// Stars the player must collect before the Gate opens, or `null`.
     pub stars_required: Option<i32>,
+    /// Sublevel (L1) dark background color as sRGB `[r, g, b]` floats in
+    /// `[0, 1]`. Omitted from JSON when absent (only L1 layers populate it).
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub bg_color: Option<[f32; 3]>,
+    /// Sublevel (L1) emissive glow on/off flag. Omitted when absent.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub glow_enabled: Option<bool>,
+    /// Sublevel (L1) emissive glow color as sRGB `[r, g, b]` floats in
+    /// `[0, 1]`. Multiplied by `glow_intensity` in linear space at spawn.
+    /// Omitted from JSON when absent.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub glow_color: Option<[f32; 3]>,
+    /// Sublevel (L1) emissive glow intensity multiplier in linear space
+    /// (0.0 disables). Omitted from JSON when absent.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub glow_intensity: Option<f32>,
+    /// Solar canopy on/off flag (L2 rooftop only). Omitted from JSON when absent.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub canopy_enabled: Option<bool>,
+    /// Solar canopy panel bottom Y in world units. Omitted from JSON when absent.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub canopy_panel_bottom: Option<f32>,
+    /// Solar canopy panel strip thickness in world units. Omitted from JSON when absent.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub canopy_panel_height: Option<f32>,
+    /// Solar canopy opaque backdrop height above panel in world units. Omitted from JSON when absent.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub canopy_backdrop_height: Option<f32>,
+    /// Solar canopy panel strip base color as sRGB `[r, g, b]` floats. Omitted from JSON when absent.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub canopy_panel_color: Option<[f32; 3]>,
+    /// Solar canopy panel strip alpha (0..1). Omitted from JSON when absent.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub canopy_panel_alpha: Option<f32>,
+    /// Solar canopy opaque backdrop base color as sRGB `[r, g, b]` floats. Omitted from JSON when absent.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub canopy_backdrop_color: Option<[f32; 3]>,
 }
 
 /// Compiled enemy entity.
@@ -186,6 +223,17 @@ impl OutputLayer {
             gate_col: layer.gate_col,
             exit_next_level: layer.exit_next_level,
             stars_required: layer.stars_required,
+            bg_color: layer.bg_color,
+            glow_enabled: layer.glow_enabled,
+            glow_color: layer.glow_color,
+            glow_intensity: layer.glow_intensity,
+            canopy_enabled: layer.canopy_enabled,
+            canopy_panel_bottom: layer.canopy_panel_bottom,
+            canopy_panel_height: layer.canopy_panel_height,
+            canopy_backdrop_height: layer.canopy_backdrop_height,
+            canopy_panel_color: layer.canopy_panel_color,
+            canopy_panel_alpha: layer.canopy_panel_alpha,
+            canopy_backdrop_color: layer.canopy_backdrop_color,
         }
     }
 }
@@ -290,6 +338,17 @@ mod tests {
                 gate_col: Some(7),
                 exit_next_level: Some("Level_1".to_string()),
                 stars_required: Some(3),
+                bg_color: None,
+                glow_enabled: None,
+                glow_color: None,
+                glow_intensity: None,
+                canopy_enabled: None,
+                canopy_panel_bottom: None,
+                canopy_panel_height: None,
+                canopy_backdrop_height: None,
+                canopy_panel_color: None,
+                canopy_panel_alpha: None,
+                canopy_backdrop_color: None,
             }],
         }
     }
