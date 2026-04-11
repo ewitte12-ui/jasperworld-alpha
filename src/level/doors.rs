@@ -64,9 +64,10 @@ pub fn spawn_doors_for_level(
         TransitionDoor { target_layer: 1 },
         ProximityGlow {
             radius: 80.0,
-            // ~20% larger than the 60×54 door model scale so the glow halo
-            // wraps around the door edges without being too large.
-            glow_size: Vec2::new(72.0, 65.0),
+            // 1.2×1.2 in the door's local space.  The door entity has world
+            // scale (60, 54), so this child rect resolves to 72×64.8 world
+            // units — ~20% larger than the door, hugging the edges cleanly.
+            glow_size: Vec2::new(1.2, 1.2),
         },
     ));
 
@@ -77,9 +78,10 @@ pub fn spawn_doors_for_level(
         TransitionDoor { target_layer: 2 },
         ProximityGlow {
             radius: 80.0,
-            // ~20% larger than the 60×54 door model scale so the glow halo
-            // wraps around the door edges without being too large.
-            glow_size: Vec2::new(72.0, 65.0),
+            // 1.2×1.2 in the door's local space.  The door entity has world
+            // scale (60, 54), so this child rect resolves to 72×64.8 world
+            // units — ~20% larger than the door, hugging the edges cleanly.
+            glow_size: Vec2::new(1.2, 1.2),
         },
     ));
 }
