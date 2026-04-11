@@ -1,6 +1,45 @@
-use bevy::prelude::*;
+use bevy::{
+    mesh::MeshVertexBufferLayoutRef,
+    pbr::{MaterialPipeline, MaterialPipelineKey},
+    prelude::*,
+    render::render_resource::{AsBindGroup, RenderPipelineDescriptor, SpecializedMeshPipelineError},
+    shader::ShaderRef,
+};
 
 use crate::player::components::Player;
+
+/// Custom material that discards sprite RGB and outputs a solid HDR yellow,
+/// masked by the sprite texture's alpha channel.  This avoids the dark-brown
+/// multiply artefact produced when a yellow tint is blended over a
+/// sprite using standard `AlphaMode::Blend`.
+#[derive(Asset, TypePath, AsBindGroup, Clone)]
+pub struct AlphaSilhouetteMaterial {
+    #[texture(0)]
+    #[sampler(1)]
+    pub texture: Option<Handle<Image>>,
+}
+
+impl Material for AlphaSilhouetteMaterial {
+    fn fragment_shader() -> ShaderRef {
+        "shaders/alpha_silhouette.wgsl".into()
+    }
+
+    fn alpha_mode(&self) -> AlphaMode {
+        AlphaMode::Blend
+    }
+
+    /// Disable backface culling so the glow remains visible when the parent
+    /// sprite is horizontally flipped (scale.x < 0), which reverses winding order.
+    fn specialize(
+        _pipeline: &MaterialPipeline,
+        descriptor: &mut RenderPipelineDescriptor,
+        _layout: &MeshVertexBufferLayoutRef,
+        _key: MaterialPipelineKey<Self>,
+    ) -> Result<(), SpecializedMeshPipelineError> {
+        descriptor.primitive.cull_mode = None;
+        Ok(())
+    }
+}
 
 /// Attach to any entity (enemy, door, etc.) that should show a yellow glow when
 /// the player is within `radius` world units.
@@ -8,15 +47,24 @@ use crate::player::components::Player;
 pub struct ProximityGlow {
     /// XY distance threshold (world units) at which the glow becomes visible.
     pub radius: f32,
-    /// Size of the glow quad for non-mesh entities (doors).
-    /// Ignored for entities with Mesh3d (enemies use their own mesh for contour glow).
+    /// For non-sprite entities (doors): scale factor applied to the door's own
+    /// world scale to compute the glow rect dimensions.
+    /// e.g. Vec2::new(1.2, 1.2) → glow is 20% wider/taller than the door.
+    /// Ignored for entities with Mesh3d (enemies use their own mesh).
     pub glow_size: Vec2,
 }
 
-/// Marker placed on the child entity that renders the glow.
-/// Used to find and despawn the glow when the player moves away.
+/// Marker placed on the child/independent entity that renders the glow.
+/// Used by level-transition cleanup queries to despawn glow entities.
 #[derive(Component)]
 pub struct GlowIndicator;
+
+/// Placed on independent (non-child) glow entities to link them back to their
+/// owning glowable entity.  Used for has-glow detection and despawn when the
+/// owning entity leaves proximity, since these glows are not children of the
+/// door and cannot be found via the parent's Children component.
+#[derive(Component)]
+pub struct GlowIndicatorFor(pub Entity);
 
 /// Cached rectangle mesh and material for door glow (non-sprite entities).
 /// Enemy glow materials are created per-entity since each has a different texture.
@@ -58,26 +106,39 @@ const HYSTERESIS: f32 = 5.0;
 /// 1.15 = 15% larger than the sprite, creating a visible border.
 const CONTOUR_SCALE: f32 = 1.15;
 
-/// Spawns or despawns a yellow glow child on entities with [`ProximityGlow`]
+/// Spawns or despawns a yellow glow on entities with [`ProximityGlow`]
 /// based on XY distance to the player.
 ///
-/// For enemies (entities with `Mesh3d` + `MeshMaterial3d`): spawns a slightly
-/// scaled-up copy of the same mesh with a yellow-tinted version of the same
-/// texture. Because the mesh handle is shared, animation UV updates apply to
-/// the glow automatically. The texture alpha channel masks the glow to the
-/// sprite's contour.
+/// **Enemies** (entities with `Mesh3d` + `MeshMaterial3d`): spawns a
+/// slightly scaled-up copy of the same mesh as a **child** entity using
+/// [`AlphaSilhouetteMaterial`].  The shared mesh handle means animation UV
+/// updates propagate to the glow automatically.
 ///
-/// For doors (entities without `Mesh3d`): spawns a plain additive rectangle.
+/// **Doors** (entities without `Mesh3d`): spawns an **independent world-space
+/// entity** with a plain additive rectangle.  The glow is NOT a child of the
+/// door so the door's non-uniform scale (60, 54, 7) and any rotation are
+/// handled explicitly rather than inherited.  The glow position is computed
+/// using `transform.rotation * Vec3::Z * 0.5` so it stays correctly placed
+/// in front of the door regardless of how the door entity is oriented.
+///
+/// WHY independent entity for doors: a child of a SceneRoot with scale
+/// (60, 54, 7) inherits that non-uniform scale on all axes.  Computing a
+/// local-space transform that undoes the parent scale *and* rotation is
+/// fragile and breaks when either changes.  World-space spawning is simpler
+/// and more robust.
 // WHY clippy::too_many_arguments allowed: this system needs player/glowable/child/mesh/material
-// queries plus a local cache; splitting would obscure the single-pass glow update logic.
+// queries plus a local cache and a GlowIndicatorFor query; splitting would obscure the
+// single-pass glow update logic.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn update_proximity_glow(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut std_materials: ResMut<Assets<StandardMaterial>>,
+    mut sil_materials: ResMut<Assets<AlphaSilhouetteMaterial>>,
     player_query: Query<&Transform, With<Player>>,
     glowable_query: Query<(Entity, &Transform, &ProximityGlow, Option<&Children>)>,
     glow_child_query: Query<Entity, With<GlowIndicator>>,
+    glow_for_query: Query<(Entity, &GlowIndicatorFor)>,
     mesh_query: Query<&Mesh3d>,
     mat_query: Query<&MeshMaterial3d<StandardMaterial>>,
     mut cache: Local<GlowCache>,
@@ -91,16 +152,18 @@ pub(crate) fn update_proximity_glow(
         let entity_pos = transform.translation.truncate();
         let dist = player_pos.distance(entity_pos);
 
-        let existing_glow_children: Vec<Entity> = maybe_children
-            .map(|children| {
-                children
-                    .iter()
-                    .filter(|child| glow_child_query.get(*child).is_ok())
-                    .collect()
-            })
-            .unwrap_or_default();
+        let is_sprite = mesh_query.get(entity).is_ok() && mat_query.get(entity).is_ok();
 
-        let has_glow = !existing_glow_children.is_empty();
+        // ── has_glow detection ───────────────────────────────────────────────
+        // Enemies: glow is a child — look in Children.
+        // Doors:   glow is an independent entity — look in GlowIndicatorFor.
+        let has_glow = if is_sprite {
+            maybe_children
+                .map(|children| children.iter().any(|c| glow_child_query.get(c).is_ok()))
+                .unwrap_or(false)
+        } else {
+            glow_for_query.iter().any(|(_, g)| g.0 == entity)
+        };
 
         let should_show = if has_glow {
             dist <= proximity_glow.radius + HYSTERESIS
@@ -110,15 +173,15 @@ pub(crate) fn update_proximity_glow(
 
         match (should_show, has_glow) {
             (true, false) => {
-                // Check if entity has a sprite mesh (enemy) or is a 3D model (door).
-                if let (Ok(parent_mesh), Ok(parent_mat)) =
-                    (mesh_query.get(entity), mat_query.get(entity))
-                {
+                if is_sprite {
                     // ── Enemy contour glow ───────────────────────────────────
                     // Clone the mesh handle so animation UV changes propagate
-                    // to the glow child automatically. The sprite texture's
-                    // alpha channel masks the glow to the sprite's silhouette.
-                    let texture = materials
+                    // to the glow child automatically.  AlphaSilhouetteMaterial
+                    // discards sprite RGB entirely and outputs pure HDR yellow,
+                    // masked by the texture alpha — no colour-multiply artefact.
+                    let parent_mesh = mesh_query.get(entity).unwrap();
+                    let parent_mat  = mat_query.get(entity).unwrap();
+                    let texture = std_materials
                         .get(&parent_mat.0)
                         .and_then(|m| m.base_color_texture.clone());
                     info!(
@@ -126,15 +189,7 @@ pub(crate) fn update_proximity_glow(
                         entity,
                         texture.is_some()
                     );
-                    let glow_mat = materials.add(StandardMaterial {
-                        base_color: Color::srgba(1.0, 0.9, 0.0, 1.0),
-                        base_color_texture: texture,
-                        alpha_mode: AlphaMode::Blend,
-                        unlit: true,
-                        double_sided: true,
-                        cull_mode: None,
-                        ..default()
-                    });
+                    let glow_mat = sil_materials.add(AlphaSilhouetteMaterial { texture });
                     commands.entity(entity).with_children(|parent| {
                         parent.spawn((
                             Mesh3d(parent_mesh.0.clone()),
@@ -146,21 +201,49 @@ pub(crate) fn update_proximity_glow(
                     });
                 } else {
                     // ── Door rectangle glow ──────────────────────────────────
-                    let glow_mesh = cache.door_mesh(&mut meshes, proximity_glow.glow_size);
-                    let glow_mat = cache.door_material(&mut materials);
-                    commands.entity(entity).with_children(|parent| {
-                        parent.spawn((
-                            Mesh3d(glow_mesh),
-                            MeshMaterial3d(glow_mat),
-                            Transform::from_xyz(0.0, 0.0, -0.5),
-                            GlowIndicator,
-                        ));
-                    });
+                    // Spawned as an independent world-space entity (NOT a child)
+                    // to avoid inheriting the door's non-uniform scale (60,54,7)
+                    // and any rotation.
+                    //
+                    // World dimensions: door_scale * glow_size_factor.
+                    let world_w = transform.scale.x * proximity_glow.glow_size.x;
+                    let world_h = transform.scale.y * proximity_glow.glow_size.y;
+                    //
+                    // World position: door center offset +0.5 along the door's
+                    // local +Z axis (accounting for any door rotation).  This
+                    // places the glow slightly in FRONT of the door so it is
+                    // never occluded by the door mesh in the depth buffer.
+                    let z_forward = transform.rotation * Vec3::new(0.0, 0.0, 0.5);
+                    let glow_pos = transform.translation + z_forward;
+                    //
+                    // Rotation: same as door so rect faces the same direction.
+                    let glow_mesh = cache.door_mesh(&mut meshes, Vec2::new(world_w, world_h));
+                    let glow_mat  = cache.door_material(&mut std_materials);
+                    commands.spawn((
+                        Mesh3d(glow_mesh),
+                        MeshMaterial3d(glow_mat),
+                        Transform::from_translation(glow_pos)
+                            .with_rotation(transform.rotation),
+                        GlowIndicator,
+                        GlowIndicatorFor(entity),
+                    ));
                 }
             }
             (false, true) => {
-                for child_entity in existing_glow_children {
-                    commands.entity(child_entity).despawn();
+                if is_sprite {
+                    // Enemy: despawn GlowIndicator children.
+                    if let Some(children) = maybe_children {
+                        for child in children.iter() {
+                            if glow_child_query.get(child).is_ok() {
+                                commands.entity(child).despawn();
+                            }
+                        }
+                    }
+                } else {
+                    // Door: despawn the independent GlowIndicatorFor entity.
+                    for (glow_entity, _) in glow_for_query.iter().filter(|(_, g)| g.0 == entity) {
+                        commands.entity(glow_entity).despawn();
+                    }
                 }
             }
             _ => {}

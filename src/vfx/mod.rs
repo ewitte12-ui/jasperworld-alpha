@@ -4,7 +4,7 @@ pub mod systems;
 pub mod vignette;
 
 use bevy::prelude::*;
-use glow::update_proximity_glow;
+use glow::{update_proximity_glow, AlphaSilhouetteMaterial};
 use systems::{
     emit_weather_particles, flash_level_name, flash_on_damage, tick_level_name_flash,
     tick_screen_flash, update_weather,
@@ -18,7 +18,8 @@ pub struct VfxPlugin;
 
 impl Plugin for VfxPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_vignette)
+        app.add_plugins(MaterialPlugin::<AlphaSilhouetteMaterial>::default())
+            .add_systems(Startup, spawn_vignette)
             .add_systems(
                 Update,
                 (
