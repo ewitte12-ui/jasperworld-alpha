@@ -2,235 +2,91 @@
 
 ## Agent Structure
 
-Use subagents for all work while making changes no matter how trivial.  The main conversation (Opus) coordinates and synthesizes. Subagents run in parallel when tasks are independent.
-
-| Agent | Model | When to Use |
-|-------|-------|-------------|
-| **Main** | Sonnet (user switches to Opus manually) | Coordination, synthesis, user communication |
-| **Research** | Sonnet | When investigating unknowns, searching docs, exploring APIs |
-| **Coding** | Sonnet | Always when writing or modifying code |
-| **Testing** | Sonnet | Always when coding — validate syntax, check builds, verify changes |
-| **Critic** | Sonnet | Always when coding — audit changes for bugs, regressions, edge cases |
-| **Debug** | Sonnet | When diagnosing crashes, unexpected behavior, or pipeline failures |
-
-### Rules
-- **Always** use coding + testing + critic agents together when making ANY changes, no matter how trivial
-- **Never** skip the critic — it catches regressions before they ship
-- Launch agents in **parallel** when their tasks are independent
-- The debug agent should trace through actual code paths, not guess
+See `docs/agents/` for full workflow contract. Always use subagents for any change — coding + testing + critic in parallel.
 
 ---
 
-**Guardrail‑First Instructions for Working in This Repository**
+## ❗ PRIMARY DIRECTIVE
+
+Guardrails override assumptions, aesthetics, convenience, and inferred intent.
+
+If code behavior and guardrail documents differ: **guardrails are authoritative until explicitly revoked.**
+
+If unsure whether a change is allowed: **STOP and ask. Do not guess.**
 
 ---
 
-## ❗ PRIMARY DIRECTIVE (READ FIRST)
+## 📂 GUARDRAILS LOCATION
 
-This repository is protected by **explicit guardrails**.
-**Guardrails override assumptions, aesthetics, convenience, and inferred intent.**
-
-If code behavior and guardrail documents differ:
-> **The guardrails are authoritative until explicitly revoked.**
-
-If you are unsure whether a change is allowed:
-> **STOP and ask. Do not guess.**
-
----
-
-## 📂 GUARDRAILS LOCATION (AUTHORITATIVE)
-Guardrail documents live under the repository folder:
-
-- `docs/guardrails/` — process + invariants (always-on rules)
+- `docs/guardrails/` — process + invariants
 - `docs/architecture/` — camera/rendering/parallax/layer contracts
 - `docs/design/` — level/gameplay design constraints
 - `docs/agents/` — agent workflow + enforcement contracts
 
-If a referenced guardrail is not found under `docs/`, **STOP** and ask for the correct path.
+If a referenced guardrail is not found under `docs/`, **STOP** and ask.
 
 ---
-### Agent Workflow
-Each phase uses 4 agents: Spec → Implementation → Test → Critic.
 
-## 🛑 STOP & TEST ENFORCEMENT (NON‑NEGOTIABLE)
+## 🛑 STOP & TEST (NON-NEGOTIABLE)
 
-**No multi‑step execution is permitted without validation.**
-
-### Mandatory Workflow
 1. **STOP** after each phase
 2. **TEST / VALIDATE**
 3. **WAIT for human confirmation**
 4. Proceed only after approval
 
-Forbidden behaviors:
-- Proceeding “to save time”
-- Chaining fixes across systems
-- Making “minor” follow‑ups without confirmation
+Forbidden: proceeding to save time, chaining fixes, making "minor" follow-ups without confirmation.
 
-If STOP & TEST is skipped:
-> **All output is invalid regardless of correctness.**
+> If STOP & TEST is skipped, all output is invalid regardless of correctness.
 
 ---
 
-## ✅ ALLOWED COMMANDS (REFERENCE ONLY)
+## 📷 CAMERA SAFETY RULES
 
-- **Build:** `cargo build`
-- **Run:** `cargo run`
-- **Test:** `cargo test`
-- **Single test:** `cargo test <test_name>`
-- **Check (fast):** `cargo check`
-- **Format:** `cargo fmt`
-- **Lint:** `cargo clippy -- -D warnings`
+- All cameras must have explicit role markers (`GameplayCamera`, `TitleCamera`, `UICamera`, etc.)
+- Camera3d-only queries are forbidden
+- Do NOT assume there is "only one camera" unless guarded by role
 
-Commands are informational only.
-Running them is **not** an instruction to modify code.
+Violations are hard bugs, not style issues.
 
 ---
 
-## 🎮 PROJECT OVERVIEW (DESCRIPTIVE, NOT A CONTRACT)
+## 🕹️ PHYSICS & MOVEMENT (LOCKED)
 
-**Jasper’s World (test2)**
-A 2D raccoon platformer rendered with **Camera3d** in **Bevy 0.18** (Rust 2024).
-
-This section describes the **current state**, not eternal truth.
-
----
-
-## 🧱 CURRENT ARCHITECTURE (SUBJECT TO CHANGE)
-
-> ⚠️ The following are **current architectural choices**, not invariants.
-
-### Rendering Model
-- World rendered using **Camera3d + OrthographicProjection**
-- Camera looks down the **-Z axis** onto the **XY plane**
-- Z axis is used for **visual depth only**
-- Sprites rendered as **Mesh3d quads** with `StandardMaterial`
-- Real 3D lighting is used (`DirectionalLight3d`, `PointLight3d`)
-
-🔒 **Guardrail override:**
-Camera usage, ordering, clearing, and anchoring are governed by formal camera guardrails.
-Do **not** assume this architecture cannot evolve.
+- Physics: **avian2d** — do not swap
+- Do not replace the character controller stack
+- If behavior looks wrong: assume integration/configuration error, not engine choice
 
 ---
 
-## 📷 CAMERA SAFETY RULES (CRITICAL)
+## 🎨 ASSET SAFETY
 
-- All cameras **must have explicit role markers**
-  - `GameplayCamera`
-  - `TitleCamera`
-  - `UICamera`
-  - etc.
-- **Camera3d‑only queries are forbidden**
-- Do NOT assume there is “only one camera” unless guarded by role
-
-Violations here are considered **hard bugs**, not stylistic issues.
+- `buildassets/` — staging only, not safe for runtime
+- `assets/` — runtime authoritative
+- Never reference `buildassets` directly in code
+- No new assets without a pruning/safety pass
 
 ---
 
-## 🕹️ PHYSICS & MOVEMENT STACK (LOCKED)
+## 🤖 AGENT SCOPE
 
-- Physics uses **avian2d**
-- Character control uses the current controller stack (do not replace)
-
-🚫 **Do NOT:**
-- Swap physics engines
-- Replace controllers
-- “Simplify” physics to fix visuals
-
-If a behavior looks wrong:
-> Assume integration or configuration error first — not engine choice.
+Agents must not expand scope, improve aesthetics unrequested, combine multiple fixes, or touch systems outside declared intent. If a guardrail blocks a change, explain the conflict and stop.
 
 ---
 
-## 🎨 ASSET USAGE & SAFETY
+## Cargo Commands
 
-### Asset Sources
-- `buildassets/` — **STAGING ONLY**
-  - Large CC0 packs
-  - Not safe for runtime use
-- `assets/` — **RUNTIME‑AUTHORITATIVE**
+`cargo build` / `run` / `test` / `check` / `fmt` / `clippy -- -D warnings`
 
-🚫 **Forbidden:**
-- Referencing assets directly from `buildassets`
-- Introducing new assets without the pruning/safety pass
-- Assuming all Kenney assets are acceptable for gameplay scenes
-
-Asset role honesty and gameplay envelope rules apply.
-
----
-
-## 🧠 ASSUMPTIONS VS INVARIANTS (IMPORTANT)
-
-Some statements exist as **current tuning assumptions**, not guarantees.
-
-Example:
-- Platform spacing (e.g., “~5 tiles apart”) reflects **current movement tuning**
-- If movement physics change, geometry must be revalidated
-
-🚫 Treating assumptions as eternal invariants is a defect.
-
-Only formally documented guardrails are permanent.
-
----
-
-## 🤖 AGENT ROLE EXPECTATIONS
-
-Agents may assist with:
-- Analysis
-- Diagnosis
-- Narrow, scoped changes
-
-Agents must **not**:
-- Expand scope
-- Improve aesthetics unrequested
-- Combine multiple fixes
-- Change systems outside the declared intent
-
-If a guardrail blocks a requested change:
-> You must explain the conflict and stop.
-
----
-
-## 🧾 DOCUMENTATION REQUIREMENT
-
-Any non‑obvious number, offset, or workaround **must be documented in code comments**.
-
-Rules:
-- Explain **WHY** the value exists
-- Explain **WHAT breaks if it changes**
-- Move comments with code when refactoring
-
-Undocumented “magic values” are considered future bugs.
-
----
-
-## 📚 REQUIRED READING (AUTHORITATIVE)
-
-Before implementing changes, agents must respect:
-- Quit / shutdown lifecycle guardrail
-- Camera role & pipeline guardrails
-- Camera ↔ world anchor rules
-- Background lifecycle & bounds rules
-- Implementation (one‑axis) rules
-- Regression snapshot discipline
-
-If unsure which guardrails apply:
-> Ask before proceeding.
+Running these is not permission to modify code.
 
 ---
 
 ## ✅ FINAL RULE
 
-If a change:
-- Fixes the requested problem **but**
-- Violates a guardrail
-- Introduces new unrequested behavior
-- Touches multiple systems
-
-Then:
-> **The change is invalid. Roll it back.**
+If a change fixes the requested problem but violates a guardrail, introduces unrequested behavior, or touches multiple systems: **the change is invalid. Roll it back.**
 
 ---
 
-**Guardrails exist to protect correctness and time.
-Creativity happens first — constraints lock it safely.**
+## 📚 REQUIRED READING
+
+Before implementing: quit/shutdown lifecycle guardrail, camera role & pipeline guardrails, camera ↔ world anchor rules, background lifecycle & bounds rules, implementation (one-axis) rules, regression snapshot discipline.
