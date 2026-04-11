@@ -1561,6 +1561,9 @@ fn handle_new_game(
     // Reset resources.
     *game_progress = GameProgress::default();
     *current_level = CurrentLevel::default();
+    // Explicitly clear collected_by_layer so a new game never inherits
+    // persistence from a prior session within the same app run.
+    *progress = CollectionProgress::default();
 
     // Spawn Forest via the canonical shared path.
     let spawn = spawn_level_full(
