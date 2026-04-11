@@ -230,6 +230,10 @@ pub struct SanctuaryBackgroundEntry {
     /// Y-axis rotation in radians (0.0 = face camera directly).
     #[serde(default)]
     pub rotation_y: f32,
+    /// Z-axis rotation in radians (negative = clockwise tilt from camera view).
+    /// Used to level models whose geometry tilts on one side.
+    #[serde(default)]
+    pub rotation_z: f32,
 }
 
 // ── Loader ────────────────────────────────────────────────────────────────────

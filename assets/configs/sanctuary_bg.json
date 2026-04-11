@@ -7,7 +7,8 @@
     "scale": 648.0,
     "factor": 0.70,
     "rotation_x": 0.0,
-    "rotation_y": -1.5708
+    "rotation_y": -1.5708,
+    "rotation_z": -0.1396
   },
   "far_trees": {
     "x_start": 0,
