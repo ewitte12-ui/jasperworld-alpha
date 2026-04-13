@@ -79,7 +79,9 @@ impl GlowCache {
         self.door_material
             .get_or_insert_with(|| {
                 materials.add(StandardMaterial {
-                    base_color: Color::srgba(1.0, 0.85, 0.0, 0.5),
+                    // Linear HDR values (>1.0) give the same luminance boost that
+                    // the enemy AlphaSilhouetteMaterial shader uses (2.0/1.7).
+                    base_color: Color::linear_rgba(2.0, 1.7, 0.0, 1.0),
                     alpha_mode: AlphaMode::Add,
                     unlit: true,
                     double_sided: true,
@@ -209,12 +211,20 @@ pub(crate) fn update_proximity_glow(
                     let world_w = transform.scale.x * proximity_glow.glow_size.x;
                     let world_h = transform.scale.y * proximity_glow.glow_size.y;
                     //
-                    // World position: door center offset +0.5 along the door's
-                    // local +Z axis (accounting for any door rotation).  This
-                    // places the glow slightly in FRONT of the door so it is
-                    // never occluded by the door mesh in the depth buffer.
-                    let z_forward = transform.rotation * Vec3::new(0.0, 0.0, 0.5);
-                    let glow_pos = transform.translation + z_forward;
+                    // World position: center the glow on the door's body.
+                    //
+                    // Doors are bottom-anchored (.glb origin at feet), so the
+                    // door body spans [origin.y, origin.y + scale.y].  Raise the
+                    // glow by scale.y*0.5 (in the door's local up direction) so
+                    // the Rectangle is centered on the door rather than its floor.
+                    //
+                    // Also offset along local +Z by (scale.z*0.5 + 2.0) to clear
+                    // the door's deepest face plus any frames/handles, accounting
+                    // for the camera's ~28° downward tilt.
+                    let y_up = transform.rotation * Vec3::new(0.0, transform.scale.y * 0.5, 0.0);
+                    let z_clearance = transform.scale.z * 0.5 + 2.0;
+                    let z_forward = transform.rotation * Vec3::new(0.0, 0.0, z_clearance);
+                    let glow_pos = transform.translation + y_up + z_forward;
                     //
                     // Rotation: same as door so rect faces the same direction.
                     let glow_mesh = cache.door_mesh(&mut meshes, Vec2::new(world_w, world_h));
@@ -224,6 +234,8 @@ pub(crate) fn update_proximity_glow(
                         MeshMaterial3d(glow_mat),
                         Transform::from_translation(glow_pos)
                             .with_rotation(transform.rotation),
+                        Visibility::Visible,
+                        InheritedVisibility::VISIBLE,
                         GlowIndicator,
                         GlowIndicatorFor(entity),
                     ));
