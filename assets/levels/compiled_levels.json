@@ -4690,7 +4690,34 @@
           "lights": [],
           "gate_col": 91,
           "exit_next_level": "Sanctuary",
-          "stars_required": 10
+          "stars_required": 10,
+          "bg_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_enabled": false,
+          "glow_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_intensity": 0.0,
+          "canopy_enabled": false,
+          "canopy_panel_bottom": 106.0,
+          "canopy_panel_height": 18.0,
+          "canopy_backdrop_height": 500.0,
+          "canopy_panel_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "canopy_panel_alpha": 0.65,
+          "canopy_backdrop_color": [
+            0.0,
+            0.0,
+            0.0
+          ]
         },
         {
           "id": 1,
@@ -5456,7 +5483,22 @@
             0.0,
             0.0
           ],
-          "glow_intensity": 0.0
+          "glow_intensity": 0.0,
+          "canopy_enabled": false,
+          "canopy_panel_bottom": 106.0,
+          "canopy_panel_height": 18.0,
+          "canopy_backdrop_height": 500.0,
+          "canopy_panel_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "canopy_panel_alpha": 0.65,
+          "canopy_backdrop_color": [
+            0.0,
+            0.0,
+            0.0
+          ]
         },
         {
           "id": 2,
@@ -9790,7 +9832,34 @@
           "lights": [],
           "gate_col": null,
           "exit_next_level": null,
-          "stars_required": null
+          "stars_required": null,
+          "bg_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_enabled": false,
+          "glow_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_intensity": 0.0,
+          "canopy_enabled": false,
+          "canopy_panel_bottom": 106.0,
+          "canopy_panel_height": 18.0,
+          "canopy_backdrop_height": 500.0,
+          "canopy_panel_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "canopy_panel_alpha": 0.65,
+          "canopy_backdrop_color": [
+            0.0,
+            0.0,
+            0.0
+          ]
         }
       ]
     },
@@ -12076,7 +12145,7 @@
             {
               "target_layer": 1,
               "x": -351.0,
-              "y": -146.0
+              "y": -148.0
             }
           ],
           "props": [
@@ -12126,7 +12195,7 @@
             },
             {
               "model_id": "models/plant_bushLarge.glb",
-              "x": -387.0,
+              "x": -405.0,
               "y": -146.0,
               "z": -15.0,
               "scale_x": 79.0,
@@ -12159,7 +12228,7 @@
             },
             {
               "model_id": "models/large_rock.glb",
-              "x": -315.0,
+              "x": -279.0,
               "y": -133.988,
               "z": -15.0,
               "scale_x": 9.0,
@@ -12513,7 +12582,34 @@
           "lights": [],
           "gate_col": 91,
           "exit_next_level": "Subdivision",
-          "stars_required": 10
+          "stars_required": 10,
+          "bg_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_enabled": false,
+          "glow_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_intensity": 0.0,
+          "canopy_enabled": false,
+          "canopy_panel_bottom": 106.0,
+          "canopy_panel_height": 18.0,
+          "canopy_backdrop_height": 500.0,
+          "canopy_panel_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "canopy_panel_alpha": 0.65,
+          "canopy_backdrop_color": [
+            0.0,
+            0.0,
+            0.0
+          ]
         },
         {
           "id": 1,
@@ -13286,7 +13382,22 @@
             0.8352941,
             0.6117647
           ],
-          "glow_intensity": 1.2
+          "glow_intensity": 1.2,
+          "canopy_enabled": false,
+          "canopy_panel_bottom": 106.0,
+          "canopy_panel_height": 18.0,
+          "canopy_backdrop_height": 500.0,
+          "canopy_panel_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "canopy_panel_alpha": 0.65,
+          "canopy_backdrop_color": [
+            0.0,
+            0.0,
+            0.0
+          ]
         }
       ]
     },
@@ -14478,7 +14589,34 @@
           "lights": [],
           "gate_col": null,
           "exit_next_level": null,
-          "stars_required": null
+          "stars_required": null,
+          "bg_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_enabled": false,
+          "glow_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_intensity": 0.0,
+          "canopy_enabled": false,
+          "canopy_panel_bottom": 106.0,
+          "canopy_panel_height": 18.0,
+          "canopy_backdrop_height": 500.0,
+          "canopy_panel_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "canopy_panel_alpha": 0.65,
+          "canopy_backdrop_color": [
+            0.0,
+            0.0,
+            0.0
+          ]
         }
       ]
     },
@@ -16821,7 +16959,34 @@
           "lights": [],
           "gate_col": 91,
           "exit_next_level": "City",
-          "stars_required": 10
+          "stars_required": 10,
+          "bg_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_enabled": false,
+          "glow_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_intensity": 0.0,
+          "canopy_enabled": false,
+          "canopy_panel_bottom": 106.0,
+          "canopy_panel_height": 18.0,
+          "canopy_backdrop_height": 500.0,
+          "canopy_panel_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "canopy_panel_alpha": 0.65,
+          "canopy_backdrop_color": [
+            0.0,
+            0.0,
+            0.0
+          ]
         },
         {
           "id": 1,
@@ -17584,7 +17749,22 @@
             1.0,
             0.78039217
           ],
-          "glow_intensity": 0.7
+          "glow_intensity": 0.7,
+          "canopy_enabled": false,
+          "canopy_panel_bottom": 106.0,
+          "canopy_panel_height": 18.0,
+          "canopy_backdrop_height": 500.0,
+          "canopy_panel_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "canopy_panel_alpha": 0.65,
+          "canopy_backdrop_color": [
+            0.0,
+            0.0,
+            0.0
+          ]
         },
         {
           "id": 2,
@@ -19763,6 +19943,18 @@
           "gate_col": null,
           "exit_next_level": null,
           "stars_required": null,
+          "bg_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_enabled": false,
+          "glow_color": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "glow_intensity": 0.0,
           "canopy_enabled": true,
           "canopy_panel_bottom": 106.0,
           "canopy_panel_height": 18.0,

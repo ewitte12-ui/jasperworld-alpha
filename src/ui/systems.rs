@@ -75,20 +75,22 @@ pub fn spawn_hud(mut commands: Commands, asset_server: Res<AssetServer>) {
                     ));
                 });
 
-            // ── Bottom-centre door prompt (hidden by default) ─────────────
+            // ── Door prompt — absolutely positioned above the cave entrance ──
             parent
                 .spawn(Node {
+                    position_type: PositionType::Absolute,
                     width: Val::Percent(100.0),
+                    top: Val::Percent(35.0),
                     justify_content: JustifyContent::Center,
-                    align_items: AlignItems::FlexEnd,
+                    align_items: AlignItems::Center,
                     ..default()
                 })
-                .with_children(|bottom| {
-                    bottom.spawn((
+                .with_children(|centre| {
+                    centre.spawn((
                         Text::new(""),
                         TextFont {
                             font: font.clone(),
-                            font_size: 20.0,
+                            font_size: 30.0,
                             ..default()
                         },
                         TextColor(Color::srgb(1.0, 1.0, 0.6)),
