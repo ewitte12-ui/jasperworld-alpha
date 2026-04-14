@@ -21,3 +21,7 @@ __pycache__/
 # Environment / secrets
 .env
 .env.*
+
+# Local git helper scripts (copy manually between machines)
+.gitpush
+.gitpull
