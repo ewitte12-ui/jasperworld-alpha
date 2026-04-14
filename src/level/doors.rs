@@ -71,17 +71,20 @@ pub fn spawn_doors_for_level(
         },
     ));
 
-    // Door to upper layer — on the highest platform (row 14 for Forest/Subdivision, row 30 for City).
-    commands.spawn((
-        SceneRoot(asset_server.load("models/door-rotate.glb#Scene0")),
-        Transform::from_xyz(x_upper, upper_y, 1.0).with_scale(Vec3::new(60.0, 54.0, 7.0)),
-        TransitionDoor { target_layer: 2 },
-        ProximityGlow {
-            radius: 80.0,
-            // 1.2×1.2 in the door's local space.  The door entity has world
-            // scale (60, 54), so this child rect resolves to 72×64.8 world
-            // units — ~20% larger than the door, hugging the edges cleanly.
-            glow_size: Vec2::new(1.2, 1.2),
-        },
-    ));
+    // Door to upper layer — on the highest platform (row 14 for Subdivision, row 30 for City).
+    // Forest has no rooftop sublevel, so no upper door is spawned for it.
+    if level_id != LevelId::Forest {
+        commands.spawn((
+            SceneRoot(asset_server.load("models/door-rotate.glb#Scene0")),
+            Transform::from_xyz(x_upper, upper_y, 1.0).with_scale(Vec3::new(60.0, 54.0, 7.0)),
+            TransitionDoor { target_layer: 2 },
+            ProximityGlow {
+                radius: 80.0,
+                // 1.2×1.2 in the door's local space.  The door entity has world
+                // scale (60, 54), so this child rect resolves to 72×64.8 world
+                // units — ~20% larger than the door, hugging the edges cleanly.
+                glow_size: Vec2::new(1.2, 1.2),
+            },
+        ));
+    }
 }

@@ -5,7 +5,7 @@ use bevy::prelude::*;
 pub fn forest_level() -> LevelData {
     LevelData {
         id: LevelId::Forest,
-        layers: vec![forest_layer_0(), forest_layer_1(), forest_layer_2()],
+        layers: vec![forest_layer_0(), forest_layer_1()],
     }
 }
 
@@ -118,61 +118,5 @@ fn forest_layer_1() -> LayerData {
         origin_y: 5000.0,
         // Spawn on floor, near left side: col 2 = 5000 + 2*18 + 9 = 5045
         spawn: Vec2::new(5045.0, 5063.0),
-    }
-}
-
-// ── Layer 2: Treetop Canopy ───────────────────────────────────────────────────
-// 96 cols × 22 rows, origin_x = -864.0, origin_y = -200.0
-// rows 0-2: solid ground
-// rows 3-5: open air
-// row 6: platforms at 6..=10, 32..=36, 62..=66, 88..=91
-// rows 7-9: open air
-// row 10: platforms at 16..=20, 48..=52, 78..=82
-// rows 11-13: open air
-// row 14: platforms at 25..=29, 65..=69
-// rows 15-21: open sky
-fn forest_layer_2() -> LayerData {
-    let tiles: Vec<Vec<TileType>> = {
-        let solid = || vec![S; 96];
-        let empty = || vec![E; 96];
-        let plat = |platforms: &[(usize, usize)]| {
-            let mut row = vec![E; 96];
-            for &(start, end) in platforms {
-                row[start..=end].fill(P);
-            }
-            row
-        };
-        vec![
-            solid(),                                        // row 0
-            solid(),                                        // row 1
-            solid(),                                        // row 2
-            empty(),                                        // row 3
-            empty(),                                        // row 4
-            empty(),                                        // row 5
-            plat(&[(6, 10), (32, 36), (62, 66), (88, 91)]), // row 6
-            empty(),                                        // row 7
-            empty(),                                        // row 8
-            empty(),                                        // row 9
-            plat(&[(16, 20), (48, 52), (78, 82)]),          // row 10
-            empty(),                                        // row 11
-            empty(),                                        // row 12
-            empty(),                                        // row 13
-            plat(&[(25, 29), (65, 69)]),                    // row 14
-            empty(),                                        // row 15
-            empty(),                                        // row 16
-            empty(),                                        // row 17
-            empty(),                                        // row 18
-            empty(),                                        // row 19
-            empty(),                                        // row 20
-            empty(),                                        // row 21
-        ]
-    };
-
-    LayerData {
-        id: 2,
-        tiles,
-        origin_x: -864.0,
-        origin_y: -200.0,
-        spawn: Vec2::new(-783.0, -128.0),
     }
 }

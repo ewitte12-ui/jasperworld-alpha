@@ -4,7 +4,7 @@
 Reads compiled_levels.json (game-coordinate tile and entity data) and writes
 all IntGrid tiles and entity instances into jasperworld.ldtk, replacing the
 existing levels array with 9 fully-populated levels:
-  Forest / Forest_Cave / Forest_Rooftop
+  Forest / Forest_Cave
   Subdivision / Subdivision_Sewer / Subdivision_Rooftop
   City / City_Subway / City_Rooftop
 
@@ -661,7 +661,6 @@ LAYER_NAMES = {
     "Forest": {
         0: "Forest",
         1: "Forest_Cave",
-        2: "Forest_Rooftop",
     },
     "Subdivision": {
         0: "Subdivision",
@@ -680,7 +679,6 @@ LAYER_NAMES = {
 WORLD_POSITIONS = {
     "Forest":               (0,     0),
     "Forest_Cave":          (2000,  0),
-    "Forest_Rooftop":       (4000,  0),
     "Subdivision":          (0,     1000),
     "Subdivision_Sewer":    (2000,  1000),
     "Subdivision_Rooftop":  (4000,  1000),
