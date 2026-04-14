@@ -19,6 +19,7 @@ impl Plugin for UiPlugin {
                 systems::update_health_display.run_if(in_state(AppState::Playing)),
                 systems::update_star_counter.run_if(in_state(AppState::Playing)),
                 systems::update_level_name.run_if(in_state(AppState::Playing)),
+                systems::update_door_prompt.run_if(in_state(AppState::Playing)),
                 pause::toggle_pause
                     .run_if(in_state(AppState::Playing).or(in_state(AppState::Paused))),
                 manage_hud_visibility,

@@ -19,6 +19,7 @@ use avian2d::prelude::*;
 
 use super::doors::TransitionDoor;
 use super::level_data::{LayerData, LevelData, LevelId};
+use crate::vfx::glow::ProximityGlow;
 
 // ── Deserialization structs (match output_schema from Phase 5) ───────────────
 
@@ -374,14 +375,57 @@ pub fn spawn_entities_from_compiled(
             );
             continue;
         }
-        commands.spawn((
-            SceneRoot(asset_server.load("models/door-rotate.glb#Scene0")),
-            Transform::from_xyz(door.x, door.y, 1.0)
-                .with_scale(Vec3::new(60.0, 54.0, 7.0)),
-            TransitionDoor {
-                target_layer: door.target_layer as usize,
-            },
-        ));
+        // Forest cave entrance/exit: both the surface door (L0→cave) and the cave
+        // return door (L1→surface) use the cave-entrance PNG sprite so the
+        // AlphaSilhouetteMaterial glow path (same as enemies) applies.
+        // Transform y stays at door.y (floor level) for proximity detection;
+        // the rect is center-anchored so the bottom half is hidden by floor tiles.
+        let is_forest_cave_door = level_id == LevelId::Forest
+            && ((layer.id == 0 && door.target_layer == 1) || layer.id == 1);
+        if is_forest_cave_door {
+            let texture = asset_server.load("images/cave-entrance.png");
+            let mesh = meshes.add(Rectangle::new(60.0, 54.0));
+            let material = materials.add(StandardMaterial {
+                base_color_texture: Some(texture),
+                unlit: true,
+                alpha_mode: AlphaMode::Blend,
+                double_sided: true,
+                cull_mode: None,
+                ..default()
+            });
+            // Surface cave entrance (layer 0): Z=-10 — no background in surface layer,
+            // so placing behind the tile plane is fine.
+            // Cave exit (layer 1): Z=-2 — the sublevel dark background is at Z=-5;
+            // Z=-10 would hide the door behind it.  Z=-2 keeps the door in front of
+            // the background but behind any solid tiles (Z=0) at that position.
+            let door_z = if layer.id == 1 { -2.0 } else { -10.0 };
+            commands.spawn((
+                Mesh3d(mesh),
+                MeshMaterial3d(material),
+                // +27 (half of 54) so the bottom edge sits at door.y (floor level).
+                Transform::from_xyz(door.x, door.y + 27.0, door_z),
+                TransitionDoor {
+                    target_layer: door.target_layer as usize,
+                },
+                ProximityGlow {
+                    radius: 80.0,
+                    glow_size: Vec2::new(1.2, 1.2),
+                },
+            ));
+        } else {
+            commands.spawn((
+                SceneRoot(asset_server.load("models/door-rotate.glb#Scene0")),
+                Transform::from_xyz(door.x, door.y, 1.0)
+                    .with_scale(Vec3::new(60.0, 54.0, 7.0)),
+                TransitionDoor {
+                    target_layer: door.target_layer as usize,
+                },
+                ProximityGlow {
+                    radius: 80.0,
+                    glow_size: Vec2::new(1.2, 1.2),
+                },
+            ));
+        }
     }
 
     // ── Props (decorative models placed in LDtk) ─────────────────────────────

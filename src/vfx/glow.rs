@@ -70,24 +70,23 @@ pub struct GlowIndicatorFor(pub Entity);
 /// Enemy glow materials are created per-entity since each has a different texture.
 #[derive(Default)]
 pub(crate) struct GlowCache {
-    door_material: Option<Handle<StandardMaterial>>,
+    door_sil_material: Option<Handle<AlphaSilhouetteMaterial>>,
     door_meshes: bevy::platform::collections::HashMap<(u32, u32), Handle<Mesh>>,
 }
 
 impl GlowCache {
-    fn door_material(&mut self, materials: &mut Assets<StandardMaterial>) -> Handle<StandardMaterial> {
-        self.door_material
+    fn door_sil_material(
+        &mut self,
+        sil_materials: &mut Assets<AlphaSilhouetteMaterial>,
+    ) -> Handle<AlphaSilhouetteMaterial> {
+        self.door_sil_material
             .get_or_insert_with(|| {
-                materials.add(StandardMaterial {
-                    // Linear HDR values (>1.0) give the same luminance boost that
-                    // the enemy AlphaSilhouetteMaterial shader uses (2.0/1.7).
-                    base_color: Color::linear_rgba(2.0, 1.7, 0.0, 1.0),
-                    alpha_mode: AlphaMode::Add,
-                    unlit: true,
-                    double_sided: true,
-                    cull_mode: None,
-                    ..default()
-                })
+                // texture: None → Bevy's AsBindGroup fallback is a 1×1 white pixel,
+                // so the shader outputs solid HDR yellow (alpha = 1.0 from white pixel).
+                // The rect is positioned behind the door so depth-testing occludes the
+                // centre, leaving yellow visible only around the door's edges — same
+                // visual principle as the enemy contour glow.
+                sil_materials.add(AlphaSilhouetteMaterial { texture: None })
             })
             .clone()
     }
@@ -135,7 +134,7 @@ const CONTOUR_SCALE: f32 = 1.15;
 pub(crate) fn update_proximity_glow(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut std_materials: ResMut<Assets<StandardMaterial>>,
+    std_materials: ResMut<Assets<StandardMaterial>>,
     mut sil_materials: ResMut<Assets<AlphaSilhouetteMaterial>>,
     player_query: Query<&Transform, With<Player>>,
     glowable_query: Query<(Entity, &Transform, &ProximityGlow, Option<&Children>)>,
@@ -218,17 +217,17 @@ pub(crate) fn update_proximity_glow(
                     // glow by scale.y*0.5 (in the door's local up direction) so
                     // the Rectangle is centered on the door rather than its floor.
                     //
-                    // Also offset along local +Z by (scale.z*0.5 + 2.0) to clear
-                    // the door's deepest face plus any frames/handles, accounting
-                    // for the camera's ~28° downward tilt.
+                    // Place the rect BEHIND the door (-Z) so depth testing occludes
+                    // the centre, leaving yellow visible only around the door's edges
+                    // — same visual principle as the enemy contour glow.
                     let y_up = transform.rotation * Vec3::new(0.0, transform.scale.y * 0.5, 0.0);
-                    let z_clearance = transform.scale.z * 0.5 + 2.0;
-                    let z_forward = transform.rotation * Vec3::new(0.0, 0.0, z_clearance);
-                    let glow_pos = transform.translation + y_up + z_forward;
+                    let z_clearance = -(transform.scale.z * 0.5 + 1.0);
+                    let z_behind = transform.rotation * Vec3::new(0.0, 0.0, z_clearance);
+                    let glow_pos = transform.translation + y_up + z_behind;
                     //
                     // Rotation: same as door so rect faces the same direction.
                     let glow_mesh = cache.door_mesh(&mut meshes, Vec2::new(world_w, world_h));
-                    let glow_mat  = cache.door_material(&mut std_materials);
+                    let glow_mat  = cache.door_sil_material(&mut sil_materials);
                     commands.spawn((
                         Mesh3d(glow_mesh),
                         MeshMaterial3d(glow_mat),

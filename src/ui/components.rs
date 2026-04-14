@@ -18,6 +18,10 @@ pub struct StarCounter;
 #[derive(Component)]
 pub struct LevelNameDisplay;
 
+/// Marker for the door interaction prompt ("Press E to enter/exit the cave").
+#[derive(Component)]
+pub struct DoorPrompt;
+
 // ── Menu button actions ──────────────────────────────────────────────────────
 
 #[derive(Component, Clone, Copy, Debug)]
