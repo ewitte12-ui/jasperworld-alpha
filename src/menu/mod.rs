@@ -17,9 +17,6 @@ use crate::ui::styles::*;
 // ── Marker components for each menu screen ───────────────────────────────────
 
 #[derive(Component)]
-struct TitleScreenRoot;
-
-#[derive(Component)]
 struct MainMenuRoot;
 
 #[derive(Component)]
@@ -37,17 +34,6 @@ pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
-        // Title screen
-        app.add_systems(OnEnter(AppState::TitleScreen), setup_title_screen)
-            .add_systems(
-                OnExit(AppState::TitleScreen),
-                despawn_with::<TitleScreenRoot>,
-            )
-            .add_systems(
-                Update,
-                handle_title_input.run_if(in_state(AppState::TitleScreen)),
-            );
-
         // Main menu
         app.add_systems(OnEnter(AppState::MainMenu), setup_main_menu)
             .add_systems(OnExit(AppState::MainMenu), despawn_with::<MainMenuRoot>)
@@ -137,57 +123,6 @@ fn enforce_quit_exit(
     exit.write(AppExit::Success);
     for entity in &windows {
         commands.entity(entity).despawn();
-    }
-}
-
-// ── Title Screen ─────────────────────────────────────────────────────────────
-
-fn setup_title_screen(mut commands: Commands) {
-    // Transparent background so the 3D forest scene (rendered by the title camera
-    // at order: 1) shows through.  Text is anchored to the bottom of the screen.
-    commands
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::FlexEnd,
-                align_items: AlignItems::Center,
-                padding: UiRect::bottom(Val::Px(48.0)),
-                row_gap: SECTION_GAP,
-                ..default()
-            },
-            BackgroundColor(Color::NONE),
-            TitleScreenRoot,
-        ))
-        .with_children(|parent: &mut ChildSpawnerCommands| {
-            parent.spawn((
-                Text::new("JASPER'S WORLD"),
-                TextFont {
-                    font_size: FONT_SIZE_TITLE,
-                    ..default()
-                },
-                TextColor(COLOR_TEXT_TITLE),
-            ));
-
-            parent.spawn((
-                Text::new("Press any key to continue"),
-                TextFont {
-                    font_size: FONT_SIZE_BODY,
-                    ..default()
-                },
-                TextColor(COLOR_TEXT_SUBTITLE),
-            ));
-        });
-}
-
-fn handle_title_input(
-    keys: Res<ButtonInput<KeyCode>>,
-    mouse: Res<ButtonInput<MouseButton>>,
-    mut next_state: ResMut<NextState<AppState>>,
-) {
-    if keys.get_just_pressed().next().is_some() || mouse.get_just_pressed().next().is_some() {
-        next_state.set(AppState::MainMenu);
     }
 }
 
@@ -930,11 +865,13 @@ pub fn apply_graphics_settings(graphics: Res<GraphicsSettings>, mut windows: Que
         return;
     };
 
-    let (w, h) = graphics.resolution();
-    window.resolution.set(w, h);
     window.mode = if graphics.fullscreen {
+        let (w, h) = graphics.resolution();
+        window.resolution.set(w, h);
         WindowMode::BorderlessFullscreen(MonitorSelection::Current)
     } else {
+        // In windowed mode the user controls the window size directly;
+        // window_geometry.rs persists and restores it across restarts.
         WindowMode::Windowed
     };
     window.present_mode = if graphics.vsync {
