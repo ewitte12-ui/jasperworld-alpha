@@ -1,10 +1,10 @@
-# Jasper's World
+# Jasper's World Demo
 
 A 2D platformer starring Jasper the raccoon, built with [Bevy](https://bevyengine.org/) (Rust).
 
 ## About
 
-Jasper's World is a side-scrolling platformer rendered with a 2.5D camera system — 2D gameplay on 3D-lit scenes. Guide Jasper through three distinct levels, collecting stars, solving puzzles, and stomping enemies along the way.
+Jasper's World Demo is a side-scrolling platformer rendered with a 2.5D camera system — 2D gameplay on 3D-lit scenes. Guide Jasper through three distinct levels, collecting stars, solving puzzles, and stomping enemies along the way.
 
 ### Levels
 
@@ -65,7 +65,7 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ## Support
 
-Jasper's World is open-source under the MIT License. You are free to use, modify, and share the code.
+Jasper's World Demo is open-source under the MIT License. You are free to use, modify, and share the code.
 
 If you enjoy the game and want to support development:
 
