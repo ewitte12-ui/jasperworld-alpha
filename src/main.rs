@@ -102,6 +102,11 @@ fn main() {
     .add_plugins(MenuPlugin)
     // Global systems
     .add_systems(Startup, load_settings)
+    // Boot directly into a new game — the old TitleScreen/MainMenu flow was
+    // never reachable in WASM (debug_start.json bypass relied on std::fs).
+    .add_systems(Startup, |mut new_game: ResMut<NewGameRequested>| {
+        new_game.0 = true;
+    })
     .add_systems(
         Update,
         (
