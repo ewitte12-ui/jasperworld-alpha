@@ -11,7 +11,9 @@ pub struct AudioSettings {
 impl Default for AudioSettings {
     fn default() -> Self {
         Self {
-            master_volume: 1.0,
+            // Muted by default — bundled sounds were intentionally disabled.
+            // Users can raise the master slider in Settings to re-enable playback.
+            master_volume: 0.0,
             music_volume: 0.8,
             sfx_volume: 0.8,
         }
