@@ -4,10 +4,10 @@ use bevy::prelude::*;
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum AppState {
     TitleScreen,
-    #[default]
     MainMenu,
     Settings,
     SaveLoadMenu,
+    #[default]
     Playing,
     Paused,
 }
