@@ -243,14 +243,42 @@ pub struct SanctuaryBackgroundEntry {
 /// Returns `None` with a warning log if the file cannot be read or parsed.
 /// Callers should fall back to hard-coded defaults when this returns `None`
 /// so a missing/malformed config file never crashes the game.
+///
+/// On WASM the file system is unavailable, so known config paths are embedded
+/// in the binary via `include_str!`. Unknown paths log a warning and return None.
 pub fn load_config<T: for<'de> Deserialize<'de>>(path: &str) -> Option<T> {
-    let contents = match std::fs::read_to_string(path) {
+    #[cfg(target_arch = "wasm32")]
+    let contents: String = match path {
+        "assets/configs/forest_bg.json" => {
+            include_str!("../../assets/configs/forest_bg.json").to_string()
+        }
+        "assets/configs/subdivision_bg.json" => {
+            include_str!("../../assets/configs/subdivision_bg.json").to_string()
+        }
+        "assets/configs/city_bg.json" => {
+            include_str!("../../assets/configs/city_bg.json").to_string()
+        }
+        "assets/configs/sanctuary_bg.json" => {
+            include_str!("../../assets/configs/sanctuary_bg.json").to_string()
+        }
+        "assets/configs/sanctuary_cutscene.json" => {
+            include_str!("../../assets/configs/sanctuary_cutscene.json").to_string()
+        }
+        _ => {
+            eprintln!("[parallax_config] no embedded asset for path '{}'", path);
+            return None;
+        }
+    };
+
+    #[cfg(not(target_arch = "wasm32"))]
+    let contents: String = match std::fs::read_to_string(path) {
         Ok(s) => s,
         Err(e) => {
             eprintln!("[parallax_config] could not read '{}': {}", path, e);
             return None;
         }
     };
+
     match serde_json::from_str(&contents) {
         Ok(cfg) => Some(cfg),
         Err(e) => {

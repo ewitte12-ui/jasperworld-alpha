@@ -167,8 +167,21 @@ fn default_light_range() -> f32 {
 /// Reads `path` from disk, parses JSON, checks schema_version == 1.
 /// Returns `None` on any error (file missing, parse failure, wrong version).
 /// All errors are logged at `warn!` level so fallback is silent but diagnosable.
+///
+/// On WASM the file system is unavailable, so the canonical compiled-levels
+/// path is embedded in the binary via `include_str!`. Other paths still
+/// attempt the disk read for parity with native (and fail gracefully).
 pub fn try_load_compiled_levels(path: &str) -> Option<CompiledRoot> {
-    let text = match std::fs::read_to_string(path) {
+    #[cfg(target_arch = "wasm32")]
+    let text: String = if path == "assets/levels/compiled_levels.json" {
+        include_str!("../../assets/levels/compiled_levels.json").to_string()
+    } else {
+        warn!("[compiled_data] no embedded asset for path '{path}'");
+        return None;
+    };
+
+    #[cfg(not(target_arch = "wasm32"))]
+    let text: String = match std::fs::read_to_string(path) {
         Ok(s) => s,
         Err(e) => {
             warn!("[compiled_data] could not read {path}: {e}");
