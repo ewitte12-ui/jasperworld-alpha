@@ -19,10 +19,8 @@ struct LoadingOverlayState {
 
 impl Default for LoadingOverlayState {
     fn default() -> Self {
-        let mut t = Timer::from_seconds(2.0, TimerMode::Once);
-        t.pause();
         Self {
-            timer: t,
+            timer: Timer::from_seconds(2.0, TimerMode::Once),
             active: false,
         }
     }
@@ -78,7 +76,6 @@ fn show_overlay(
         spawn_overlay_entity(&mut commands);
     }
     state.timer = Timer::from_seconds(2.0, TimerMode::Once);
-    state.timer.unpause();
     state.active = true;
 }
 
@@ -96,7 +93,6 @@ fn detect_level_change(
                 spawn_overlay_entity(&mut commands);
             }
             state.timer = Timer::from_seconds(2.0, TimerMode::Once);
-            state.timer.unpause();
             state.active = true;
         }
     }
@@ -112,7 +108,7 @@ fn tick_overlay(
         return;
     }
     state.timer.tick(time.delta());
-    if state.timer.finished() {
+    if state.timer.just_finished() {
         state.active = false;
         for e in &existing {
             commands.entity(e).despawn();
