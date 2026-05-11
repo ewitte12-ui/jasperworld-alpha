@@ -26,6 +26,7 @@ use jaspersworld::states::{
     SettingsReturnState, SettingsTab,
 };
 use jaspersworld::tilemap::TilemapPlugin;
+use jaspersworld::title::TitleBackgroundPlugin;
 use jaspersworld::ui::UiPlugin;
 use jaspersworld::vfx::VfxPlugin;
 use jaspersworld::window_geometry::{load_window_geometry, persist_window_geometry};
@@ -100,13 +101,9 @@ fn main() {
     .add_plugins(SanctuaryPlugin)
     // Menu plugin (title, main menu, pause, settings, save/load)
     .add_plugins(MenuPlugin)
+    .add_plugins(TitleBackgroundPlugin)
     // Global systems
     .add_systems(Startup, load_settings)
-    // Boot directly into a new game — the old TitleScreen/MainMenu flow was
-    // never reachable in WASM (debug_start.json bypass relied on std::fs).
-    .add_systems(Startup, |mut new_game: ResMut<NewGameRequested>| {
-        new_game.0 = true;
-    })
     .add_systems(
         Update,
         (
