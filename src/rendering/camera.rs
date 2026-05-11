@@ -52,10 +52,12 @@ pub struct FillDirectionalLight;
 /// exactly one role marker.  All systems that query a camera by Transform
 /// MUST filter with `(With<Camera3d>, With<GameplayCamera>)` — never
 /// `With<Camera3d>` alone — so they remain correct when other cameras
-/// (future debug/cutscene cameras) coexist in the world.
+/// (TitleCamera, future debug/cutscene cameras) coexist in the world.
 ///
-/// LIFECYCLE: spawned `is_active: true` at Startup and persists for the
-/// entire app lifetime. It is the only camera in the world.
+/// LIFECYCLE: spawned `is_active: false` at Startup.  TitleBackgroundPlugin
+/// activates it on `OnExit(AppState::TitleScreen)` and deactivates it on
+/// `OnEnter(AppState::TitleScreen)`.  This satisfies the title screen
+/// isolation guardrail: exactly 1 active camera per AppState at all times.
 ///
 /// WARNING: Removing this marker from the gameplay camera will cause every
 /// `With<GameplayCamera>` query to return zero results, silently breaking
@@ -91,7 +93,11 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn((
         Camera3d::default(),
         Camera {
-            is_active: true,
+            // WHY is_active: false — starts inactive; TitleBackgroundPlugin
+            // activates it when TitleScreen exits.  This guarantees exactly 1
+            // active camera during TitleScreen (the title camera) with zero
+            // code needed in the first-frame path.
+            is_active: false,
             ..default()
         },
         GameplayCamera,

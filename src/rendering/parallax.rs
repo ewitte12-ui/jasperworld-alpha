@@ -51,7 +51,7 @@ pub struct ParallaxBackground;
 /// from despawned layers are purged and new layers re-anchor cleanly.
 ///
 /// WHY GameplayCamera filter: `single()` would fail (MultipleEntities) whenever
-/// a secondary camera exists (e.g. future debug/cutscene cameras).
+/// a secondary camera exists (e.g. the TitleSceneEntity camera during TitleScreen).
 /// GameplayCamera guarantees exactly one match regardless of other active cameras.
 ///
 /// PARALLAX FACTOR CONVENTION (corrected):
