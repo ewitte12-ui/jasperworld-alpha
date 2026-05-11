@@ -3,8 +3,8 @@ use bevy::prelude::*;
 /// Top-level application state.
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum AppState {
-    #[default]
     TitleScreen,
+    #[default]
     MainMenu,
     Settings,
     SaveLoadMenu,
