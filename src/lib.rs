@@ -21,6 +21,7 @@ pub mod sanctuary;
 pub mod save_load;
 pub mod states;
 pub mod tilemap;
+pub mod title;
 pub mod ui;
 pub mod vfx;
 pub mod window_geometry;
