@@ -8,6 +8,7 @@ use jaspersworld::dialogue::DialoguePlugin;
 use jaspersworld::enemies::EnemiesPlugin;
 use jaspersworld::level::LevelPlugin;
 use jaspersworld::lighting::LightingPlugin;
+use jaspersworld::loading_overlay::LoadingOverlayPlugin;
 use jaspersworld::menu::MenuPlugin;
 use jaspersworld::menu::{apply_audio_settings, apply_graphics_settings, load_settings};
 use jaspersworld::particles::ParticlesPlugin;
@@ -100,6 +101,8 @@ fn main() {
     .add_plugins(SanctuaryPlugin)
     // Menu plugin (main menu, pause, settings, save/load)
     .add_plugins(MenuPlugin)
+    // Loading overlay shown during level transitions (WASM async loads)
+    .add_plugins(LoadingOverlayPlugin)
     // Global systems
     .add_systems(Startup, load_settings)
     .add_systems(

@@ -10,6 +10,7 @@ pub mod dialogue;
 pub mod enemies;
 pub mod level;
 pub mod lighting;
+pub mod loading_overlay;
 pub mod menu;
 pub mod particles;
 pub mod physics;
