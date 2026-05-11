@@ -2,6 +2,10 @@
 
 A 2D platformer starring Jasper the raccoon, built with [Bevy](https://bevyengine.org/) (Rust).
 
+> **Branch layout**
+> - `main` — canonical native build. Run with `cargo run`. Do not merge changes from `itch` into here.
+> - `itch` — WASM/browser build published to [ericjwi/jaspers-world-bevy](https://ericjwi.itch.io/jaspers-world-bevy). Trimmed assets, browser-specific source adaptations. Periodically merges from `main`; never the other way.
+
 ## About
 
 Jasper's World Demo is a side-scrolling platformer rendered with a 2.5D camera system — 2D gameplay on 3D-lit scenes. Guide Jasper through three distinct levels, collecting stars, solving puzzles, and stomping enemies along the way.
